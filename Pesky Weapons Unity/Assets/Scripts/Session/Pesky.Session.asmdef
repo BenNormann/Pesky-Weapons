@@ -1,0 +1,19 @@
+{
+    "name": "Pesky.Session",
+    "rootNamespace": "Pesky.Session",
+    "references": [
+        "Pesky.Data",
+        "Pesky.Protocol",
+        "Pesky.Transport",
+        "Pesky.Sim"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

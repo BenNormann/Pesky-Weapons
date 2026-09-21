@@ -31,6 +31,16 @@ namespace Pesky.Game
         [Tooltip("The glowing plane. Hidden while the gate is closed.")]
         [SerializeField] GameObject planeVisual;
 
+        [Header("Grid doorway (labyrinth)")]
+        [Tooltip("On: this is one of a labyrinth room's four doorways and its far side is whatever room the grid table currently puts next door. The serialized twin above is then ignored.")]
+        [SerializeField] bool gridDoor;
+        [Tooltip("The labyrinth that answers 'where does this lead now'. Required when Grid Door is on.")]
+        [OptionalRef][SerializeField] LabyrinthDirector labyrinth;
+        [Tooltip("The room this doorway belongs to. Required when Grid Door is on.")]
+        [OptionalRef][SerializeField] LabyrinthRoom room;
+        [Tooltip("Which of the room's four doorways this is.")]
+        [SerializeField] Pesky.Protocol.Heading doorwayDir = Pesky.Protocol.Heading.North;
+
         [Header("Opening (local: x across, y up from the floor)")]
         [SerializeField] float width = 2.9f;
         [SerializeField] float height = 3.45f;
@@ -52,19 +62,48 @@ namespace Pesky.Game
         public float ReentryCooldown { get { return reentryCooldown; } }
         public float ExitClearance { get { return exitClearance; } }
 
-        /// <summary>The other end: the serialized twin, or the registered door that shares this link id.</summary>
+        /// <summary>True for a doorway of a labyrinth room: its far side is whatever the grid says right now.</summary>
+        public bool IsGridDoor { get { return gridDoor; } }
+        /// <summary>The labyrinth that answers for this doorway, for a grid doorway. Null for a plain door.</summary>
+        public LabyrinthDirector Labyrinth { get { return labyrinth; } }
+
+
+        /// <summary>The labyrinth room this doorway belongs to, for a grid doorway.</summary>
+        public LabyrinthRoom Room { get { return room; } }
+
+        /// <summary>Which of the room's four doorways this is (a Heading value: 0 north, 1 east, 2 south, 3 west).</summary>
+        public int DoorwayDir { get { return (int)doorwayDir; } }
+
+        /// <summary>
+        /// The other end. A grid doorway resolves it from the labyrinth table AT THE MOMENT IT IS ASKED,
+        /// which is what makes a room the Mage moved while you were in the air change where you come out.
+        /// Otherwise it is the serialized twin, or the registered door that shares this link id.
+        /// </summary>
         public MagicDoor Twin
         {
             get
             {
+                if (gridDoor) return labyrinth != null ? labyrinth.ResolveTwin(this) : null;
                 if (twin != null) return twin;
                 return authority != null ? authority.FindLinkedMagicDoor(this) : null;
             }
         }
 
+        /// <summary>The one doorway in the whole grid that leads out instead of next door: going through it is the Exit.</summary>
+        public bool IsExitDoorway { get { return gridDoor && labyrinth != null && labyrinth.IsExit(this); } }
+
+        /// <summary>Which cell this doorway leads to right now; -1 for the Exit and for a plain door.</summary>
+        public int DestinationCell { get { return gridDoor && labyrinth != null ? labyrinth.DestinationCell(this) : -1; } }
+
+        /// <summary>The truthful name of whatever is through here right now. Glyphs never lie; compasses do.</summary>
+        public string DestinationLabel { get { return gridDoor && labyrinth != null ? labyrinth.DestinationLabel(this) : ""; } }
+
+        /// <summary>The short glyph form of the same truth.</summary>
+        public string DestinationGlyph { get { return gridDoor && labyrinth != null ? labyrinth.DestinationGlyph(this) : ""; } }
+
         public bool GateOpen { get { return gate == null || gate.IsOpen; } }
-        /// <summary>Open and linked: a crossing will be accepted.</summary>
-        public bool IsPassable { get { return GateOpen && Twin != null; } }
+        /// <summary>Open and linked: a crossing will be accepted. The Exit is passable although it has no twin.</summary>
+        public bool IsPassable { get { return GateOpen && (Twin != null || IsExitDoorway); } }
 
         void OnEnable()
         {

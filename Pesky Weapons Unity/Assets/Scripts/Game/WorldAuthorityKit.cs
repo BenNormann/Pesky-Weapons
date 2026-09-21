@@ -196,25 +196,21 @@ namespace Pesky.Game
 
         // ------------------------------------------------------------------ request: magnet power
 
-        public bool RequestSetMagnet(int magnetId, bool on)
+public bool RequestSetMagnet(int magnetId, bool on)
         {
             MagnetZone magnet = GetMagnet(magnetId);
             if (magnet == null || magnet.IsOn == on) return false;
-            magnet.ApplyOn(on);
-            if (MagnetChanged != null) MagnetChanged(magnet, on);
-            return true;
+            return NetHostSwitch(Pesky.Protocol.KitKind.Magnet, magnetId, on);
         }
 
         // ------------------------------------------------------------------ request: lift power
 
         /// <summary>Switches a lift on (it leaves its top stop after one dwell) or off (parked at the top).</summary>
-        public bool RequestSetLift(int liftId, bool on)
+public bool RequestSetLift(int liftId, bool on)
         {
             Lift lift = GetLift(liftId);
             if (lift == null || lift.IsOn == on) return false;
-            lift.ApplyPower(on, lift.Clock != null ? lift.Clock.Ms : 0L);
-            if (LiftChanged != null) LiftChanged(lift, on);
-            return true;
+            return NetHostSwitch(Pesky.Protocol.KitKind.Lift, liftId, on);
         }
     }
 }

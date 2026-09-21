@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73d4e0961389e4f4ebeb1bc015806c4b, type: 3}
+  m_Name: Labyrinth_Tutorial
+  m_EditorClassIdentifier: Pesky.Data::Pesky.Data.LabyrinthDef
+  gridWidth: 3
+  gridHeight: 3
+  rooms:
+  - label: Entry Hall
+    glyph: E
+    role: 1
+  - label: Resurrection Room
+    glyph: R
+    role: 2
+  - label: Gate Hall
+    glyph: G
+    role: 3
+  - label: Cell A
+    glyph: A
+    role: 0
+  - label: Cell B
+    glyph: B
+    role: 0
+  - label: Cell C
+    glyph: C
+    role: 0
+  - label: Cell D
+    glyph: D
+    role: 0
+  - label: Cell F
+    glyph: F
+    role: 0
+  - label: Cell H
+    glyph: H
+    role: 0
+  showDoorLabels: 0
+  showFloorNumbers: 1
+  padMaxStrokes: 300
+  padMaxPoints: 4000
+  padStrokesPerSecond: 20
+  padStrokeBurst: 40
+  swapCooldownSeconds: 15
+  swapAcrossWrap: 0
+  bendCooldownSeconds: 5
+  bendFractionLimit: 0.5
+  mageBaseCount: 1
+  mageSecondFromPlayers: 6
+  mageMaxCount: 2
+  escapeFraction: 1
+  resurrectionFraction: 1
+  exitGatherRadius: 6
+  respawnDelaySeconds: 10
+  legendOnDeath: 0

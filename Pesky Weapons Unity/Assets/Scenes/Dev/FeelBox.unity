@@ -559,6 +559,7 @@ MonoBehaviour:
   - {fileID: 9078611130593446151}
   lifts:
   - {fileID: 2149922331588708911}
+  sessionRunner: {fileID: 790094385}
   ropes:
   - {fileID: 1763570710}
   pots:
@@ -1056,6 +1057,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0ba79583d7d7ba439f2244cd0d81798, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.LevelClock
+  session: {fileID: 790094385}
+  followToleranceMs: 50
 --- !u!4 &582680219
 Transform:
   m_ObjectHideFlags: 0
@@ -1148,6 +1151,101 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 445309e553cb6c94391677c5a06df8c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.CrackedWall
+--- !u!1 &790094383
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 790094384}
+  - component: {fileID: 790094385}
+  m_Layer: 0
+  m_Name: SessionRunner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &790094384
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 790094383}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1418150646}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &790094385
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 790094383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c16d367afcb6be4284d21d2976f53c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.SessionRunner
+  gameData: {fileID: 11400000, guid: 828c8d8cc7ff7e848918671815b1d028, type: 2}
+  offlineRoomCode: SOLO
+  offlinePlayerName: Player
+  autoStartGame: 1
+--- !u!1 &816410109
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 816410110}
+  - component: {fileID: 816410111}
+  m_Layer: 0
+  m_Name: PoseStreamer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &816410110
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 816410109}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1418150646}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &816410111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 816410109}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c859287dac0540942af75e40cb8bf557, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.PoseStreamer
+  session: {fileID: 790094385}
+  spawner: {fileID: 1578728416}
+  authority: {fileID: 267765539}
 --- !u!1001 &826995155
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1292,6 +1390,54 @@ Transform:
   - {fileID: 2137978952}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &879032210
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 879032211}
+  - component: {fileID: 879032212}
+  m_Layer: 0
+  m_Name: RemotePlayerSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &879032211
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 879032210}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1418150646}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &879032212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 879032210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76af1c377e416c2489266d01e21580ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.RemotePlayerSpawner
+  session: {fileID: 790094385}
+  authority: {fileID: 267765539}
+  viewPrefab: {fileID: 5442623511255715562, guid: 517b67c8f951c4043ab485a66e199a91, type: 3}
+  viewRoot: {fileID: 879032211}
 --- !u!1001 &929328442
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1780,6 +1926,9 @@ Transform:
   - {fileID: 1578728417}
   - {fileID: 1600386599}
   - {fileID: 267765538}
+  - {fileID: 790094384}
+  - {fileID: 816410110}
+  - {fileID: 879032211}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1495116779
@@ -1848,6 +1997,7 @@ MonoBehaviour:
   orbitCamera: {fileID: 2137978955}
   localSpawnIndex: 0
   authority: {fileID: 267765539}
+  session: {fileID: 790094385}
 --- !u!4 &1578728417
 Transform:
   m_ObjectHideFlags: 0

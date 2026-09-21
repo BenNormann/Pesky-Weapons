@@ -1474,3 +1474,402 @@ afterwards. Watch for that if a kit prefab is ever re-saved mid-session.
 * Rooms **13-20, c and d are still empty shapes** — that is stage 5, along with the Room 16 cracked-wall
   placeholder, the Room 19 winch (wire `lift` to Lift id 1501) and key 2 in Room c.
 * The Editor is left with `Zone1.unity` open and saved.
+
+---
+
+## Netcode port, Stage 1 of 7 — the engine is over and it compiles (2026-09-20). IMPLEMENTED, UNTESTED.
+
+Full record, with the file-by-file table and every seam left open, is in `docs/NETCODE-STATUS.md`.
+Plan: `docs/NETCODE-PORT.md`. Summary only here.
+
+Brought ATCK's multiplayer engine into the project as four new assemblies. Every C# file was copied
+**inside the Editor** with `execute_code` (`File.Copy` / read-replace-write, `ATCK` → `Pesky`, then
+`AssetDatabase.Refresh`); Unity generated all `.meta` files. No ported file was retyped through the
+model. The "adapt" files were then cut with `apply_text_edits`; the four genuinely new files were
+written with `create_script`.
+
+* **New asmdefs**: `Pesky.Protocol` (no refs), `Pesky.Transport` (no refs), `Pesky.Sim` (Data, Protocol),
+  `Pesky.Session` (Data, Protocol, Transport, Sim). `Pesky.Game` gained Session, Sim, Protocol and
+  **never** Transport; `Pesky.Editor` and `Pesky.Tests` gained all five.
+* **New folders**: `Assets/Scripts/{Protocol,Protocol/Messages,Transport,Sim,Session,Session/Rules}`,
+  `Assets/Plugins/WebGL`, `Assets/WebGLTemplates/Pesky`.
+* **Copied verbatim**: the five Transport files (WebRTC + loopback + voice interfaces),
+  `Tick`/`NetWriter`/`NetReader`/`Frame`/`Appearance`/`M0Messages`, `Rng`/`SimHash`, and the
+  Session engine — `Inbox`, `InboxItem`, `InboxKind`, `Outbox`, `PendingEvents`, `PeerSlots`,
+  `RoomClock`, `ClockPinger`, `SnapshotReceiver`, `SessionRouter`, `TransportFactory`,
+  `NetSessionExtensions`, `IHostRule`, `IIntentValidator`, `Rules/ClockRule`.
+* **Adapted (ATCK gameplay cut out)**: `Wire` (`NoCompany` gone, **ProtocolVersion reset to 1**),
+  `Headers` (`AircraftHeader` gone), `MsgId` (0x20-0x7E emptied), `MessageInfo` (ten session rows +
+  FRAME), `Enums` (~30 ATCK enums deleted, six rewritten for Pesky), `SessionMessages`
+  (`SESSION_INFO` and `SESSION_PHASE` now carry a `floorId` instead of the airfield and day clock;
+  the other eight messages byte for byte), `NetSession` (save/resume, shift/hazard/modifiers and
+  airport naming cut), `JoinFlow` (resume and economy cut, `BuildSessionInfo` rewritten),
+  `MessageApplier` (five cases; `TryEventTick` is now a fixed offset of 1), `EventSink`
+  (aircraft header helpers gone), `HostAuthority` (`CreateDefault` is the clock and nothing else),
+  `HostIds` (`NextEnemy`/`NextPickup`/`NextDoor`), `SnapshotCodec` (`Order` = World, Players).
+* **Written fresh**: `Scripts/Sim/WorldSim.cs` (a players table, the session header and the two
+  snapshot parts — nothing else), `Scripts/Sim/PlayerState.cs`, `Scripts/Sim/PlayerTable.cs`,
+  `Scripts/Data/GameData.cs`.
+* **Browser bridge**: `AHNet.jslib` verbatim; `ATCKPlatform.jslib` → `PeskyPlatform.jslib` and
+  `keys.js` renamed as a pair (dormant, nothing imports them yet); `trystero.min.js` verbatim;
+  `net.js` and `index.html` retitled. Own identity: trystero `appId` **`pesky-weapons-9d4kv2`**,
+  room prefix **`PESKY-`**. The three magic names — GameObject `NetBridge`, `window.AH_Net`,
+  `window.AH_UnityInstance` — are unchanged and consistent across C#, jslib and net.js.
+  `net.js`'s `iceServers()` now actually reads `window.PESKY_ICE_SERVERS` from `index.html`
+  (ATCK defined that global and ignored it), so TURN can be pasted in without a rebuild.
+
+### Not done / notes for the next stage
+* **Nothing was run.** No play mode, no tests, no browser, no build. The only check is that the whole
+  project compiles with no CS errors in the console. Everything is implemented, untested.
+* **Nothing is wired into gameplay.** No scene, prefab, material or existing `Scripts/Game` file was
+  touched. `Zone1.unity` was open and clean before and after; nothing was saved over it. The build
+  target was not switched and `PlayerSettings.WebGL.template` was not set.
+* **`TRANSFORM` (0x01) is still ATCK's 19-byte position + yaw.** Stage 2 respecifies it as
+  position + smallest-three quaternion + velocity; `NETCODE-STATUS.md` section 6 lists every file
+  that change touches, in order, ending with a bump of `Wire.ProtocolVersion` to 2.
+* **No `GameData` asset instance exists** — the ScriptableObject class is there, the `.asset` is not.
+* Still missing from the port: `BuildTools.cs` and the WebGL player settings block,
+  `PhysicsLayerSetup.cs`, `link.xml`, the EditMode test harness, the Game-layer files
+  (`Bootstrap`, `PoseStreamer`, `RemoteCharacter`, `RemotePlayerSpawner`, `RoomCodes`, `Clipboard`),
+  a `JOIN_REFUSED` reply for version mismatch, and a desktop transport.
+
+---
+
+## Netcode port, Stage 2 of 7 — the game is on the netcode (2026-09-20). IMPLEMENTED, UNTESTED.
+
+Full record: `docs/NETCODE-STATUS.md`, "Stage 2". Kit rules: `docs/KIT.md`,
+"Netcode rules for kit pieces". Nothing was run; checks were compile, the scene
+validator (0 issues in `Zone1` and `Dev/FeelBox`) and read-backs.
+
+- **Session everywhere.** `_Managers/SessionRunner` (order -1000) in `Zone1`
+  and `Dev/FeelBox`: adopts `SessionRunner.Shared` or starts an offline
+  `LoopbackTransport` session and `StartGame()`s it. `LevelClock` follows the
+  room clock (`SessionRunner.LevelMs`).
+- **Protocol v2.** POSE 0x01 is now 26 bytes (flags, f32 position, smallest-three
+  rotation, velocity, seq). New ids 0x20-0x28 (possess / release / weapon owner,
+  state, broken, respawned, damaged / bat claim, bat event), 0x40-0x42 (enemy
+  state, hit claim, enemy health), 0x50-0x52 (kit state, kit req, world reset).
+  New files: `Protocol/GameEnums.cs`, `Protocol/Messages/{Player,Enemy,World}Messages.cs`.
+- **Sim.** `WorldSim` re-created with player / weapon / enemy / kit tables and
+  snapshot parts; `Sim/{WeaponTable,EnemyTable,KitTable}.cs`.
+- **Session.** `IHostWorld`, `NetSession.HostEmit` / `HostHeader` / `HostWorld`,
+  `Rules/{WeaponRule,EnemyStateRule}.cs`,
+  `Validators/{PossessValidator,HitValidator,BatValidator,KitValidator}.cs`.
+- **Game.** `SessionRunner`, `WorldAuthorityNet` (the bridge), `WeaponBodyNet`,
+  `GoblinBrainNet` (host rows + client puppet), `PoseStreamer`,
+  `RemotePlayerSpawner`, `RemotePlayerView`, `Prefabs/Player/RemotePlayer.prefab`,
+  `Data/GameData.asset` (weapons[1..7], enemies[1..3], modifiers[1], indexed by
+  def id). Every `WorldAuthority.Request*` kept its signature and its C# event.
+- **Exact names to grep:** `Simulates`, `ReconcileOwner`, `SubmitKit`, `ApplyKit`,
+  `SyncFromSim`, `NetCollect`, `PuppetUpdate`, `SetRemoteDriven`, `RemoteMove`,
+  `NoteBat`, `RequestBat`, `RequestEnemyAttack`, `CopyRemotePoints`.
+- **Process notes.** `script_apply_edits` and `apply_text_edits` echo the whole
+  edit back, so large changes went into new partial files and the edits to
+  existing MonoBehaviours were kept to one-line hooks. `apply_text_edits` needs a
+  `precondition_sha256`. `delete_script` was refused once by the permission
+  system (`PlayerState.cs`, then edited in place) and allowed once
+  (`WorldSim.cs`, re-created; new GUID, plain class, harmless).
+  `manage_scriptable_object` patches: `{"propertyPath": "x.Array.size", "op":
+  "array_resize", "value": n}` and `{"propertyPath": "x.Array.data[i]", "op":
+  "set", "ref": {"path": "Assets/..."}}`. Scene object references in
+  `manage_components set_property` take instance ids, not hierarchy paths.
+
+## Netcode port, Stage 3 of 7 — a desktop transport (2026-09-20). IMPLEMENTED, UNTESTED.
+
+Full detail in `docs/NETCODE-STATUS.md` section "Stage 3". Nothing was run: no
+play mode, no build, no socket. Clean compile, 0 console errors and 0 warnings.
+
+- **`Transport/TcpTransport.cs` + `Transport/TcpLink.cs`** — plain TCP behind
+  `INetTransport`, so two non-browser instances can finally meet (ATCK had no
+  desktop path; this is `NETCODE-PORT.md` section 8.3). The host listens on 7777
+  and **relays**, so `Broadcast` and `SendTo` behave like a full mesh even
+  between two clients. Frames are `len u32 | op u8 | body`; opcodes Hello,
+  Welcome, Joined, Left, Relay, Deliver, Ping. Peer ids are `host`, `p1`, `p2`.
+  Liveness is the socket receive timeout (10 s) fed by a 2 s idle ping.
+- **Threads:** accept, connect, and a reader + writer per socket, all background.
+  The main thread only enqueues. `Leave()` closes and joins them, and also runs
+  from `Application.quitting`, `ExitingPlayMode` and `beforeAssemblyReload`, so
+  nothing survives a domain reload.
+- **`Session/TransportFactory.cs`** — `ForPlatform()` is now WebGL to
+  `WebRtcTransport`, editor and standalone to `TcpTransport`; `Offline()` still
+  `LoopbackTransport`. New `TransportFactory.DefaultPort` and
+  `HostAddresses(port)` (the LAN IPv4 list) so Game can show the room code
+  without naming a transport. The room code on desktop **is** the address.
+- **The dev switch** (`Game/SessionRunnerDev.cs`, a `partial SessionRunner`, plus
+  `Editor/NetDevWindow.cs`): there is no lobby yet, so host / join / offline is
+  chosen by the `Pesky > Net` menu in the Editor (EditorPrefs, they persist) or
+  by `-peskyhost [port]` / `-peskyjoin host[:port]` / `-peskyname Name` on a
+  build's command line. Default is unchanged: offline on loopback. Delete this
+  when the lobby scene exists.
+- **Exact names to grep:** `TcpTransport`, `TcpLink`, `TcpWire`, `TcpOp`,
+  `StartAutoSession`, `DevAddress`, `HostAddresses`, `NetDevWindow`,
+  `Pesky.DevNetMode`.
+- **Process notes.** Both transport files are wrapped in
+  `#if !UNITY_WEBGL || UNITY_EDITOR`, the exact complement of the
+  `TransportFactory` branch, so a WebGL player never compiles
+  `System.Net.Sockets`. `PlayerSettings.runInBackground` was already true and was
+  not touched. No scene, prefab or asset was modified in this stage.
+
+## Netcode port, Stage 4 of 7 — main menu and room page (2026-09-20). IMPLEMENTED, UNTESTED.
+
+Full notes: `docs/NETCODE-STATUS.md` section "Stage 4". Checks made: clean
+compile, the edit-mode scene validator on `MainMenu`, `Zone1` and `Dev/FeelBox`
+(0 issues), serialized values and build settings read back, and `Menu.uxml`
+instantiated in edit mode to prove every element `MenuView` queries exists. No
+play mode, no build.
+
+- **Scene flow is now** `Boot` (0) -> `MainMenu` (1) -> the level. Build settings
+  are `Boot`, `MainMenu`, `Zone1`, in that order. `Boot/_Bootstrap`'s
+  `GameBootstrap.sceneName` changed from `Zone1` to `MainMenu`; Boot is still
+  nothing but that one object.
+- **`Scenes/MainMenu.unity`** (new): `_Managers/EventSystem` (EventSystem +
+  InputSystemUIInputModule, its eight UI actions bound to
+  `Assets/InputSystem_Actions.inputactions`), `_Cameras/Main Camera` (solid
+  colour, culling mask 0, tagged MainCamera), `_UI/Menu` (UIDocument ->
+  `UI/Menu.uxml` + `UI/UiPanelSettings.asset`, and `MenuFlow` with its document,
+  `UI/Menu.uss` and `Data/GameData.asset` serialized).
+- **UI (UI Toolkit):** `UI/Menu.uxml` + `UI/Menu.uss`. A centred column, max
+  560 px wide, dark ground, one accent (amber `rgb(226,186,74)`), cards for the
+  groups. TITLE = title, callsign field (remembered in `PlayerPrefs` under
+  `Pesky.Callsign`), HOST, JOIN with the code field beside it, TUTORIAL, a status
+  row, QUIT (hidden on WebGL). ROOM = the code big with COPY, the eight crew rows
+  (slot colour, callsign, HOST and YOU badges, OPEN), the crew count, the
+  labyrinth-size line, START (host, enabled from one player), LEAVE.
+- **`UI/HudPanelSettings.asset` was renamed** to `UI/UiPanelSettings.asset` with
+  `AssetDatabase.RenameAsset`, so the GUID survived and `Prefabs/UI/HUD.prefab`
+  still resolves it. The HUD and the menu now share one PanelSettings.
+- **New scripts** under `Scripts/Game`: `GameLocator.cs` (the one static handle
+  that outlives a scene load: `Session`, `FromMenu`, a one-shot `Message`),
+  `SceneNames.cs`, and under `Scripts/Game/UI`: `RoomCodes.cs` (ATCK's six-letter
+  alphabet plus the desktop `host:port` shape), `Clipboard.cs`, `SlotColors.cs`,
+  `MenuView.cs` (the elements) and `MenuFlow.cs` (the controller).
+- **`NetSession.ReturnToLobby()`** added: host only, emits `SESSION_PHASE(Lobby)`,
+  so a room that finished a run can start another.
+- **`SessionRunner`** now adopts `GameLocator.Session` (its `Shared` property
+  forwards there) and, when the menu started the session, loads `menuScene` on
+  `SessionPhase.Ended` or a lost host. Both endings are queued and acted on after
+  `NetSession.Update()` returns.
+- **Deleted:** `Scripts/Game/SessionRunnerDev.cs` and
+  `Scripts/Editor/NetDevWindow.cs`. The `Pesky > Net` menu and the
+  `-peskyhost` / `-peskyjoin` / `-peskyname` command-line switches are gone; host
+  and join are chosen in the menu now.
+- **Exact names to grep:** `MenuFlow`, `MenuView`, `GameLocator`, `SceneNames`,
+  `RoomCodes`, `SlotColors`, `ReturnToLobby`, `IsInBuild`, `Pesky.Callsign`,
+  `UiPanelSettings`.
+- **Watch out:** the `Labyrinth` scene does not exist, so START checks the build
+  settings first and says so instead of throwing; to walk the whole flow today,
+  point `MenuFlow.labyrinthScene` at `Zone1` in the Inspector.
+
+## Stage 5 — the labyrinth core (code and data only)
+
+The grid, the Mage's two powers, the compass and the round rules, with no scene.
+Full description in `docs/LABYRINTH.md`; netcode detail in `docs/NETCODE-STATUS.md`
+section "Stage 5". Implemented, untested: clean compile, scene validator 0 issues
+on `MainMenu` / `Zone1` / `Dev/FeelBox`, nothing run.
+
+- **The grid is a table, not geometry.** `Pesky.Sim.LabyrinthGrid` (plain C#) is
+  `cell -> room id` for a **5x5 grid whose size is data**. Opposite edges wrap;
+  exactly one doorway does not, the outward one on the good-end room, and that is
+  the **Exit**. Start room = centre cell, the two ends = two different corners
+  chosen by the session seed. `cell = row * Width + column`, north is row - 1,
+  east is column + 1, headings are `North 0, East 1, South 2, West 3`.
+- **New data asset** `Assets/Data/Labyrinth.asset` (`LabyrinthDef`), linked from
+  `GameData.labyrinth`. 25 rooms: id 0 `Weapon Rack` (Start), 1
+  `Resurrection Room` (BadEnd), 2 `Gate Hall` (GoodEnd), 3-24 blank. **The index
+  in `rooms` is the room id and it travels on the wire: append only.**
+- **Ten new messages, `MsgId` 0x30-0x39**, and `Wire.ProtocolVersion` is now
+  **3**. Two of them (`ROLE_ASSIGN`, `COMPASS_TARGETS`) are **Replies**, which is
+  how a secret reaches one player and nobody else.
+- **`SnapshotPartKind.Labyrinth = 5`; `End` moved to 6.** Any future part goes
+  before `End` the same way.
+- **`LabyrinthRule`** is both the host rule and the validator for the Mage's two
+  intents. It assigns roles at round start from a **host-private Rng** (never
+  `WorldSim.Rng`, which every peer can replay), validates swaps (adjacent, never
+  diagonal, never the three fixed rooms, cooldown per Mage, plus a connectivity
+  hook), enforces the **minority limit** on compass bends across both Mages, runs
+  the respawns, and ends the round on "enough of the crew at the Exit" or "a
+  majority in the Resurrection Room".
+- **Every refusal is silent** and `ROUND_RESULT` is the only message that ever
+  names the Mages.
+- **`MagicDoor` gained a grid-door mode**: `gridDoor`, `labyrinth`, `room`,
+  `doorwayDir`. `Twin` then resolves from the table **at the moment it is asked**,
+  and `DestinationLabel` / `DestinationGlyph` give a doorway a truthful glyph.
+  Glyphs never lie; compasses do.
+- **New Game scripts:** `LabyrinthRoom.cs` (room id, four doorways, footprint,
+  anchor), `LabyrinthDirector.cs` (the one sim-to-scene mapping, under
+  `_Managers`), `CompassModel.cs` (`HasReading`, `Spinning`, `Doorway`,
+  `WorldDirection`).
+- **`IHostWorld.CollectPlayerCells(int[], bool[])`** is new: the host asks the
+  scene where everybody is, five times a second, from the streamed player rows.
+- **Exact names to grep:** `LabyrinthGrid`, `LabyrinthState`, `LabyrinthDef`,
+  `LabyrinthRule`, `LabyrinthDirector`, `LabyrinthRoom`, `CompassModel`,
+  `CompassHint`, `DoorwayFilter`, `ApplyReply`, `CollectPlayerCells`,
+  `ReportPlayerDown`, `RequestRoomSwap`, `RequestCompassBend`, `IsExitDoorway`,
+  `DestinationLabel`.
+- **Watch out:** no scene has a `LabyrinthDirector`, so all of this is idle at
+  runtime today; `Labyrinth.unity` still does not exist and is still not in the
+  build settings. Crossing the Exit doorway does nothing — the win condition is
+  proximity to it. Nothing calls `ReportPlayerDown`, so death and respawn have
+  never executed.
+
+## Netcode port, Stage 6 of 7 — the labyrinth scene and its UI (2026-09-20). IMPLEMENTED, UNTESTED.
+
+- **`Assets/Scenes/Labyrinth.unity`** — new, build index **3**. 2,269
+  GameObjects, 1,229 static, 1 Camera / AudioListener / WorldAuthority /
+  LevelClock / LabyrinthDirector. Roots `_Managers`, `_Cameras`, `_Lighting`,
+  `_UI`, `Environment/Rooms`. 25 room instances on a 200 m lattice
+  (`x = (id % 5) * 200`, `z = -(id / 5) * 200`), ids 0/1/2 = Start / Resurrection
+  Room / Gate Hall. Scene ids 101..302. `WorldAuthority`: `magicDoors` 100,
+  `rooms` 26, `weapons` 7, `labyrinth` = the director.
+- **New prefabs**: `Assets/Prefabs/Kit/MagicDoor_Grid.prefab`,
+  `Assets/Prefabs/Rooms/LabyrinthRoom.prefab` and its variants
+  `LabyrinthRoom_Start`, `LabyrinthRoom_BadEnd`, `LabyrinthRoom_Exit`.
+- **New scripts**: `Game/DoorwayGlyph.cs`, `Game/ExitZone.cs`,
+  `Game/UI/LabyrinthHud.cs`, `Game/UI/LabyrinthMapView.cs`.
+- **New UI**: `Assets/UI/Labyrinth.uxml`, `Assets/UI/Labyrinth.uss` — compass,
+  hold-Tab map with the Mage's drag and compass-bend chips, role reveal, round
+  banner.
+- **Changed**: `Assets/Scripts/Editor/SceneValidator.cs` (grid doorways exempt
+  from the twin check, new `CheckLabyrinth`); `Assets/Input/PeskyControls.inputactions`
+  (new `Gameplay/Map` action on Tab, added through the InputSystem API).
+- **The wire is untouched.** `Wire.ProtocolVersion` is still 3.
+- **Checks made**: clean compile after every script change; project scene
+  validator 0 problems on `Labyrinth`, `Zone1`, `MainMenu` and `Dev/FeelBox`;
+  serialized values read back (doorway forwards, door wiring, weapon home slots,
+  exit zones, build settings). **Nothing was run** — no play mode, no tests, no
+  screenshots.
+- **Exact names to grep:** `LabyrinthHud`, `LabyrinthMapView`, `DoorwayGlyph`,
+  `ExitZone`, `MagicDoor_Grid`, `LabyrinthRoom_Start`, `LabyrinthRoom_BadEnd`,
+  `LabyrinthRoom_Exit`, `CheckLabyrinth`, `map-overlay`, `mage-bar`,
+  `compass-needle`, `role-reveal`, `result-banner`.
+- **Watch out:** the exit doorway's direction is chosen by the seed, so all four
+  doorways of the Gate Hall carry an `ExitZone` and only one lights up. Cooldown
+  rings on the map are a local guide, not the host's truth. The Mage's "BENT n"
+  counter only counts what this Mage asked for. Crossing the Exit still does
+  nothing — the win is proximity. Nothing calls `ReportPlayerDown`.
+
+## Netcode port, Stage 7 of 7 — the tutorial scene and the test guide (2026-09-20). IMPLEMENTED, UNTESTED.
+
+- **`Assets/Scenes/Tutorial.unity`** — new, build index **2**, made by
+  duplicating `Zone1.unity` in the Editor and cutting the towers out of the copy:
+  `Room06`…`Room20`, `RoomA`…`RoomD`, `BackTowerShell`, `MagicDoor_2_to_A` and
+  `_Managers/FloorActivator` are gone (22 objects), and the 113 null entries that
+  left in `WorldAuthority`'s arrays were compacted. Rooms 1-5 and the four
+  hallways are untouched. 1,267 objects, 679 static. NavMesh re-baked to
+  `Assets/Scenes/Tutorial/NavMesh-Environment.asset`. **`Zone1.unity` itself was
+  never written to** and is still openable from the Editor — it is just out of
+  the build.
+- **Build settings are now exactly** `Boot`, `MainMenu`, `Tutorial`, `Labyrinth`.
+  `MenuFlow.tutorialScene` changed from `Zone1` to `Tutorial`; TUTORIAL still
+  starts an offline loopback session and loads it at once.
+- **`Room6_MageTutorial` (new scene root)** — the Mage lesson: 9 rooms of the real
+  labyrinth on a 3x3 grid, 120 m apart from `(300, 0, 0)`, built from
+  `LabyrinthRoom` / `_BadEnd` / `_Exit`. `_Managers/LabyrinthDirector`,
+  `_Managers/CompassModel` and `_UI/LabyrinthHud` (sortingOrder 1) drive it with
+  the same components the real labyrinth uses. Scene ids 2001..2075. The arena's
+  far doorway (`MagicDoor_5_to_Practice`, was `MagicDoor_5_to_6`) is twinned with
+  `MagicDoor_Practice_to_5` in the Entry Hall.
+- **3x3, not the 3x1 the brief asked for** — `LabyrinthDef.MinSide` is 3, and in
+  a 3-cell grid the Start and both ends occupy every cell, so no swap could ever
+  be legal and the lesson could not be taught. Reasoning in NETCODE-STATUS S7.3.
+- **New assets**: `Assets/Data/Labyrinth_Tutorial.asset` (3x3, 9 rooms, 5 s
+  cooldowns, `resurrectionFraction` 1 so a solo player cannot trip the Mage's
+  instant win) and `Assets/Data/GameData_Tutorial.asset` (a copy of `GameData`
+  pointing at it; **it will not follow later edits to `GameData.asset`**).
+- **New script**: `Game/TutorialTrigger.cs` — a one-shot trigger box that
+  switches objects, wakes the labyrinth HUD, and (on the Gate Hall's four
+  `ExitZone`s, whose colliders are live only for the real Exit) ends the run with
+  `NetSession.EndRun(Escaped)` + `Leave()`, which lands the player back on the
+  menu's title page.
+- **Edited**: `LabyrinthHud` (`startAsleep`, `practiceChipName`, `Wake()`),
+  `LabyrinthMapView` (`PracticeName` — a local-only "DUMMY" chip on the Mage bar
+  that sends nothing), `MenuFlow` (optional `tutorialData`). The wire is
+  untouched: `Wire.ProtocolVersion` is still 3.
+- **New doc**: `docs/TEST-CHECKLIST.md` — how to run solo, how to pair the Editor
+  with a Windows build from Build Profiles, 13 ordered checks from "connect" to
+  "late join", the tutorial's own walk-through, and every stage's riskiest
+  assumptions in one list. `docs/SLICE-1-REPORT.md` gained the Tab / map keys.
+- **Checks made**: clean compile after every change; the scene validator on all
+  four build scenes (0 problems each); build list and serialized values read
+  back. **Nothing was run** — no play mode, no tests, no screenshots.
+- **Exact names to grep**: `TutorialTrigger`, `TutorialGate_MageLesson`,
+  `PRoom_00_EntryHall`, `MagicDoor_Practice_to_5`, `Labyrinth_Tutorial`,
+  `GameData_Tutorial`, `startAsleep`, `practiceChipName`, `PracticeName`,
+  `tutorialData`.
+- **Watch out**: the tutorial player is always the Mage (one player, one
+  fragment), so the labyrinth's own escape ending cannot fire there. The HUD
+  stays blank until a weapon enters the Entry Hall. Souls do not trigger
+  `TutorialTrigger`. Opening `Tutorial.unity` straight from the Editor works and
+  does **not** return to the menu when the run ends (`GameLocator.FromMenu`).
+
+---
+
+## Feedback round 2 — the owner's five notes (2026-09-20)
+
+**Implemented, untested.** Clean compile after every change; the edit-mode scene
+validator on `Boot`, `MainMenu`, `Tutorial` and `Labyrinth` — **0 problems
+each**; every new message encoded and decoded once in the Editor; a full snapshot
+built and read back; serialized values read back. **Nothing was run — no play
+mode, no tests, no screenshots.** Full write-ups: `docs/LABYRINTH.md` section 11
+and `docs/NETCODE-STATUS.md` section F2.
+
+1. **Door labels off, a number on the floor.** `LabyrinthDef.showDoorLabels` is
+   new and **false**; `DoorwayGlyph` reads it through the new
+   `MagicDoor.Labyrinth` accessor and hides the two labels, and they are
+   **inactive in `MagicDoor_Grid.prefab`** as well. The logic is intact — turn
+   the toggle on and they come back. `LabyrinthRoom.prefab` gained
+   `Fixtures/FloorNumber`: a world-space TMP at local (0, 0.03, 0), rotation
+   **(90, 0, 0)**, driven by the new `Game/RoomFloorNumber.cs`, which writes
+   `LabyrinthRoom.RoomId` at runtime. All 25 rooms, the three variants and the
+   tutorial's nine practice rooms picked it up from the one prefab.
+   **The mirroring was real.** A `TextMeshPro` mesh faces its own local **-Z**
+   (proved against Unity's Quad and against the MagicDoor's own glowing plane,
+   which is a Quad deliberately yawed 180 so it faces into the room). The
+   doorway labels were at identity on a door whose +Z faces the room, and
+   `Sign.prefab`'s `Label` was yawed 180 while sitting on the board's -Z face.
+   Both are fixed. **The Sign fix reaches every sign in the project**; no Sign
+   anywhere overrides that rotation, so no sign changes which side it shows,
+   only whether it reads correctly. Revert: `Sign.prefab` > `Label` > yaw 180.
+2. **A shared scratch pad, and it is the Tab menu.** A weapon holding Tab now
+   gets **only** a blank dark canvas — no auto-map, no cells, no room names. A
+   Mage gets two top tabs, MAP and PAD. Strokes are vector polylines in
+   normalised u16 canvas coordinates: PAD_STROKE_REQ (0x3A) -> host validates
+   size and rate -> PAD_STROKE (0x3B) broadcast with a sequence number and the
+   drawer's slot, painted with Painter2D; PAD_CLEAR (0x3C) at the start of every
+   round and from a host-only CLEAR button. An eraser is a stroke in the canvas
+   colour, not a delete. 64 points per message (260 / 267 / 5 bytes), longer
+   strokes split on a shared joining point, snapshot part `Pad = 6` (`End` moved
+   to 7) capped at 300 strokes / 4,000 points = about 16 KB. **The cursor is now
+   freed for everybody** while the overlay is open, not just for a Mage.
+   New: `Protocol/Messages/PadMessages.cs`, `Sim/ScratchPadState.cs`,
+   `Session/Rules/PadRule.cs`, `Game/UI/ScratchPadView.cs`.
+3. **The compass is a ring and spikes.** New `Game/UI/CompassView.cs` paints it:
+   a **green** spike from the middle toward the doorway to take (still green and
+   simply wrong for a bent player), plus a **red** one toward the Resurrection
+   Room **on a Mage's machine only**. A spike spins inside its target room.
+   Nothing else is on it — the needle, the N/E/S/W caption and the destination
+   name are gone from `Labyrinth.uxml`. `CompassModel` gained the red half.
+4. **Swap cooldown 60 s.** `Assets/Data/Labyrinth.asset` is **60**,
+   `Labyrinth_Tutorial.asset` is **15** so the lesson is not a wait.
+   `LabyrinthRule` reads the asset and nothing else; the only other number is
+   `LabyrinthDef`'s field initialiser, now also 60, for a brand-new asset.
+5. **The tutorial hole was Room 2's east wall.** `Environment/Room2_Goblin/
+   Geometry/Wall_East_Doorway` — the opening the deleted lift shaft beside the
+   Goblin Room used to connect to — led straight into the void: a probe found no
+   floor for 15 m east of it. Filled with a 3.0 x 3.5 x 0.5 `Plug` on
+   `M_Wall`, World layer, the same static flags as the jambs, and the segment
+   renamed **`Wall_East_Sealed`**. Nothing orphaned was left near it. Tutorial
+   NavMesh re-baked. **Every other opening in the scene checks out**: the other
+   nine all have a door within 2 m or floor on both sides.
+   `SceneValidator.CheckDoorwayOpenings` is new and enforces it; renaming the
+   sealed segment back to `..._Doorway` makes it fire, which is how it was
+   proved.
+
+- **Exact names to grep**: `PadStrokeReq`, `PadStroke`, `PadClear`, `PadRule`,
+  `ScratchPadState`, `ScratchPadView`, `CompassView`, `RoomFloorNumber`,
+  `showDoorLabels`, `showFloorNumbers`, `padMaxStrokes`, `Wall_East_Sealed`,
+  `CheckDoorwayOpenings`, `FloorNumber`, `HasRedReading`.
+- **Watch out**: `Wire.ProtocolVersion` is **4** — rebuild both sides before
+  pairing two instances. The `Sign.prefab` rotation fix is the one change with
+  project-wide reach. A rate-capped pad stroke is refused in silence and fades
+  off the drawer's own screen after 3 s.

@@ -163,7 +163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22fc29bd225eff64c91000148e05c065, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.GameBootstrap
-  sceneName: Zone1
+  sceneName: MainMenu
   loadOnStart: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

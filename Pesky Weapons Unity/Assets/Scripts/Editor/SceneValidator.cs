@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Pesky.Data;
 using Pesky.Game;
 using UnityEditor;
 using UnityEngine;
@@ -57,6 +58,8 @@ namespace Pesky.Editor
             CheckLayersAndStatic(all, problems);
             CheckPuzzleKit(all, problems);
             CheckEnemyRoles(all, problems);
+            CheckLabyrinth(all, problems);            CheckDoorwayOpenings(all, problems);
+
             CheckRegistry(all, problems);
             CheckSceneSanity(all, problems);
             return problems;
@@ -218,13 +221,33 @@ namespace Pesky.Editor
                 MagicDoor magic = go.GetComponent<MagicDoor>();
                 if (magic != null)
                 {
-                    MagicDoor other = magic.Twin;
-                    if (magic.LinkId == 0) problems.Add("MagicDoor has link id 0 (unassigned): " + path);
-                    if (other == null) problems.Add("MagicDoor has no twin (no reference, and no other door in the registry shares its link id): " + path);
+                    if (magic.IsGridDoor)
+                    {
+                        // A grid doorway has NO authored twin: its far side is whatever room the labyrinth
+                        // table puts next door, resolved the moment it is asked - and at edit time there is
+                        // no table at all. What it needs instead is its room and its director.
+                        SerializedObject gso = new SerializedObject(magic);
+                        SerializedProperty director = gso.FindProperty("labyrinth");
+                        if (director == null || director.objectReferenceValue == null)
+                            problems.Add("Grid MagicDoor has no LabyrinthDirector, so it can never resolve a twin: " + path);
+                        gso.Dispose();
+
+                        if (magic.Room == null)
+                            problems.Add("Grid MagicDoor has no LabyrinthRoom: " + path);
+                        else if (magic.Room.Doorway(magic.DoorwayDir) != magic)
+                            problems.Add("Grid MagicDoor is not the one its room lists for direction " +
+                                         magic.DoorwayDir + ": " + path);
+                    }
                     else
                     {
-                        if (other.Twin != magic) problems.Add("MagicDoor's twin does not link back: " + path);
-                        if (other.LinkId != magic.LinkId) problems.Add("MagicDoor and its twin carry different link ids: " + path);
+                        MagicDoor other = magic.Twin;
+                        if (magic.LinkId == 0) problems.Add("MagicDoor has link id 0 (unassigned): " + path);
+                        if (other == null) problems.Add("MagicDoor has no twin (no reference, and no other door in the registry shares its link id): " + path);
+                        else
+                        {
+                            if (other.Twin != magic) problems.Add("MagicDoor's twin does not link back: " + path);
+                            if (other.LinkId != magic.LinkId) problems.Add("MagicDoor and its twin carry different link ids: " + path);
+                        }
                     }
                     if (Mathf.Abs(Vector3.Dot(go.transform.up, Vector3.up) - 1f) > 0.001f)
                         problems.Add("MagicDoor must stand upright (only its yaw may be rotated): " + path);
@@ -250,6 +273,141 @@ namespace Pesky.Editor
                 problems.Add(typeof(T).Name + " should be on layer " + LayerMask.LayerToName(layer) +
                              " but is on " + LayerMask.LayerToName(go.layer) + ": " + path);
         }
+
+        // ------------------------------------------------------------------ the labyrinth
+
+        /// <summary>
+        /// The labyrinth's own wiring, which nothing else can check: room ids are unique and in range, every
+        /// authored room is listed in the director, and each room's four doorways point back at it.
+        /// </summary>
+        static void CheckLabyrinth(List<GameObject> all, List<string> problems)
+        {
+            List<LabyrinthRoom> rooms = new List<LabyrinthRoom>();
+            LabyrinthDirector director = null;
+            int directors = 0;
+            for (int i = 0; i < all.Count; i++)
+            {
+                LabyrinthRoom room = all[i].GetComponent<LabyrinthRoom>();
+                if (room != null) rooms.Add(room);
+                LabyrinthDirector d = all[i].GetComponent<LabyrinthDirector>();
+                if (d == null) continue;
+                director = d;
+                directors++;
+            }
+
+            if (rooms.Count == 0 && director == null) return;
+            if (directors > 1) problems.Add("Expected at most 1 LabyrinthDirector, found " + directors);
+            if (director == null)
+            {
+                problems.Add("There are " + rooms.Count + " LabyrinthRooms but no LabyrinthDirector to map them.");
+                return;
+            }
+
+            HashSet<int> seen = new HashSet<int>();
+            for (int i = 0; i < rooms.Count; i++)
+            {
+                LabyrinthRoom room = rooms[i];
+                if (!seen.Add(room.RoomId))
+                    problems.Add("Two labyrinth rooms share room id " + room.RoomId + ": " + Path(room));
+
+                for (int dir = 0; dir < 4; dir++)
+                {
+                    MagicDoor door = room.Doorway(dir);
+                    if (door == null) { problems.Add("Labyrinth room " + room.RoomId + " has no doorway " + dir + ": " + Path(room)); continue; }
+                    if (!door.IsGridDoor) problems.Add("Labyrinth doorway " + dir + " is not a grid door: " + Path(door));
+                    if (door.Room != room) problems.Add("Labyrinth doorway " + dir + " belongs to another room: " + Path(door));
+                    if (door.DoorwayDir != dir) problems.Add("Labyrinth doorway is listed as " + dir + " but says " + door.DoorwayDir + ": " + Path(door));
+                }
+            }
+
+            IReadOnlyList<LabyrinthRoom> listed = director.Rooms;
+            for (int i = 0; i < rooms.Count; i++)
+            {
+                bool found = false;
+                for (int j = 0; j < listed.Count; j++) if (listed[j] == rooms[i]) found = true;
+                if (!found) problems.Add("Labyrinth room is not listed in the LabyrinthDirector: " + Path(rooms[i]));
+            }
+
+            LabyrinthDef def = director.Def;
+            if (def == null)
+            {
+                problems.Add("LabyrinthDirector has no LabyrinthDef to fall back on: " + Path(director));
+                return;
+            }
+            string trouble = def.Problem();
+            if (!string.IsNullOrEmpty(trouble)) problems.Add("LabyrinthDef: " + trouble);
+            if (rooms.Count < def.CellCount)
+                problems.Add("The labyrinth needs " + def.CellCount + " authored rooms but the scene has " + rooms.Count + ".");
+            for (int i = 0; i < rooms.Count; i++)
+                if (rooms[i].RoomId < 0 || rooms[i].RoomId >= def.rooms.Length)
+                    problems.Add("Labyrinth room id " + rooms[i].RoomId + " is outside LabyrinthDef.rooms: " + Path(rooms[i]));
+        }
+        // ------------------------------------------------------------------ doorway openings
+
+        /// <summary>How near a Door or MagicDoor has to be to count as filling an opening.</summary>
+        const float DoorwayNearDoor = 2.5f;
+
+        /// <summary>How far past the wall the floor probe stands.</summary>
+        const float DoorwayProbe = 3f;
+
+        /// <summary>The probe's height above the opening's sill, and how far down it looks for floor.</summary>
+        const float DoorwaySill = 0.75f;
+        const float DoorwayDrop = 10f;
+
+        /// <summary>
+        /// A HOLE IN A WALL HAS TO LEAD SOMEWHERE. Every doorway wall segment (a DoorwayWallSegment, which
+        /// the room builder names "..._Doorway") must either hold a working Door or MagicDoor, or have floor
+        /// on BOTH sides of it. An opening with a doorway in it is fine however solid the far side is - a
+        /// magic doorway's alcove is walled off on purpose - but an opening with neither a door nor a floor
+        /// beyond it is a way out of the game, which is exactly the leftover this check was written for.
+        ///
+        /// Seal an opening by filling it with wall and renaming the segment ("..._Sealed"): it is no longer
+        /// a doorway, so it is no longer checked.
+        /// </summary>
+        static void CheckDoorwayOpenings(List<GameObject> all, List<string> problems)
+        {
+            List<Transform> openings = new List<Transform>();
+            List<Transform> doors = new List<Transform>();
+            for (int i = 0; i < all.Count; i++)
+            {
+                GameObject go = all[i];
+                if (go.GetComponent<MagicDoor>() != null || go.GetComponent<Door>() != null) doors.Add(go.transform);
+                if (go.name.EndsWith("_Doorway")) openings.Add(go.transform);
+            }
+            if (openings.Count == 0) return;
+
+            // Edit-mode physics queries need the colliders where the transforms say they are.
+            Physics.SyncTransforms();
+
+            for (int i = 0; i < openings.Count; i++)
+            {
+                Transform opening = openings[i];
+                Vector3 middle = opening.position + Vector3.up * 1.75f;
+
+                bool served = false;
+                for (int d = 0; d < doors.Count && !served; d++)
+                    served = Vector3.Distance(doors[d].position, middle) <= DoorwayNearDoor;
+                if (served) continue;
+
+                Vector3 sill = opening.position + Vector3.up * DoorwaySill;
+                Vector3 across = opening.forward;
+                bool front = HasFloorUnder(sill + across * DoorwayProbe);
+                bool back = HasFloorUnder(sill - across * DoorwayProbe);
+                if (front && back) continue;
+
+                problems.Add("Doorway opening leads nowhere: no door or magic doorway within " +
+                             DoorwayNearDoor + " m and no floor " + DoorwayProbe + " m " +
+                             (front ? "behind" : "in front of") + " it. Seal it or give it a door: " +
+                             Path(opening.gameObject));
+            }
+        }
+
+        static bool HasFloorUnder(Vector3 point)
+        {
+            RaycastHit hit;
+            return Physics.Raycast(point, Vector3.down, out hit, DoorwayDrop, ~0, QueryTriggerInteraction.Ignore);
+        }
+
 
         // ------------------------------------------------------------------ scene sanity
 

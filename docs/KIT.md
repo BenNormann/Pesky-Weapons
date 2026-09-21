@@ -461,3 +461,100 @@ two `WallSegment` children — one filling the old opening, one above the new on
 weapon prefab **at the Slot's world position and rotation**, parented under the room's `Gameplay`, and wire
 `WeaponBody.homeSlot` to that slot. Register the weapon in `WorldAuthority.weapons`. A stand with no weapon
 on it is a legal drop point (Room 10's porter stand).
+
+---
+
+## Netcode rules for kit pieces (netcode stage 2, 2026-09-20). IMPLEMENTED, UNTESTED.
+
+No new kit pieces were added. What changed is how every existing piece's shared
+state travels; the full wire table is in `docs/NETCODE-STATUS.md` section S2.3.
+
+- A piece still never changes shared state itself. It calls a
+  `WorldAuthority.Request*` / `Report*`, and it changes only in its `Apply*`
+  method, which is now called from **one** place: `WorldAuthority.ApplyKit`
+  (`WorldAuthorityNet.cs`), on every peer, when the session delivers a
+  **KIT_STATE** event `(kind, pieceId, state, actor weapon, value, clockMs)`.
+- Two families. **Contact pieces** (key, rune, rope, pot, lever, cracked wall,
+  anvil): the peer that *simulates* the touching weapon reports it
+  (`WorldAuthority.Simulates`: the player holding it, or the host while it is
+  loose). The host publishes at once; a client sends KIT_REQ and the host
+  re-checks the piece's own rule (`CanCut`, `CanSmash`, `CanFlip`, `CanBreak`,
+  taken / available) against its own scene, within 8 m. **Host pieces** (door,
+  plate, scales, counterweight, porter gate, magnet, lift, lightning, porter
+  carry): only the host's copy reports; on a client the `Report*` call does
+  nothing and the piece waits for KIT_STATE.
+- Anything timed carries the host's `LevelClock.Ms` in `clockMs` (rope cut,
+  lift start, counterweight target), and `LevelClock` follows the session's
+  room clock, so a mover is the same function of the same number on every peer
+  and a late joiner sees it where it really is.
+- **Adding a piece:** give it a `KitKind` value (append only, `Protocol/GameEnums.cs`),
+  a case in `ApplyKit` that is **idempotent** (a piece already in that state
+  returns without raising its event, because a snapshot is replayed through the
+  same method with `live: false`), a case in `ValidateKit` if clients may ask
+  for it, and a `FillKit` case if it needs `value` or `clockMs`. Bump
+  `Wire.ProtocolVersion`.
+- Scene ids are u16 on the wire: keep every `ISceneId` in 0..65534 and unique
+  per kind.
+- Counterweight targets are compared and sent in whole millimetres, otherwise
+  the pair would re-report every physics step.
+- `AnvilStation` and `DoorPrompt` now react only to the **locally** possessed
+  weapon (`WeaponBody.IsLocallyPossessed`), so another player standing at an
+  anvil does not raise your prompt.
+
+---
+
+## Labyrinth pieces (stage 6, 2026-09-20). IMPLEMENTED, UNTESTED.
+
+Full context in `docs/LABYRINTH.md` sections 8 and 9. These are the new pieces
+and the rules for using them.
+
+### `MagicDoor_Grid.prefab` — `Assets/Prefabs/Kit`
+
+A `MagicDoor` whose far side is **whatever room the labyrinth table currently
+puts next door**, resolved the moment it is asked. Built from `MagicDoor.prefab`
+with the `Door`, the `DoorCondition` and the solid `Panel` removed: a grid
+doorway has no gate and is always open.
+
+Rules for placing one:
+
+- Fill in `labyrinth` (the scene's `LabyrinthDirector`), `room` (its
+  `LabyrinthRoom`) and `doorwayDir`, and put it in that room's `doorways` array
+  at the same index. `gridDoor` must be on; `twin`, `gate` and `linkId` stay
+  empty — the validator will not ask for them, and will complain if the room
+  does not list the door back.
+- Keep it **upright**, yaw only, with its local **+Z facing into the room**. A
+  traveller is only accepted crossing from +Z to -Z.
+- It still needs `authority` and a unique `id` like any other `ISceneId`.
+- The opening is 2.9 x 3.45; author a wall hole of about 3.0 x 3.5 around it.
+
+### `DoorwayGlyph.cs` — the truthful sign
+
+On the doorway root, wired to the `MagicDoor` and two world-space TextMeshPro
+labels. Four times a second it writes `DestinationGlyph` and `DestinationLabel`.
+**Glyphs never lie; compasses do** — a doorway always says truthfully where it
+leads right now, including straight after a Mage moves a room.
+
+### `LabyrinthRoom.prefab` and its three variants — `Assets/Prefabs/Rooms`
+
+A 24 m square, 10 m high grey-box room with four centred doorways, four torches,
+a `RoomVolume`, a room-name `Sign`, a big disabled `Footprint` box, an `Anchor`
+and a `SpawnPoint`. `LabyrinthRoom_Start` adds the weapon rack and eight soul
+spawns; `LabyrinthRoom_BadEnd` adds the red Resurrection ring and its counting
+volume; `LabyrinthRoom_Exit` adds four `ExitZone`s, one per doorway.
+
+The **footprint** is what `CollectPlayerCells` uses to say which cell a player is
+in. Make it generous in every direction, including up: outside every footprint a
+player counts for nothing, for the endings or for a respawn anchor.
+
+Nothing in the code says "square". A rectangular or odd-shaped room only has to
+keep one doorway per Heading, each upright with +Z into the room, listed in
+N E S W order, and a footprint that covers it.
+
+### `ExitZone.cs`
+
+A trigger box in front of one doorway of the good-end room. It goes live only
+while that doorway is `IsExitDoorway` — the corner and the direction are chosen
+by the seed, so all four doorways carry one. Live, it shows a bright ring
+**exactly `exitGatherRadius` across, centred on the doorway**, and a second disc
+while a weapon stands in it. It decides nothing: the host wins the round by
+measuring that radius itself.

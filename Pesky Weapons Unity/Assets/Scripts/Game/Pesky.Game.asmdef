@@ -3,6 +3,9 @@
     "rootNamespace": "Pesky.Game",
     "references": [
         "Pesky.Data",
+        "Pesky.Protocol",
+        "Pesky.Sim",
+        "Pesky.Session",
         "Unity.InputSystem",
         "Unity.TextMeshPro",
         "Unity.AI.Navigation",

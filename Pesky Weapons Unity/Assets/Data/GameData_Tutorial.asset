@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7181d98dd4dcd444888566fbef4c71b, type: 3}
+  m_Name: GameData_Tutorial
+  m_EditorClassIdentifier: Pesky.Data::Pesky.Data.GameData
+  weapons:
+  - {fileID: 0}
+  - {fileID: 11400000, guid: d48a63db35023ee44819e851c963f9eb, type: 2}
+  - {fileID: 11400000, guid: 532bbcbf1e86b9c42b9876ce2f506075, type: 2}
+  - {fileID: 11400000, guid: 88297927e954691478c0308b9b0a62dc, type: 2}
+  - {fileID: 11400000, guid: f819c522d1922d44fa6e0beb18f61a46, type: 2}
+  - {fileID: 11400000, guid: d9fb280d82e725d4494d25c4cef3daae, type: 2}
+  - {fileID: 11400000, guid: ff30fee096f8d13479db3028e2bde509, type: 2}
+  - {fileID: 11400000, guid: b2c0351273a26604686b27456b6f30ba, type: 2}
+  enemies:
+  - {fileID: 0}
+  - {fileID: 11400000, guid: db2df0eb8ac89bc4090dda61db69bc70, type: 2}
+  - {fileID: 11400000, guid: 47632c51517b91240860f5fa2ab5701f, type: 2}
+  - {fileID: 11400000, guid: b012a470e1b7c7c4a83854d89c3243c6, type: 2}
+  modifiers:
+  - {fileID: 0}
+  - {fileID: 11400000, guid: 8058bf5a152768d4faf9dfbc02bebfbe, type: 2}
+  movement: {fileID: 11400000, guid: 1850e2ed809ade4478afb97e9b9cdd73, type: 2}
+  labyrinth: {fileID: 11400000, guid: 2aab9064d9084274da87d1764f2bafd9, type: 2}
+  impactSpeedMin: 3
+  impactSpeedMax: 12
+  hitCooldownSeconds: 0.35
+  batMinSpeed: 4
+  batMaxSpeed: 18
+  batRestitution: 0.5

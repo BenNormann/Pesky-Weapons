@@ -3,6 +3,10 @@
     "rootNamespace": "Pesky.Tests",
     "references": [
         "Pesky.Data",
+        "Pesky.Protocol",
+        "Pesky.Transport",
+        "Pesky.Sim",
+        "Pesky.Session",
         "Pesky.Game",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
