@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6de812856abacd4bb5fc30b55b8eddb, type: 3}
+  m_Name: Hammer
+  m_EditorClassIdentifier: Pesky.Data::Pesky.Data.WeaponDef
+  id: 6
+  displayName: Hammer
+  launchSpeed: 9
+  launchTorque: 1.5
+  mass: 14
+  linearDrag: 0.05
+  angularDrag: 1.5
+  physicsMaterial: {fileID: 13400000, guid: 112df69a6aa01b64e8015e53d334a231, type: 2}
+  damage: 28
+  maxHp: 140
+  bladed: 0
+  blunt: 1
+  metal: 1
+  wooden: 0
+  tipAxis: {x: 0, y: 0, z: 1}
+  canRoll: 0
+  rollTorque: 0
+  prefab: {fileID: 3175698649139945085, guid: 1ae38f5f10bca0a40b100766c67070da, type: 3}

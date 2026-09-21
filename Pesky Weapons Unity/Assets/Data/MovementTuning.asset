@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5070ecd1a2a71364ca5e746d28670662, type: 3}
+  m_Name: MovementTuning
+  m_EditorClassIdentifier: Pesky.Data::Pesky.Data.MovementTuning
+  minLiftDeg: 15
+  maxLiftDeg: 80
+  restingCameraPitchDeg: 20
+  maxLiftCameraPitchDeg: -35
+  launchCooldown: 0.25
+  compensateIntegrator: 1
+  groundedNormalY: 0.6
+  groundedGrace: 0.1
+  wallNormalY: 0.3
+  wallGrace: 0.15
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 2816
+  wallMask:
+    serializedVersion: 2
+    m_Bits: 256
+  wallJumpsPerAirtime: 1
+  wallReboundBlend: 0.5
+  wallMinDot: 0.3
+  wallDotMargin: 0.05
+  gravity: 20
+  killY: -20
+  recoverLift: 0.5
+  safeSpeed: 1
+  previewSeconds: 1
+  previewPoints: 24
+  previewBlockMask:
+    serializedVersion: 2
+    m_Bits: 2304
+  previewMarkerRadius: 0.35
+  previewMarkerLift: 0.02
+  animateSeconds: 1.5
+  animateSpeed: 1
+  stickMinSpeed: 6
+  stickMaxAngleDeg: 60
+  stickSinkDepth: 0.1
+  stickRearmSeconds: 0.3
+  bladeAlignRate: 10
+  bladeAlignDelay: 0.15
+  bladeAlignMinSpeed: 3

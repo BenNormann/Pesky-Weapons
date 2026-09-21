@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="hud-root" class="hud-root" picking-mode="Ignore">
+        <ui:Style src="project://database/Assets/UI/Hud.uss" />
+        <ui:VisualElement name="magic-flash" class="magic-flash" picking-mode="Ignore" />
+        <ui:VisualElement name="top-row" class="top-row" picking-mode="Ignore">
+            <ui:Label name="flash" class="flash" text="" />
+            <ui:VisualElement name="tags" class="tags" picking-mode="Ignore">
+                <ui:Label name="key-tag" class="tag tag-key" text="KEY 1" />
+                <ui:Label name="combat-tag" class="tag tag-combat" text="IN COMBAT" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="centre" class="centre" picking-mode="Ignore">
+            <ui:Label name="prompt" class="prompt" text="" />
+            <ui:VisualElement name="anvil-track" class="anvil-track" picking-mode="Ignore">
+                <ui:VisualElement name="anvil-fill" class="anvil-fill" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="bottom-row" class="bottom-row" picking-mode="Ignore">
+            <ui:VisualElement name="weapon-panel" class="weapon-panel" picking-mode="Ignore">
+                <ui:Label name="weapon-name" class="weapon-name" text="WEAPON" />
+                <ui:VisualElement name="hp-track" class="hp-track" picking-mode="Ignore">
+                    <ui:VisualElement name="hp-fill" class="hp-fill" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Label name="hp-text" class="hp-text" text="0 / 0" />
+                <ui:Label name="modifiers" class="modifiers" text="no modifiers" />
+            </ui:VisualElement>
+            <ui:Label name="hint" class="hint" text="" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

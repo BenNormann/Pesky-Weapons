@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6de812856abacd4bb5fc30b55b8eddb, type: 3}
+  m_Name: Staff
+  m_EditorClassIdentifier: Pesky.Data::Pesky.Data.WeaponDef
+  id: 3
+  displayName: Staff
+  launchSpeed: 11
+  launchTorque: 2
+  mass: 2.5
+  linearDrag: 0.05
+  angularDrag: 3
+  physicsMaterial: {fileID: 13400000, guid: 112df69a6aa01b64e8015e53d334a231, type: 2}
+  damage: 12
+  maxHp: 90
+  bladed: 0
+  blunt: 1
+  metal: 0
+  wooden: 1
+  tipAxis: {x: 0, y: 0, z: 1}
+  canRoll: 0
+  rollTorque: 0
+  prefab: {fileID: 2302857351661723454, guid: 6537c8c1749fabc489fe7a033bfe99cb, type: 3}

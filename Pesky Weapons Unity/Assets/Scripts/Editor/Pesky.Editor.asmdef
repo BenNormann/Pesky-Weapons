@@ -1,0 +1,19 @@
+{
+    "name": "Pesky.Editor",
+    "rootNamespace": "Pesky.Editor",
+    "references": [
+        "Pesky.Data",
+        "Pesky.Game"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
