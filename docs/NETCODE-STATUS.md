@@ -1321,3 +1321,19 @@ added **before** the send and popped immediately.
    drift. If a future page tints the canvas, the eraser stops matching.
 7. **8 players x 40 strokes of 267 bytes** is 85 KB of broadcast in one burst.
    The Outbox spills it over about six ticks; never measured.
+
+---
+
+## Addendum — the web build exists (2026-09-21)
+
+Three items from stage 1's **Not done** list are now done and should not be rebuilt:
+`Assets/Scripts/Editor/BuildTools.cs` (ported from ATCK, with `Pesky/Apply Player Settings`,
+`Pesky/Build Web`, `Pesky/Build Windows (two-player test)` and `BuildFromCommandLine`), the
+WebGL player settings block (applied from code, including `PlayerSettings.WebGL.template =
+"PROJECT:Pesky"`), and `Assets/link.xml`. A full WebGL build has been run and succeeded
+(16.2 MiB in `<repo>/Builds/Web`), so the browser target compiles, links and strips cleanly —
+but **no browser has ever loaded it**, and no two peers have ever met over WebRTC. The active
+build target is now WebGL; the Editor still uses `TcpTransport` / `LoopbackTransport` there,
+because every browser-only path is guarded with `UNITY_WEBGL && !UNITY_EDITOR`.
+Still not done from that list: `JOIN_REFUSED`, `Editor/PhysicsLayerSetup.cs`, the EditMode test
+harness. See `docs/WEB-BUILD.md`.

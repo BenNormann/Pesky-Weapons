@@ -1913,3 +1913,68 @@ Full detail in `docs/CLEANUP-AUDIT.md`. In short:
 **Nothing was run.** Checks: clean compile; `Pesky > Validate Open Scenes` 0 problems on all four
 build scenes plus `Dev/FeelBox`; 0 missing scripts and 0 dangling references; build settings still
 exactly Boot, MainMenu, Tutorial, Labyrinth; no empty folders; 376 assets before, 346 after.
+
+---
+
+## Web build and publishing setup (2026-09-21)
+
+The game can now be built for the browser and published to GitHub Pages. Full instructions
+live in the new **`docs/WEB-BUILD.md`**; this is the record of what changed.
+
+**Added**
+
+- `Assets/Scripts/Editor/BuildTools.cs` — ported from `ATCK Unity/Assets/Scripts/Editor/BuildTools.cs`
+  (copied inside the Editor with `execute_code`, `ATCK` → `Pesky`, then edited). Menu items
+  **Pesky > Apply Player Settings**, **Pesky > Build Web** and
+  **Pesky > Build Windows (two-player test)**, plus `BuildFromCommandLine` (exits 0/1 for CI).
+  Differences from ATCK's: output goes to `<repo>/Builds/Web` (what `publish.ps1` expects) instead
+  of the repository root; the scene list is read from the **build settings** rather than hard-coded;
+  the colour space is left alone; a `Build Windows` path was added; and a wrong active build target
+  makes the menu item switch platform and ask to be run again rather than build through a domain
+  reload. ATCK's five-minute cooldown and `isBuildingPlayer` guard were kept — automation replays
+  menu items, and a WebGL build is 10–25 minutes.
+- `Assets/link.xml` — ported from ATCK's, trimmed to the assemblies this project actually has
+  (ATCK's `UnityEngine.TextRenderingModule` and `UnityEngine.InputModule` are gone: neither package
+  is in `manifest.json`) and extended with `UnityEngine.AIModule` and `UnityEngine.UIElementsModule`.
+- `docs/WEB-BUILD.md` — building, publishing, the one-time GitHub Pages steps, every player settings
+  choice and why, the platform-conditional map, the TURN hook, and the Windows test build.
+
+**Player settings now applied from code** (WebGL): template `PROJECT:Pesky`, Brotli **with**
+decompression fallback, Run In Background on, `OpenGLES3` only with threads off, full exceptions
+with stack traces, engine stripping + managed stripping Low + `link.xml`, IL2CPP `OptimizeSize`,
+data caching on, 64 MB initial / 2048 MB max geometric memory, company `Ben Normann`, product
+`Pesky Weapons`. **The colour space stays Linear** — WebGL 2 supports it and the project is authored
+that way; ATCK's `ColorSpace.Gamma` line was deliberately not ported.
+
+**Platform conditionals: audited, nothing had to change.** After switching the active target to
+WebGL, `UNITY_WEBGL` is defined in the Editor too, so every browser-only path was checked:
+`WebRtcTransport` (usings, nine `AHNet_*` DllImports, every call site), `TransportFactory`
+(`ForPlatform` / `DefaultPort` / `HostAddresses`), `RoomCodes.IsAddressBased` and `Clipboard` all
+already use `#if UNITY_WEBGL && !UNITY_EDITOR`, and `TcpTransport` / `TcpLink` use the exact
+complement `#if !UNITY_WEBGL || UNITY_EDITOR`. So the Editor still gets TCP/loopback while the
+target is WebGL, and a real browser player contains no sockets or threads at all. `MenuFlow`'s QUIT
+button uses a runtime `Application.platform` test, which is correct as it stands. Every `AHNet_*`
+`DllImport` was matched against `Plugins/WebGL/AHNet.jslib`'s exports (all ten present, including
+`AHNet_CopyClipboard`), and the three bridge names (`NetBridge`, `window.AH_Net`,
+`window.AH_UnityInstance`) match across C#, the jslib and `net.js`.
+
+**The build was run. It succeeded.** `Builds/Web` = **16.2 MiB (16,964,942 bytes)**:
+`index.html`, `net.js`, `trystero.min.js`, `keys.js`, `.nojekyll` and
+`Build/Web.{loader.js,data.unityweb,framework.js.unityweb,wasm.unityweb}` — the `.unityweb`
+extension confirms the Pages-compatible decompression fallback is active. No `TemplateData/`
+(the template has no assets of its own, and `index.html` never references it). `[Pesky] build
+result: Succeeded, size 16 MB, 0 errors, 0 warnings`; the only build warnings in the console come
+from `com.unity.ai.inference`'s Sentis shaders, none from our code, and `link.xml` resolved every
+assembly it names.
+
+**Two things worth knowing.** The *first* attempt failed with a bare `Build was canceled.`:
+`com.unity.test-framework.performance` creates `Assets/Resources/PerformanceTestRunInfo.json` and
+`PerformanceTestRunSettings.json` from its build preprocessor, and creating assets mid-build makes
+Unity abort. Those two files (plus their `.meta`s) now exist in the project and the retry — and a
+later full run of the menu item itself — both succeeded. Second: the unused AI / multiplayer-centre
+/ visual-scripting packages are a meaningful share of the 16 MB if the download size ever matters.
+
+**Nothing was run**: no play mode, no tests, no browser. The checks made were a clean compile before
+and after the platform switch (0 CS errors), every player setting read back through the Editor, the
+`DllImport`-to-jslib-export audit, and one complete WebGL build. **The active build target was left
+on WebGL.**
