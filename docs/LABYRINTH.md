@@ -1,4 +1,4 @@
-# LABYRINTH
+﻿# LABYRINTH
 
 The labyrinth: what it is made of, what travels on the wire, what the host
 decides, every number you can turn, and how to add rooms or change the size.
@@ -422,7 +422,7 @@ stands** — that is the host's table, and the doorways are the only way across.
 | 2 `Gate Hall` | `LabyrinthRoom_Exit` | GoodEnd (a different corner) | (400, 0, 0) |
 | 3..24 `Room 3`..`Room 24` | `LabyrinthRoom` | Blank | the lattice above |
 
-### 8.3 `Assets/Prefabs/Rooms/LabyrinthRoom.prefab` — the blank room
+### 8.3 `Assets/Prefabs/Rooms/Labyrinth/LabyrinthRoom.prefab` — the blank room
 
 Grey-box, square, **24 m across and 10 m high**, `World` layer, static geometry.
 Local space: **+Z is the room's north, +X its east.**
@@ -462,7 +462,7 @@ player above the roof or in the gap between rooms is in no cell and counts for
 nothing (NETCODE-STATUS S5.5 #2). At 200 m spacing two footprints still cannot
 touch.
 
-### 8.4 `Assets/Prefabs/Kit/MagicDoor_Grid.prefab` — a grid doorway
+### 8.4 `Assets/Prefabs/Kit/Doors/MagicDoor_Grid.prefab` — a grid doorway
 
 `MagicDoor.prefab` with the `Door` and `DoorCondition` removed (a grid doorway
 has no gate) and the solid `Panel` deleted (it is always open). What is left is
@@ -607,7 +607,7 @@ rather than deleted:
   it through `MagicDoor.Labyrinth` (a new accessor) and switches the two label
   objects off; the resolve-and-write logic is untouched, so turning the toggle on
   brings them back exactly as they were.
-- In `Assets/Prefabs/Kit/MagicDoor_Grid.prefab` the `Glyph` and
+- In `Assets/Prefabs/Kit/Doors/MagicDoor_Grid.prefab` the `Glyph` and
   `DestinationName` objects are **inactive** as well, so a doorway is blank even
   with no labyrinth in the scene.
 - Both were also **rotated 180 degrees** while they were open. That is the real
@@ -617,7 +617,7 @@ rather than deleted:
 
 In their place, every room now tells you **its own number and nothing else**:
 
-`Assets/Prefabs/Rooms/LabyrinthRoom.prefab` gained `Fixtures/FloorNumber` — a
+`Assets/Prefabs/Rooms/Labyrinth/LabyrinthRoom.prefab` gained `Fixtures/FloorNumber` — a
 world-space `TextMeshPro` (LiberationSans SDF on `M_TextWorld`, size 20, bold,
 a 14 x 14 rect) at local **(0, 0.03, 0)**, rotation **(90, 0, 0)**, driven by
 `Assets/Scripts/Game/RoomFloorNumber.cs`.
@@ -636,7 +636,7 @@ doorway** (`room.Doorway(0).Labyrinth`) when its own field is empty, so no
 instance needed rewiring — no `Find`, no singleton.
 
 **The room-name Sign was mirrored too, and the fix is project-wide.**
-`Assets/Prefabs/Kit/Sign.prefab`'s `Label` sat at the sign's local `z = -0.06`
+`Assets/Prefabs/Kit/Signs_And_Lights/Sign.prefab`'s `Label` sat at the sign's local `z = -0.06`
 (in front of the board's -Z face) but was **rotated 180**, which pointed its
 readable face back into the board. The rotation is now identity, so the text
 faces the side it physically sits on. No `Sign` anywhere in the project overrides
@@ -698,6 +698,13 @@ on the compass.**
   green one is always the truth, because the host never bends a Mage.
 - A spike **spins** while the player is standing inside that spike's target room,
   and while it has no reading.
+- The **green spike is drawn smaller than the red one and on top of it** — 70% of its
+  length and 60% of its width by default — so a Mage whose two readings point the same
+  way still sees both. All five shape numbers are USS custom properties on `.compass-dial`
+  in `Assets/UI/Labyrinth.uss` (`--spike-length`, `--spike-width`, `--spike-tail` describe
+  the full-size red spike as fractions of the dial radius; `--green-length-scale` and
+  `--green-width-scale` shrink the green one), with the same values as fallbacks in
+  `CompassView`. A weapon, who only ever has the green spike, simply gets the smaller one.
 
 `CompassModel` gained the red half: `HasRedReading`, `RedSpinning`, `RedDoorway`
 and `RedWorldDirection`, computed from `Grid.ToCell(cell, Grid.BadEndCell)` and
@@ -722,3 +729,100 @@ solid on purpose, which is why a door short-circuits the floor test.
 
 To seal an opening: fill it with wall and **rename the segment** (`..._Sealed`).
 It is no longer a doorway, so it is no longer checked.
+
+---
+
+## 12. Room prefabs — the shapes you can drop into a cell
+
+**Authored 2026-09-20 by the cleanup pass. Implemented, untested: nothing was run,
+and none of them is placed in `Labyrinth.unity`. They are inventory.**
+
+They live in `Assets/Prefabs/Rooms/Labyrinth/` beside the square `LabyrinthRoom` and its
+three variants. Each one was built with the **Room Shape Builder**
+(`Pesky / Rooms / Room Shape Builder`) out of `Assets/Prefabs/Rooms/Pieces/*`, then given
+the square room's own fixtures — so every one of them carries the same parts as
+`LabyrinthRoom.prefab` and obeys the same four facts from section 9.2: one doorway per
+Heading, each upright with its local **+Z pointing into the room**, listed in `doorways` in
+**N E S W** order, and a footprint that covers the shape.
+
+Every one has: four `MagicDoor_Grid` doorways (`gridDoor` on, `doorwayDir` 0..3, `room`
+pointing back at the room), a `Geometry/Shell` on the **World** layer marked fully static,
+a roof, **four torches (four lights, under the six-light rule)**, a `RoomVolume`, a
+`RoomSign`, a `Fixtures/FloorNumber` (the room's own number, flat on the floor), an
+`Anchor`, a `SpawnPoint` and a disabled `Footprint` box. `roomId` is **0** on all of them:
+set it per instance.
+
+| Prefab | Shape | Footprint of the room itself | Doorway slots, local | `RoomVolume` | `Footprint` box |
+|---|---|---|---|---|---|
+| `LabyrinthRoom` | square, 24 across, 10 high | 24 x 24 | N/E/S/W at (0,0,±12) / (±12,0,0) | 24 x 10 x 24 | 56 x 44 x 56 @ y 10 |
+| `LabyrinthRoom_Round` | 12-sided, 26 across, 10 high, 6.7 m walls | 26 x 26 | (0,0,±12.31) / (±12.31,0,0) | 26.1 x 11 x 26.1 @ y 5 | 57.1 x 44 x 57.1 @ y 10 |
+| `LabyrinthRoom_Octagon` | 8-sided, 26 across, 10 high, 9.9 m walls | 25 x 25 | (0,0,±11.76) / (±11.76,0,0) | 25 x 11 x 25 @ y 5 | 56 x 44 x 56 @ y 10 |
+| `LabyrinthRoom_LShape` | L, 30 x 30 with 12 m arms, 10 high | 30 x 30 minus an 18 x 18 bite out of the north-east | N (-9,0,14.75), E (14.75,0,-9), S (0,0,-14.75), W (-14.75,0,0) | 31 x 11 x 31 @ y 5 | 62 x 44 x 62 @ y 10 |
+| `LabyrinthRoom_LongGallery` | rectangle 24 x 48, long in Z, 10 high | 24 x 48 | N (0,0,23.75), E (11.75,0,0), S (0,0,-23.75), W (-11.75,0,0) | 25 x 11 x 49 @ y 5 | 56 x 44 x 80 @ y 5 |
+| `LabyrinthRoom_TallShaft` | 8-sided, 20 across, **40 high**, 7.7 m walls | 20 x 20 | (0,0,±8.99) / (±8.99,0,0) | 19.5 x 41 x 19.5 @ y 20 | 50.5 x 74 x 50.5 @ y 40 |
+
+**None of them seals a slot.** Every shape here is wide enough on all four sides to host a
+3 m opening (the builder wants a wall at least 4 m long), so all four doorways are real.
+
+### 12.1 Sealed slots, if a future shape needs one
+
+`LabyrinthRoom` gained `sealedSides` — four bools in N E S W order — for a shape that
+**cannot** host a door on some side. Leave that entry of `doorways` empty and tick the
+matching `sealedSides` box; `LabyrinthRoom.IsSealed(dir)` reports it and
+`Pesky > Validate Open Scenes` then stops calling the empty slot a mistake (an empty slot
+that is *not* declared sealed is still an error).
+
+**A sealed slot is not yet honoured by the grid.** `LabyrinthGrid.Neighbour`, the BFS
+behind the compass and `EveryCellReachesExit` all assume all four doorways of every room
+work, because `LabyrinthGrid.DoorOpen` is null (section 4.2). Put a sealed room in a cell
+today and the compass will happily route the crew through a wall. Before using one, set
+`DoorOpen` to a `DoorwayFilter` that asks the `LabyrinthDirector` for the room in that cell
+and returns `!room.IsSealed(dir)`; the BFS, the compass and the swap connectivity check all
+go through `Passable`, which asks it from both sides, so that one hook fixes all three at
+once.
+
+### 12.2 The 1x2 room: what the grid would need
+
+`LabyrinthRoom_LongGallery` is a **single-cell** long room, not a 1x2 one. The grid cannot
+host a room that spans two cells: `LabyrinthGrid` is one `roomId` per cell and
+`CellOfRoom` is one-to-one, `Neighbour(cell, dir)` is per cell, and `CanSwap` / `ForceSwap`
+move exactly one cell's worth. A real 1x2 would need, at least:
+
+1. a room's **footprint in cells** in `LabyrinthDef` (a width and height per room entry),
+   with `Generate` placing the multi-cell rooms first and the table storing the same room id
+   in every cell it covers;
+2. `CellOfRoom` returning the room's **origin** cell, and everything that asks "which cell am
+   I in" agreeing on that;
+3. `Neighbour` resolving from the **doorway's own cell**, not the room's origin, so the
+   gallery's north doorway leaves from the cell it is physically at;
+4. a swap rule that moves a whole footprint and refuses overlaps;
+5. more than four doorways per room, or a rule that the covered cells' other edges are
+   sealed (see 12.1).
+
+Until then a long room simply occupies one cell and is taller inside than the grid implies.
+
+### 12.3 Recipe: swap a blank room for one of these
+
+1. Open `Assets/Scenes/Labyrinth.unity` and pick the room to replace in
+   `Environment/Rooms/Room_NN_...`. Note its **room id NN** and its world position (it is
+   `((NN % 5) * 200, 0, -(NN / 5) * 200)`).
+2. Drag the new prefab into `Environment/Rooms`, set the same position and rotation, and
+   name it `Room_NN_<Shape>`.
+3. On its `LabyrinthRoom`, set **`roomId` = NN**. The id is the index in
+   `LabyrinthDef.rooms` and it travels on the wire, so it must match.
+4. Give every `ISceneId` on it an id no other object in `Labyrinth.unity` uses (today's are
+   101..302): the four `MagicDoor`s, the `RoomVolume`, the `RoomSign` and the `SpawnPoint`.
+5. Fill in each doorway's `authority` (the scene's `WorldAuthority`) and `labyrinth` (the
+   scene's `LabyrinthDirector`) — prefabs cannot hold scene references, so these are empty
+   until you wire them. `room` and `doorwayDir` come from the prefab already.
+6. Register it: the four doorways go in `WorldAuthority.magicDoors`, the `RoomVolume` in
+   `WorldAuthority.rooms`, and the room itself in `LabyrinthDirector.rooms` (replacing the
+   old entry).
+7. Delete the old room object.
+8. Set the room's name and glyph in `Assets/Data/Labyrinth.asset` at index NN, then copy the
+   name onto `RoomSign.text` and `RoomVolume.roomName`.
+9. Run **`Pesky > Validate Open Scenes`**, and save.
+
+A bigger shape does not need more room on the lattice — 200 m apart with the widest of these
+62 m across still leaves 138 m of nothing between neighbours — but widen the stride in
+section 8.2 before any room grows past 100 m.

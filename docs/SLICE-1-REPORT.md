@@ -2,8 +2,9 @@
 
 ## How to play
 Open `Assets/Scenes/Boot.unity` and press Play; Boot loads `MainMenu`, and **TUTORIAL** loads
-`Tutorial` — rooms 1-5 of the old `Zone1` plus a practice labyrinth. (`Zone1` itself is still in the
-project and can be opened straight from the Editor, but it is no longer in the build.) Click in the
+`Tutorial` — rooms 1-5 of the old `Zone1` plus a practice labyrinth. (`Zone1` itself was removed by
+the 2026-09-20 cleanup, along with `Bridge`, `MainTower` and `Keep`; see `docs/CLEANUP-AUDIT.md`.
+The build list is now exactly `Boot`, `MainMenu`, `Tutorial`, `Labyrinth`.) Click in the
 Game view to lock the pointer (Esc frees it). You start as a free soul in Room 1 by a rack of weapons:
 possess one and hop it through five rooms to the arena's far doorway.
 

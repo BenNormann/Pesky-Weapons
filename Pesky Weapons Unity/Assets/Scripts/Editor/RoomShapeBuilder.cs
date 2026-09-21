@@ -82,16 +82,16 @@ namespace Pesky.Editor
         public const float Overlap = 0.5f;      // walls are this much longer so corners mitre
         public const int RingCoreSides = 8;     // a 12-sided core has chords too short for a 3 m doorway
 
-        const string PrefabWall = "Assets/Prefabs/Rooms/WallSegment.prefab";
-        const string PrefabDoorway = "Assets/Prefabs/Rooms/DoorwayWallSegment.prefab";
-        const string PrefabDiscFloor = "Assets/Prefabs/Rooms/DiscFloor.prefab";
-        const string PrefabDiscRoof = "Assets/Prefabs/Rooms/DiscRoof.prefab";
-        const string PrefabFloor = "Assets/Prefabs/Rooms/Floor.prefab";
-        const string PrefabRoof = "Assets/Prefabs/Rooms/Roof.prefab";
-        const string PrefabTorch = "Assets/Prefabs/Kit/Torch.prefab";
-        const string PrefabSign = "Assets/Prefabs/Kit/Sign.prefab";
-        const string PrefabSpawn = "Assets/Prefabs/Kit/SpawnPoint.prefab";
-        const string PrefabRoomVolume = "Assets/Prefabs/Kit/RoomVolume.prefab";
+        const string PrefabWall = "Assets/Prefabs/Rooms/Pieces/WallSegment.prefab";
+        const string PrefabDoorway = "Assets/Prefabs/Rooms/Pieces/DoorwayWallSegment.prefab";
+        const string PrefabDiscFloor = "Assets/Prefabs/Rooms/Pieces/DiscFloor.prefab";
+        const string PrefabDiscRoof = "Assets/Prefabs/Rooms/Pieces/DiscRoof.prefab";
+        const string PrefabFloor = "Assets/Prefabs/Rooms/Pieces/Floor.prefab";
+        const string PrefabRoof = "Assets/Prefabs/Rooms/Pieces/Roof.prefab";
+        const string PrefabTorch = "Assets/Prefabs/Kit/Signs_And_Lights/Torch.prefab";
+        const string PrefabSign = "Assets/Prefabs/Kit/Signs_And_Lights/Sign.prefab";
+        const string PrefabSpawn = "Assets/Prefabs/Kit/Markers/SpawnPoint.prefab";
+        const string PrefabRoomVolume = "Assets/Prefabs/Kit/Markers/RoomVolume.prefab";
 
         // ------------------------------------------------------------------ public API
 

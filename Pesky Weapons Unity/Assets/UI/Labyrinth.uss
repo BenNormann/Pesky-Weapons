@@ -21,6 +21,17 @@
 .compass-dial {
     width: 104px;
     height: 104px;
+
+    /* The spike shapes. --spike-* are fractions of the dial's RADIUS and describe the RED
+       (full-size) spike; --green-*-scale are fractions of that red spike, so the GREEN one is
+       deliberately shorter and thinner and is painted ON TOP of the red, which lets a Mage see
+       both when his two readings line up. CompassView falls back to these same numbers if this
+       block is removed, and clamps anything silly. */
+    --spike-length: 0.92;
+    --spike-width: 0.16;
+    --spike-tail: 0.12;
+    --green-length-scale: 0.7;
+    --green-width-scale: 0.6;
 }
 
 /* ---- role reveal and result ---- */

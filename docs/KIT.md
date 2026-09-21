@@ -1,8 +1,36 @@
 # KIT — the pieces rooms are built from
 
 Status of everything below: **implemented, untested** unless an older BUILD-LOG section says it was measured.
-All kit prefabs live in `Assets/Prefabs/Kit` (room geometry in `Assets/Prefabs/Rooms`). Scripts are in
-`Assets/Scripts/Game`, namespace `Pesky.Game`.
+Scripts are in `Assets/Scripts/Game`, namespace `Pesky.Game`.
+
+## Where the pieces live (2026-09-20 cleanup)
+
+Every kit prefab is under `Assets/Prefabs/Kit/<group>/`, so you can find one by what it *does*.
+Nothing was renamed and nothing lost its GUID — every scene reference survived the move.
+
+| Folder | Prefabs |
+|---|---|
+| `Kit/Doors/` | `Door` + variants `Door_AlwaysOpen` `Door_Key` `Door_Lever` `Door_Plate` `Door_RoomCleared` `Door_Scales` `Door_Sealed`, `MagicDoor`, `MagicDoor_Grid`, `PorterGate` |
+| `Kit/Pickups/` | `Key`, `RunePickup` |
+| `Kit/Plates_And_Pans/` | `Plate`, `ScalesLock`, `CounterweightPair` |
+| `Kit/Movers/` | `ClockMover`, `Lift`, `DropRamp`, `Rope`, `ImpactLever`, `Winch` |
+| `Kit/Breakables/` | `Pot`, `CrackedWall`, `WoodBlock` |
+| `Kit/Hazards/` | `LightningField`, `MagnetZone` |
+| `Kit/Stations/` | `Anvil`, `HammerStand`, `WeaponRack`, `WeaponRack_NoOrb`, `WeaponRack_Start` |
+| `Kit/Markers/` | `RoomVolume`, `SpawnPoint`, `PatrolRoute` |
+| `Kit/Signs_And_Lights/` | `Sign`, `Torch` |
+| `Prefabs/Enemies/` | `Goblin`, `GoblinSleeper`, `GoblinPorter`, `GoblinBoss` |
+| `Prefabs/Rooms/Pieces/` | the Room Shape Builder's blocks: `WallSegment`, `DoorwayWallSegment`, `DiscFloor`, `DiscRoof`, `Floor`, `Roof`, `Wall`, `Ledge`, `Step`, `DoorwayWall` |
+| `Prefabs/Rooms/Labyrinth/` | `LabyrinthRoom` + `_Start` `_BadEnd` `_Exit`, and the five ready-made shapes (see `docs/LABYRINTH.md` section 12) |
+
+**Inventory, not dead wood.** Most of these are in **no build scene today**: the whole
+`Kit/` set bar the doors, racks, signs, torches, volumes and spawn points used by the
+tutorial, plus `GoblinSleeper` / `GoblinPorter` / `GoblinBoss` and the five room shapes.
+They are kept on purpose, for building the labyrinth's real puzzle rooms. They all still
+compile against the networked `WorldAuthority` (`KIT_STATE`, see the netcode section at the
+end of this file). The only pieces actually **removed** by the cleanup were the tower's:
+`ShellPanel.prefab` (the tower's exterior shell) and `FloorActivator.cs` (the tower's
+floor culler). See `docs/CLEANUP-AUDIT.md`.
 
 ## Rules that apply to every piece
 - **Shared state goes through `WorldAuthority`** (`_Managers/WorldAuthority`): request -> validate -> apply ->
@@ -155,8 +183,10 @@ weapon clears it, Hammer apex at 45 deg = 1.01 m). Wire `clock`, set `id` (1501+
 (10,7.5,10), `Lift` at (-11,0.45,-12) with `startsOn` = true and a 6 m top stop. FeelBox now has a `WorldAuthority`
 and the HUD so these work there.
 
-## Tower room pieces — `Assets/Prefabs/Rooms`
-Added for the tower build. All are World layer, `P_World`, static, and go under `<Room>/Geometry`.
+## Room shell pieces — `Assets/Prefabs/Rooms/Pieces`
+The blocks the Room Shape Builder assembles a room out of (they were added for the tower build and
+are still exactly what the labyrinth's room shapes are made of). All are World layer, `P_World`,
+static, and go under `<Room>/Geometry`.
 
 | Piece | Rule | Tunables (per instance) | Host state | Place and wire |
 |---|---|---|---|---|
@@ -164,7 +194,7 @@ Added for the tower build. All are World layer, `P_World`, static, and go under 
 | `DoorwayWallSegment.prefab` | The same wall with a **3.0 x 3.5** opening. Root sits at FLOOR level, root scale stays 1. | children `Left` / `Right` / `Lintel` are resized per instance: side width = L/2 − 1.5, lintel from y 3.5 to the wall top | none | Root at the doorway's floor centre, +Z into the room. A MagicDoor or Door goes at exactly the same transform. |
 | `DiscFloor.prefab` | Flattened 20-sided cylinder mesh with a **MeshCollider** — the floor of every round-ish room. | scale = (2r, 0.25, 2r) ⇒ radius r, 0.5 thick; centre y = floorTop − 0.25 | none | Use r = across/2 + 0.5 so the floor reaches past the wall's outer face (MagicDoors need that). |
 | `DiscRoof.prefab` | The same disc with `NavMeshModifier.ignoreFromBuild = true`, so **roofs are excluded from the NavMesh**. Not Navigation-static. | scale as DiscFloor; centre y = wallTop + 0.25 | none | One per round-ish room. |
-| `ShellPanel.prefab` | A wall cube with **no collider** — exterior tower shells only. | scale = (panelLength, height, 0.5) | none | 12 of them on a circle at the tower's apothem. Visual only. |
+| ~~`ShellPanel.prefab`~~ | **Removed 2026-09-20**: it was the tower's exterior shell (a collider-less wall cube), and the labyrinth has no exterior. |
 
 Walls are 0.5 m thick and centred on the polygon edge; each segment is built `edgeLength + 0.5` long so
 corners mitre. Non-round rooms (Long gallery, L-shape, Wedge) use the old box `Floor` / `Roof` prefabs
@@ -210,23 +240,11 @@ builder logs a warning and makes a solid wall instead: a 12-sided polygon under 
 chords that are too short. Call it twice with `createGroups = false` to stack wall sections at different
 heights in one room (that is how the lift shaft gets a doorway at y 0 and another at y 60).
 
-## FloorActivator — `Assets/Scripts/Game/FloorActivator.cs`
-**Rule.** The tower stacks rooms on one axis and the rooms are bigger than the tower, so only a few may
-be visible at once. `FloorActivator` enables the `Geometry` and `Lighting` groups of the room the LOCAL
-player is standing in plus its **door-linked neighbours**, and disables the rest. **`Gameplay` and
-`Spawns` are never touched**, so weapons, goblins, doors, keys and spawn points stay live everywhere and
-nothing about shared state changes — it is a pure view and can run per client unchanged.
-
-It re-tests on every `WorldAuthority.MagicDoorTraversed` event and otherwise every `checkInterval`
-seconds, using the local soul's position (or its weapon's) against each entry's `RoomVolume.ContainsPoint`.
-If the player is between rooms (a hallway, mid-shaft) it keeps whatever is on rather than blanking the
-world, and until the local soul exists it leaves the scene exactly as authored.
-
-**Tunables.** `checkInterval` 0.2, `cullFloors` (false = every room stays on, handy while editing).
-**Host-owned state.** None.
-**Place and wire.** One under `_Managers`. Wire `spawner` (PlayerSpawner) and `authority`, then one
-`floors` entry per room: its `RoomVolume`, its `Geometry` group, its `Lighting` group, and the **scene
-ids** of the rooms it is door-linked to. Zone1's table is in `docs/CASTLE-LAYOUT-BUILD.md` section 4.
+## FloorActivator — REMOVED 2026-09-20
+It culled the tower's stacked floors, which only `Zone1` / `MainTower` needed. The labyrinth's rooms
+sit 200 m apart and are entered only through teleport doors, so nothing can see two of them at once
+and there is nothing to cull. The script and the tower scenes are in the system trash; the old wiring
+table is in `docs/archive/CASTLE-LAYOUT-BUILD.md` section 4 if it is ever wanted back.
 
 ## Puzzle kit (stage 3) — `Assets/Prefabs/Kit`, scripts in `Assets/Scripts/Game`
 Everything below goes through `WorldAuthority` (the puzzle half is `WorldAuthorityPuzzles.cs`, `partial class`),
@@ -495,6 +513,35 @@ state travels; the full wire table is in `docs/NETCODE-STATUS.md` section S2.3.
   `Wire.ProtocolVersion`.
 - Scene ids are u16 on the wire: keep every `ISceneId` in 0..65534 and unique
   per kind.
+
+### Is it net-synced yet? (one row per kit piece)
+
+Every row below already travels on **KIT_STATE**; "family" says who is allowed to report the
+change. Anything not listed has no shared state at all, so there is nothing to sync.
+
+| Piece | `KitKind` | Family | Notes |
+|---|---|---|---|
+| `Door` (+ every variant) | `Door` 0 | host | the open flag; opening latches |
+| `Plate` | `Plate` 1 | host | latched flag |
+| `Key` | `Key` 2 | contact | taken flag + the party key set |
+| `RunePickup` | `Rune` 3 | contact | taken flag |
+| `Anvil` | `Anvil` 4 | contact | the repair, not the HP (that is WEAPON_STATE) |
+| `MagnetZone` | `Magnet` 5 | host | on / off |
+| `Lift` | `Lift` 6 | host | on / off + the host clock ms it started |
+| `Rope` | `Rope` 7 | contact | cut flag + cut clock ms. `DropRamp` has **no state of its own** |
+| `Pot` | `Pot` 8 | contact | smashed flag |
+| `ImpactLever` / `Winch` | `Lever` 9 | contact | on / off |
+| `CounterweightPair` | `Counterweight` 10 | host | target offset + clock ms, compared in whole mm |
+| `ScalesLock` | `Scales` 11 | host | latched flag |
+| `CrackedWall` | `CrackedWall` 12 | contact | broken flag |
+| `PorterGate` | `PorterGate` 13 | host | open flag, does not latch |
+| `LightningField` | `Lightning` 14 | host | cosmetic only: the schedule is the clock, the damage is a weapon message |
+| goblin porter carry | `PorterCarry` 15 | host | which weapon is in its hands |
+| `MagicDoor` / `MagicDoor_Grid` | — | host | traversal is its own path (`RequestMagicDoorTraverse` -> `MagicDoorTraversed`), not KIT_STATE |
+| `ClockMover` | — | none | a pure function of `LevelClock.Ms`; identical on every peer with no message |
+| `WeaponRack` / `HammerStand` / `WoodBlock` / `RoomVolume` / `SpawnPoint` / `Sign` / `Torch` / `PatrolRoute` | — | none | no shared state |
+
+**Untested.** Every row is implemented and none of it has ever been run between two peers.
 - Counterweight targets are compared and sent in whole millimetres, otherwise
   the pair would re-report every physics step.
 - `AnvilStation` and `DoorPrompt` now react only to the **locally** possessed
