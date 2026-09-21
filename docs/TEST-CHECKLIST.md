@@ -1,4 +1,4 @@
-# TEST CHECKLIST
+﻿# TEST CHECKLIST
 
 Everything in `Pesky Weapons Unity` was written and never run: seven stages of
 netcode, a menu, a labyrinth and a tutorial, all "implemented, untested". No
@@ -333,7 +333,7 @@ build cannot join a newer one: rebuild both sides before pairing two instances.
 - Read the **room-name sign** on the south wall from inside the room. It must be
   visible and read correctly. *(The sign fix is project-wide: check a couple of
   tutorial signs in rooms 1-5 too. If any sign now faces the wrong way, revert
-  `Assets/Prefabs/Kit/Sign.prefab` > `Label` to yaw 180 and tell me.)*
+  `Assets/Prefabs/Kit/Signs_And_Lights/Sign.prefab` > `Label` to yaw 180 and tell me.)*
 - To get the labels back for a moment: `Assets/Data/Labyrinth.asset` >
   `showDoorLabels` on. They should come back **reading the right way round**.
 

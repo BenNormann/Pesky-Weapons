@@ -560,6 +560,7 @@ MonoBehaviour:
   lifts:
   - {fileID: 2149922331588708911}
   sessionRunner: {fileID: 790094385}
+  labyrinth: {fileID: 0}
   ropes:
   - {fileID: 1763570710}
   pots:
@@ -1199,6 +1200,7 @@ MonoBehaviour:
   offlineRoomCode: SOLO
   offlinePlayerName: Player
   autoStartGame: 1
+  menuScene: MainMenu
 --- !u!1 &816410109
 GameObject:
   m_ObjectHideFlags: 0
@@ -1924,7 +1926,6 @@ Transform:
   m_Children:
   - {fileID: 582680219}
   - {fileID: 1578728417}
-  - {fileID: 1600386599}
   - {fileID: 267765538}
   - {fileID: 790094384}
   - {fileID: 816410110}
@@ -2013,69 +2014,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1418150646}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1600386598
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1600386599}
-  - component: {fileID: 1600386600}
-  m_Layer: 0
-  m_Name: FeelProbe
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1600386599
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1600386598}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1418150646}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1600386600
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1600386598}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 15dd4aad185635b4aa0f1c3d0d9bd241, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.Dev.FeelProbe
-  spawner: {fileID: 1578728416}
-  orbitCamera: {fileID: 2137978955}
-  clock: {fileID: 582680218}
-  tuning: {fileID: 11400000, guid: 1850e2ed809ade4478afb97e9b9cdd73, type: 2}
-  weapons:
-  - {fileID: 6698517744351600248}
-  - {fileID: 7814576388119338920}
-  - {fileID: 1217704230891957497}
-  - {fileID: 1900754880377586393}
-  - {fileID: 5105154077346462943}
-  - {fileID: 2664478024904180639}
-  - {fileID: 4963377623161639887}
-  launchOrigin: {fileID: 1138904969}
-  wallOrigin: {fileID: 1495116780}
-  testModifier: {fileID: 11400000, guid: f976396e1af48524c8206eab87717366, type: 2}
-  launchYaw: 90
-  wallApproachYaw: 270
-  wallJumpYaw: 315
-  outOfWorldPoint: {x: 40, y: 2, z: 40}
 --- !u!1001 &1604764772
 PrefabInstance:
   m_ObjectHideFlags: 0

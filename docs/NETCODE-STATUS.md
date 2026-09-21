@@ -1,4 +1,4 @@
-# NETCODE-STATUS
+﻿# NETCODE-STATUS
 
 What has actually been ported from ATCK's multiplayer stack into
 `Pesky Weapons Unity`, stage by stage. The plan is `docs/NETCODE-PORT.md`;
@@ -708,7 +708,7 @@ never leaves half the room in a phase the others cannot follow.
 | `Scripts/Game/UI/MenuFlow.cs` | new. The controller: owns the `NetSession` while the menu is up, pumps it once a frame, answers the view, and hands the session to the next scene through `GameLocator`. |
 | `UI/Menu.uxml`, `UI/Menu.uss` | new. A centred column, max 560 px, one accent (amber `rgb(226,186,74)`) on a dark ground, cards for the groups, one status row per page. |
 | `UI/HudPanelSettings.asset` | **renamed** to `UI/UiPanelSettings.asset` (`AssetDatabase.RenameAsset`, so the GUID is unchanged and `Prefabs/UI/HUD.prefab` still resolves it). It is now the shared PanelSettings: scale with screen size, 1920x1080 reference, match width. |
-| `Scenes/MainMenu.unity` | new. `_Managers/EventSystem` (EventSystem + InputSystemUIInputModule, its eight UI actions bound to `Assets/InputSystem_Actions.inputactions`), `_Cameras/Main Camera` (solid colour, culling mask 0), `_UI/Menu` (UIDocument -> `Menu.uxml` + `UiPanelSettings`; `MenuFlow` -> document, `Menu.uss`, `GameData`). |
+| `Scenes/MainMenu.unity` | new. `_Managers/EventSystem` (EventSystem + InputSystemUIInputModule, its eight UI actions bound to `Assets/Input/InputSystem_Actions.inputactions`), `_Cameras/Main Camera` (solid colour, culling mask 0), `_UI/Menu` (UIDocument -> `Menu.uxml` + `UiPanelSettings`; `MenuFlow` -> document, `Menu.uss`, `GameData`). |
 | `Scenes/Boot.unity` | `GameBootstrap.sceneName` is now `MainMenu` (was `Zone1`). Nothing else in Boot changed. |
 | `Scripts/Session/NetSession.cs` | **added `ReturnToLobby()`**: host only, emits `SESSION_PHASE(Lobby)` through the same `EventSink.Emit` that starts a run, so a finished room can start another. |
 | `Scripts/Game/SessionRunner.cs` | `Shared` now forwards to `GameLocator.Session`; `Awake` adopts that session or starts its own offline one; it subscribes to `PhaseChanged`; a run that ends (or a host that leaves) loads `menuScene` (serialized, default `MainMenu`) — but only when `GameLocator.FromMenu`, so a level opened straight from the Editor is untouched. |
@@ -791,7 +791,7 @@ EditorPrefs or on a command line:
 3. **Focus and navigation.** Tab, arrows and gamepad rely on UI Toolkit's default
    traversal in document order, and the first focus is set from a scheduled
    callback one frame after a page shows. Untested on a gamepad.
-4. **The EventSystem's actions** come from `Assets/InputSystem_Actions.inputactions`
+4. **The EventSystem's actions** come from `Assets/Input/InputSystem_Actions.inputactions`
    (`PeskyControls` has no UI map). All eight UI actions were bound explicitly and
    read back, but nothing has clicked a button through them.
 5. **`ReturnToLobby` is a new edge on the phase machine.** `Ended -> Lobby` has

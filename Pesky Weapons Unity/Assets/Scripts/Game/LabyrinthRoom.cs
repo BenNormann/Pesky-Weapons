@@ -25,6 +25,9 @@ namespace Pesky.Game
 
         [Tooltip("Where a player who starts or respawns in this room is put. Empty = the room root.")]
         [SerializeField] Transform anchor;
+        [Tooltip("A side that is a SEALED WALL on purpose, because this room's shape cannot host a door there. Index matches doorways: 0 north, 1 east, 2 south, 3 west. A sealed side needs LabyrinthGrid.DoorOpen wired before the room goes into a grid, or the compass will route through a wall.")]
+        [SerializeField] bool[] sealedSides = new bool[4];
+
 
         public int RoomId { get { return roomId; } }
 
@@ -36,6 +39,14 @@ namespace Pesky.Game
             if (doorways == null || dir < 0 || dir >= doorways.Length) return null;
             return doorways[dir];
         }
+
+        /// <summary>True when that side is a sealed wall by design, not a doorway somebody forgot to wire.</summary>
+        public bool IsSealed(int dir)
+        {
+            if (sealedSides == null || dir < 0 || dir >= sealedSides.Length) return false;
+            return sealedSides[dir];
+        }
+
 
         /// <summary>Is this point inside the room? False when no footprint was set, which keeps a half-built room out of every query.</summary>
         public bool Contains(Vector3 world)

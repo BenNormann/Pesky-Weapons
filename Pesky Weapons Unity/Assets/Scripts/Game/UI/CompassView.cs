@@ -11,6 +11,11 @@ namespace Pesky.Game
     /// RED is drawn on a Mage's machine alone and points at the Resurrection Room.
     /// A spike SPINS while the player is inside that spike's target room.
     ///
+    /// The GREEN spike is drawn SMALLER than the red one (shorter and thinner) and LAST, so it sits on
+    /// top: when a Mage's two readings point the same way he can still see both. All five numbers are
+    /// USS custom properties on the dial (`--spike-length`, `--spike-width`, `--spike-tail`,
+    /// `--green-length-scale`, `--green-width-scale`) and live in Assets/UI/Labyrinth.uss.
+    ///
     /// There is nothing else on the compass: no letters, no room name, no distance.
     /// </summary>
     internal sealed class CompassView
@@ -20,7 +25,23 @@ namespace Pesky.Game
         static readonly Color Green = new Color(0.36f, 0.86f, 0.45f);
         static readonly Color Red = new Color(0.92f, 0.32f, 0.28f);
 
+        // Every number the spikes are drawn from is a USS custom property on the dial element, so the
+        // shapes can be retuned in Labyrinth.uss without touching this file. The values here are only
+        // the fallbacks used when the stylesheet says nothing. Lengths and widths are FRACTIONS OF THE
+        // DIAL RADIUS; the two green scales are fractions of the red spike.
+        static readonly CustomStyleProperty<float> SpikeLengthProp = new CustomStyleProperty<float>("--spike-length");
+        static readonly CustomStyleProperty<float> SpikeWidthProp = new CustomStyleProperty<float>("--spike-width");
+        static readonly CustomStyleProperty<float> SpikeTailProp = new CustomStyleProperty<float>("--spike-tail");
+        static readonly CustomStyleProperty<float> GreenLengthScaleProp = new CustomStyleProperty<float>("--green-length-scale");
+        static readonly CustomStyleProperty<float> GreenWidthScaleProp = new CustomStyleProperty<float>("--green-width-scale");
+
         readonly VisualElement _dial;
+
+        float _spikeLength = 0.92f;      // red spike tip, as a fraction of the radius
+        float _spikeWidth = 0.16f;       // red spike half-width at its base, fraction of the radius
+        float _spikeTail = 0.12f;        // how far the base sits BEHIND the centre, fraction of the radius
+        float _greenLengthScale = 0.7f;  // the green spike is this much of the red one's length
+        float _greenWidthScale = 0.6f;   // ... and this much of its width
 
         bool _green, _red;
         float _greenAngle, _redAngle;
@@ -31,6 +52,7 @@ namespace Pesky.Game
             if (_dial == null) return;
             _dial.pickingMode = PickingMode.Ignore;
             _dial.generateVisualContent += OnDraw;
+            _dial.RegisterCallback<CustomStyleResolvedEvent>(OnCustomStyle);
         }
 
         /// <summary>Angles are screen degrees: 0 points up the screen, positive turns clockwise.</summary>
@@ -40,6 +62,19 @@ namespace Pesky.Game
             _greenAngle = greenAngle;
             _red = red;
             _redAngle = redAngle;
+            if (_dial != null) _dial.MarkDirtyRepaint();
+        }
+
+        /// <summary>Pick the spike shape up from USS. Anything the stylesheet leaves out keeps its fallback.</summary>
+        void OnCustomStyle(CustomStyleResolvedEvent e)
+        {
+            ICustomStyle s = e.customStyle;
+            float v;
+            if (s.TryGetValue(SpikeLengthProp, out v)) _spikeLength = Mathf.Clamp(v, 0.05f, 1f);
+            if (s.TryGetValue(SpikeWidthProp, out v)) _spikeWidth = Mathf.Clamp(v, 0.01f, 1f);
+            if (s.TryGetValue(SpikeTailProp, out v)) _spikeTail = Mathf.Clamp(v, 0f, 0.9f);
+            if (s.TryGetValue(GreenLengthScaleProp, out v)) _greenLengthScale = Mathf.Clamp(v, 0.05f, 2f);
+            if (s.TryGetValue(GreenWidthScaleProp, out v)) _greenWidthScale = Mathf.Clamp(v, 0.05f, 2f);
             if (_dial != null) _dial.MarkDirtyRepaint();
         }
 
@@ -67,22 +102,27 @@ namespace Pesky.Game
             painter.Arc(centre, radius, new Angle(0f, AngleUnit.Degree), new Angle(360f, AngleUnit.Degree));
             painter.Stroke();
 
-            // Red first, so the green one is on top when the two happen to line up.
-            if (_red) Spike(painter, centre, radius, _redAngle, Red);
-            if (_green) Spike(painter, centre, radius, _greenAngle, Green);
+            // Red first and at full size, green second and SMALLER, so that when a Mage's two readings
+            // line up the green one sits on top of the red and both are still visible.
+            if (_red) Spike(painter, centre, radius, _redAngle, Red, 1f, 1f);
+            if (_green) Spike(painter, centre, radius, _greenAngle, Green, _greenLengthScale, _greenWidthScale);
         }
 
-        /// <summary>One spike: a narrow triangle from the middle of the dial out to the ring.</summary>
-        static void Spike(Painter2D painter, Vector2 centre, float radius, float degrees, Color colour)
+        /// <summary>One spike: a narrow triangle from the middle of the dial out towards the ring.</summary>
+        void Spike(Painter2D painter, Vector2 centre, float radius, float degrees, Color colour,
+                   float lengthScale, float widthScale)
         {
             float a = degrees * Mathf.Deg2Rad;
             Vector2 forward = new Vector2(Mathf.Sin(a), -Mathf.Cos(a));
             Vector2 side = new Vector2(-forward.y, forward.x);
-            float half = Mathf.Max(3f, radius * 0.16f);
 
-            Vector2 tip = centre + forward * (radius * 0.92f);
-            Vector2 left = centre + side * half - forward * (radius * 0.12f);
-            Vector2 right = centre - side * half - forward * (radius * 0.12f);
+            float reach = radius * _spikeLength * lengthScale;
+            float half = Mathf.Max(2f, radius * _spikeWidth * widthScale);
+            float tail = radius * _spikeTail * widthScale;
+
+            Vector2 tip = centre + forward * reach;
+            Vector2 left = centre + side * half - forward * tail;
+            Vector2 right = centre - side * half - forward * tail;
 
             painter.fillColor = colour;
             painter.BeginPath();

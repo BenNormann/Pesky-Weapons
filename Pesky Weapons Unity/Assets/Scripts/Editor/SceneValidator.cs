@@ -313,7 +313,7 @@ namespace Pesky.Editor
                 for (int dir = 0; dir < 4; dir++)
                 {
                     MagicDoor door = room.Doorway(dir);
-                    if (door == null) { problems.Add("Labyrinth room " + room.RoomId + " has no doorway " + dir + ": " + Path(room)); continue; }
+                    if (door == null) { if (!room.IsSealed(dir)) problems.Add("Labyrinth room " + room.RoomId + " has no doorway " + dir + ", and that side is not declared sealed: " + Path(room)); continue; }
                     if (!door.IsGridDoor) problems.Add("Labyrinth doorway " + dir + " is not a grid door: " + Path(door));
                     if (door.Room != room) problems.Add("Labyrinth doorway " + dir + " belongs to another room: " + Path(door));
                     if (door.DoorwayDir != dir) problems.Add("Labyrinth doorway is listed as " + dir + " but says " + door.DoorwayDir + ": " + Path(door));

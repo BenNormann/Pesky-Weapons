@@ -1873,3 +1873,43 @@ and `docs/NETCODE-STATUS.md` section F2.
   pairing two instances. The `Sign.prefab` rotation fix is the one change with
   project-wide reach. A rate-capped pad stroke is refused in silence and fades
   off the drawer's own screen after 3 s.
+
+
+---
+
+## 2026-09-20 — project cleanup, kit inventory, room shapes, compass spikes
+
+Full detail in `docs/CLEANUP-AUDIT.md`. In short:
+
+- **Removed** (35 assets, all to the SYSTEM TRASH via `AssetDatabase.MoveAssetToTrash`, nothing
+  hard-deleted, nothing removed from the shell): the old tower direction (`Zone1`, `Bridge`,
+  `MainTower`, `Keep`, `Scenes/Zone1/LightingData`, `FloorActivator.cs`, `ShellPanel.prefab`);
+  the URP template leftovers (`SampleScene`, `TutorialInfo/`, `Readme.asset`, `Mobile_RPAsset`,
+  `Mobile_Renderer`); and the builder leftovers (`Scripts/Game/Dev/` with `FeelProbe` and
+  `Zone1Probe`, `Assets/Screenshots/`, the stray extensionless `Assets/Rune_Metal`,
+  `PeskyPlatform.jslib`, the orphan `M_GoblinWindup.mat`).
+- **Repaired first:** `Tutorial`'s `NavMeshSurface` held a scene-embedded copy of the NavMesh while
+  the baked `Scenes/Tutorial/NavMesh-Environment.asset` sat unreferenced — it now references the
+  asset. `Tutorial` also still pointed at `Zone1`'s lighting data (0 lightmaps, 0 probes): cut.
+  `SampleSceneProfile.asset` turned out to be the project's **live** post-processing profile
+  (`PC_RPAsset.m_VolumeProfile`), so it was **renamed** `VP_Pipeline.asset`, not removed.
+  Quality level 0 repointed to `PC_RPAsset`. `InputSystem_Actions.inputactions` moved to
+  `Assets/Input/` (GUID kept; the MainMenu EventSystem still resolves it).
+- **Inventory:** every kit prefab moved into `Assets/Prefabs/Kit/<group>/` (Doors, Pickups,
+  Plates_And_Pans, Movers, Breakables, Hazards, Stations, Markers, Signs_And_Lights) and the room
+  blocks into `Prefabs/Rooms/Pieces/`, all with `AssetDatabase.MoveAsset` so every GUID and scene
+  reference survived. `RoomShapeBuilder`'s ten hard-coded paths were updated to match.
+- **Five new room shapes** in `Assets/Prefabs/Rooms/Labyrinth/`: `LabyrinthRoom_Round`,
+  `_Octagon`, `_LShape`, `_LongGallery`, `_TallShaft`. Built with the Room Shape Builder, each with
+  four grid doorways N E S W, a static World shell, a roof, four torches, `RoomVolume`, sign, floor
+  number, anchor, spawn point and footprint. Not placed in any scene. `LabyrinthRoom` gained
+  `sealedSides` (and `SceneValidator` now honours it). See `docs/LABYRINTH.md` section 12.
+- **Compass:** `CompassView`'s GREEN spike is now 70% of the RED one's length and 60% of its width
+  and is painted on top of it, so a Mage sees both when they line up. The five shape numbers are USS
+  custom properties on `.compass-dial` in `Assets/UI/Labyrinth.uss`, with matching fallbacks in code.
+- **Docs:** `DESIGN.md`, `IMPLEMENTATION-PLAN.md`, `CASTLE-LAYOUT-BUILD.md`,
+  `BACK-TOWER-TEST-CHECKLIST.md` and `level-design/*.html` moved to `docs/archive/` with a README.
+
+**Nothing was run.** Checks: clean compile; `Pesky > Validate Open Scenes` 0 problems on all four
+build scenes plus `Dev/FeelBox`; 0 missing scripts and 0 dangling references; build settings still
+exactly Boot, MainMenu, Tutorial, Labyrinth; no empty folders; 376 assets before, 346 after.
