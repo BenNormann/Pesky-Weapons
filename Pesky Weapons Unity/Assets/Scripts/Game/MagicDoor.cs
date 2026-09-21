@@ -8,7 +8,11 @@ namespace Pesky.Game
     /// possessed weapon, a loose weapon, a free soul - that crosses the plane FROM THE FRONT is moved to
     /// the twin, and its motion is turned by the rotation between the two frames, so "forward into A"
     /// becomes "forward out of B" at the same speed: a launch carries straight through. Two-way.
-    /// Goblins are never moved (they are not travellers, and the alcove behind the plane is solid).
+    /// Goblins are never moved (they are not travellers, and the alcove behind the plane is solid), and
+    /// neither is a FREE SOUL: a soul may only pass as a weapon. The opening carries a SoulBlock collider
+    /// on the SoulBarrier layer, which collides with the Soul layer and nothing else, so a soul cannot fly
+    /// through the frame into the void behind it, and the sensor below never asks the authority on its
+    /// behalf. Weapons, possessed or loose, are unaffected: SoulBarrier does not collide with Weapon.
     ///
     /// It is a sensor only: it watches the travellers the WorldAuthority knows (no trigger collider, so
     /// the layer matrix does not matter and nothing can tunnel past it), and REQUESTS the traversal; the
@@ -51,7 +55,9 @@ namespace Pesky.Game
         [Tooltip("Seconds during which a traveller that just came through cannot go through any magic door again.")]
         [SerializeField] float reentryCooldown = 0.5f;
         [Tooltip("A step longer than this in one physics tick is a teleport or a respawn, never a crossing.")]
-        [SerializeField] float maxStep = 2f;
+        [SerializeField] float maxStep = 2f;        [Tooltip("A free soul cannot use a magic door: the doorway is SOLID to it. When a soul presses on the opening from this far in front of the plane, the HUD reminds the player to possess a weapon first. 0 = no reminder.")]
+        [SerializeField] float soulHintDistance = 1.2f;
+
 
         readonly Dictionary<Rigidbody, Vector3> _previous = new Dictionary<Rigidbody, Vector3>();
         bool _planeShown = true;
@@ -187,14 +193,28 @@ namespace Pesky.Game
                 if (Watch(w.Body, w.Body.worldCenterOfMass, passable)) authority.RequestMagicDoorTraverse(this, w);
             }
 
+            // A FREE SOUL IS NOT A TRAVELLER. The doorway is solid to it (the SoulBlock collider on the
+            // SoulBarrier layer fills the opening), and the sensor does not watch it at all, so a soul can
+            // never ask for a traversal. All it gets is a reminder to possess a weapon first.
             IReadOnlyList<PlayerSoul> souls = authority.Souls;
             for (int i = 0; i < souls.Count; i++)
             {
                 PlayerSoul s = souls[i];
                 if (s == null || s.Body == null) continue;
-                if (s.IsPossessing) { _previous.Remove(s.Body); continue; }
-                if (Watch(s.Body, s.Body.position, passable)) authority.RequestMagicDoorTraverse(this, s);
+                _previous.Remove(s.Body);
+                if (!s.IsPossessing && PressingOnTheOpening(s.Body)) authority.NoteSoulBlockedByDoor(this, s);
             }
+        }
+
+        /// <summary>A free soul hovering in the opening and pushing at the plane: it will never get through.</summary>
+        bool PressingOnTheOpening(Rigidbody rb)
+        {
+            if (soulHintDistance <= 0f) return false;
+            Vector3 local = ToLocal(rb.position);
+            if (local.z < -0.35f || local.z > soulHintDistance) return false;
+            if (Mathf.Abs(local.x) > width * 0.5f || local.y < -0.25f || local.y > height) return false;
+            Vector3 v = Quaternion.Inverse(transform.rotation) * rb.linearVelocity;
+            return v.z < -0.2f;
         }
 
         bool Watch(Rigidbody rb, Vector3 world, bool passable)

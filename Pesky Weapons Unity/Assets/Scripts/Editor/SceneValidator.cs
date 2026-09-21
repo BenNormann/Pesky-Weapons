@@ -59,6 +59,7 @@ namespace Pesky.Editor
             CheckPuzzleKit(all, problems);
             CheckEnemyRoles(all, problems);
             CheckLabyrinth(all, problems);            CheckDoorwayOpenings(all, problems);
+            CheckSignFacing(all, problems);
 
             CheckRegistry(all, problems);
             CheckSceneSanity(all, problems);
@@ -353,6 +354,12 @@ namespace Pesky.Editor
         /// <summary>The probe's height above the opening's sill, and how far down it looks for floor.</summary>
         const float DoorwaySill = 0.75f;
         const float DoorwayDrop = 10f;
+        /// <summary>Height of a Sign's board above its pivot, where the readability probe looks from.</summary>
+        const float SignBoardHeight = 1.45f;
+
+        /// <summary>How far the sign probe looks for a wall on each side.</summary>
+        const float SignProbe = 40f;
+
 
         /// <summary>
         /// A HOLE IN A WALL HAS TO LEAD SOMEWHERE. Every doorway wall segment (a DoorwayWallSegment, which
@@ -401,6 +408,40 @@ namespace Pesky.Editor
                              Path(opening.gameObject));
             }
         }
+
+        /// <summary>
+        /// A TextMeshPro mesh renders and reads from its own local -Z (verified against Unity's Quad and
+        /// against the mesh winding), and Sign.prefab puts its Label on the board's -Z face - so a sign's
+        /// readable side is the sign's local -Z and its +Z belongs against the wall behind it. A sign turned
+        /// the other way shows the crew a blank board, which is what "all the signs are backwards" was.
+        /// </summary>
+        static void CheckSignFacing(List<GameObject> all, List<string> problems)
+        {
+            List<Sign> signs = new List<Sign>();
+            for (int i = 0; i < all.Count; i++)
+            {
+                Sign s = all[i].GetComponent<Sign>();
+                if (s != null) signs.Add(s);
+            }
+            if (signs.Count == 0) return;
+            Physics.SyncTransforms();
+
+            int world = LayerMask.NameToLayer("World");
+            int mask = world >= 0 ? 1 << world : ~0;
+            for (int i = 0; i < signs.Count; i++)
+            {
+                Transform t = signs[i].transform;
+                Vector3 eye = t.position + Vector3.up * SignBoardHeight;
+                RaycastHit hit;
+                float readable = Physics.Raycast(eye, -t.forward, out hit, SignProbe, mask, QueryTriggerInteraction.Ignore) ? hit.distance : SignProbe;
+                float behind = Physics.Raycast(eye, t.forward, out hit, SignProbe, mask, QueryTriggerInteraction.Ignore) ? hit.distance : SignProbe;
+                if (readable < behind - 0.25f)
+                    problems.Add("Sign '" + Path(t.gameObject) + "' faces the wrong way: its readable side (local -Z) has " +
+                                 readable.ToString("F1") + " m of room and its back has " + behind.ToString("F1") +
+                                 " m. Yaw it 180 so the text faces the room.");
+            }
+        }
+
 
         static bool HasFloorUnder(Vector3 point)
         {

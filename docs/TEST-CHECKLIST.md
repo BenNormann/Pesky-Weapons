@@ -396,3 +396,48 @@ Solo first, then with two instances.
 - `Pesky > Validate Open Scenes` now checks this: it reports any `..._Doorway`
   wall segment with no door within 2.5 m and no floor 3 m out on one side. It
   reads **0 problems** on Boot, MainMenu, Tutorial and Labyrinth.
+
+## 5. Feedback round 3 (implemented, untested)
+
+### 5.1 Signs read from the room
+
+- In the **Tutorial**, walk up to `THE GATE HALL…`, `THE RESURRECTION ROOM…`,
+  `THE COMPASS…`, `IN A REAL RUN…` and `HOLD TAB…`, and to the two control
+  signs in the first room. Each must read **left to right, facing you**, from the
+  open side of the room — not blank, not mirrored, not readable only from the
+  1.5 m gap behind it. Walk behind each one: the board must hide the text.
+- Every `Room N` / `CELL x` sign in the Labyrinth should be unchanged and correct.
+- `Pesky > Validate Open Scenes` reads **0 problems**; a sign turned to face a
+  near wall now makes it report `Sign '…' faces the wrong way`.
+
+### 5.2 A soul cannot use a teleport door
+
+- As a **free soul** (Q), fly at a doorway from the front: you must be **stopped
+  by the opening**, not teleported and not able to slip into the alcove or the
+  void behind the frame. A HUD line says to possess a weapon first.
+- Possess a weapon (E) and launch through the same doorway: it must work
+  **exactly as before** — same speed, same turn, same purple flash.
+- Throw a **loose** weapon through: it must still travel. Goblins must still
+  refuse to path into the alcove, and the trajectory preview must still end at
+  the plane.
+- Walk the whole tutorial, the respawn and the practice labyrinth: nothing may
+  require a soul to pass a doorway.
+
+### 5.3 The camera stays inside the room
+
+- As a soul, fly **straight up into the ceiling** of a labyrinth room and look
+  around: the camera must stay in the room — no seeing through the ceiling, no
+  grey void, no near-plane clipping into the slab. Repeat against a wall, in a
+  corner, in the **Round**, **Octagon**, **L-shape**, **Long Gallery** and
+  **Tall Shaft** rooms, and as a **possessed weapon**.
+- Nothing should pop: the camera may snap **in** but must ease back **out**.
+
+### 5.4 The Mage's compass bend actually lands
+
+- In the **Tutorial**, hold Tab, click the practice chip, then a room: the chip
+  must show `DUMMY > ROOM n` and the map must say so — never nothing at all.
+- Try a second bend while the ring is counting: the hint must say **why**
+  (recharging), not fall silent. Bend past the limit: it must say
+  `ALREADY BENT n OF max`.
+- With **3 players** (1 Mage, 2 crew) a bend must now land — this is the case
+  that silently failed. With 5 crew the limit must still be 2.

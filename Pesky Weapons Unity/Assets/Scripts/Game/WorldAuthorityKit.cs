@@ -46,7 +46,13 @@ namespace Pesky.Game
         public event Action<Lift, bool> LiftChanged;
         /// <summary>(weapon, wood) a bladed weapon stuck in a WoodSurface.</summary>
         public event Action<WeaponBody, WoodSurface> WeaponStuck;
-        public event Action<WeaponBody> WeaponUnstuck;
+        public event Action<WeaponBody> WeaponUnstuck;        /// <summary>A free soul pressed on a magic door's opening and was refused: doorways are solid to souls.</summary>
+        public event Action<PlayerSoul> SoulBlockedByDoor;
+
+        /// <summary>Seconds between two "you cannot go through as a soul" reminders.</summary>
+        const float SoulDoorHintCooldown = 4f;
+        float _nextSoulDoorHint;
+
 
         public IReadOnlyList<MagicDoor> MagicDoors { get { return magicDoors; } }
         public IReadOnlyList<MagnetZone> Magnets { get { return magnets; } }
@@ -170,28 +176,26 @@ namespace Pesky.Game
             return true;
         }
 
-        /// <summary>A free soul crossed a magic door's plane from the front.</summary>
+        /// <summary>
+        /// A FREE SOUL may never use a magic door - a soul passes only as a weapon. This is the host's half
+        /// of that rule (the doorway is also physically SOLID to a soul, via the SoulBlock collider on the
+        /// SoulBarrier layer, and the door's own sensor ignores souls), so a forged or replayed request from
+        /// a peer is refused here too and no MagicDoorTraversed is ever raised for a free soul.
+        /// </summary>
         public bool RequestMagicDoorTraverse(MagicDoor door, PlayerSoul soul)
         {
-            if (door == null || soul == null || soul.IsPossessing || soul.Body == null) return false;
-            MagicDoor exit = door.Twin;
-            if (exit == null || !door.GateOpen) return false;
-            Rigidbody rb = soul.Body;
-            if (WarpedRecently(rb, door.ReentryCooldown)) return false;
+            return false;
+        }
 
-            MagicDoorTraversal t = new MagicDoorTraversal();
-            t.from = door;
-            t.to = exit;
-            t.soul = soul;
-            t.turn = door.TurnTo(exit);
-            t.fromPosition = rb.position;
-            t.toPosition = door.MapPosition(exit, rb.position, rb.position);
-
-            soul.Warp(t.toPosition, t.turn * rb.linearVelocity);
-            _lastWarp[rb] = Time.time;
-            exit.NoteArrival(rb, t.toPosition);
-            if (MagicDoorTraversed != null) MagicDoorTraversed(t);
-            return true;
+        /// <summary>
+        /// A free soul is pressing on a magic door's opening. Nothing happens to it - the doorway is solid -
+        /// but the HUD is told, so the player learns to possess a weapon first. Rate limited so it cannot spam.
+        /// </summary>
+        public void NoteSoulBlockedByDoor(MagicDoor door, PlayerSoul soul)
+        {
+            if (soul == null || Time.time < _nextSoulDoorHint) return;
+            _nextSoulDoorHint = Time.time + SoulDoorHintCooldown;
+            if (SoulBlockedByDoor != null) SoulBlockedByDoor(soul);
         }
 
         // ------------------------------------------------------------------ request: magnet power

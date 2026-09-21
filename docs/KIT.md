@@ -90,6 +90,22 @@ It respects the normal door conditions: the prefab's own `Door` + `DoorCondition
 No trigger collider is used: every physics step the door compares each traveller's previous and current position
 against its plane rectangle, so layers do not matter and a fast launch cannot tunnel past it.
 
+**A FREE SOUL MAY NOT USE A MAGIC DOOR (feedback round 3).** A soul passes only as a weapon. Three things enforce
+it and all three must stay: (1) the new **`SoulBarrier` layer (15)**, which in the collision matrix collides with
+**`Soul` (10) and nothing else at all** — not World, not Weapon, not Enemy, not itself; (2) a `SoulBlock` child on
+every `MagicDoor` / `MagicDoor_Grid` prefab — a non-trigger `BoxCollider` on that layer, centre `(0, height/2,
+-0.05)`, size `(width + 0.1, height + 0.1, 0.5)` — which fills the opening so a soul cannot fly through the frame
+into the alcove or the void behind it; (3) the sensor no longer watches souls for a crossing, and
+`WorldAuthority.RequestMagicDoorTraverse(door, soul)` now always returns **false**, so a forged or replayed request
+from a peer is refused by the host too. Weapons, goblins, the NavMesh and the trajectory preview are untouched —
+none of their masks (`blockMask` 2304, `weaponMask` 512, the camera's 256) contains layer 15. A soul pressing on an
+opening gets a HUD line (`HudController.soulDoorHint`) telling it to possess a weapon first.
+
+**Signs face their own local −Z.** A `TextMeshPro` mesh renders and reads from its **local −Z** (measured: mesh
+normals `(0,0,-1)`, winding, and a backface-culled raycast against both the TMP mesh and Unity's Quad). `Sign.prefab`
+keeps its `Label` at identity on the board's −Z face, so **point a sign's +Z at the wall behind it**.
+`Pesky > Validate Open Scenes` now enforces this (`CheckSignFacing`).
+
 **Tunables (prefab, `MagicDoor`).** `width` 2.9, `height` 3.45 (the opening), `exitClearance` 0.6 (centre comes out
 at least this far in front of the twin's plane), `reentryCooldown` 0.5, `maxStep` 2 (a bigger jump in one tick is a
 teleport, not a crossing). Flash length: `HudController.magicFlashSeconds`. Flash colour: `.magic-flash` in `Hud.uss`.

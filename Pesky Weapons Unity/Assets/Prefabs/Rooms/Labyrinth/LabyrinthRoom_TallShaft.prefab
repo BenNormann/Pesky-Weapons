@@ -309,6 +309,7 @@ Transform:
   - {fileID: 6105385456218833012}
   - {fileID: 8652390656757750090}
   - {fileID: 5960860021168559681}
+  - {fileID: 4017756039954204546}
   m_Father: {fileID: 1243939449688623547}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &3824872253800031018
@@ -338,6 +339,7 @@ MonoBehaviour:
   exitClearance: 0.6
   reentryCooldown: 0.5
   maxStep: 2
+  soulHintDistance: 1.2
 --- !u!114 &7798373101970538643
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -445,6 +447,59 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &914164997597895810
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7774684226014671451}
+  - component: {fileID: 9084721331065284006}
+  m_Layer: 15
+  m_Name: SoulBlock
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7774684226014671451
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 914164997597895810}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3272983202533277530}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &9084721331065284006
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 914164997597895810}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3, y: 3.55, z: 0.5}
+  m_Center: {x: 0, y: 1.725, z: -0.05}
 --- !u!1 &934973024148519034
 GameObject:
   m_ObjectHideFlags: 0
@@ -486,6 +541,59 @@ Transform:
   - {fileID: 7715754560222715999}
   m_Father: {fileID: 840744899475524298}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &949343301167723199
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8830184427663712997}
+  - component: {fileID: 622905715533099155}
+  m_Layer: 15
+  m_Name: SoulBlock
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8830184427663712997
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 949343301167723199}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7820271630112813674}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &622905715533099155
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 949343301167723199}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3, y: 3.55, z: 0.5}
+  m_Center: {x: 0, y: 1.725, z: -0.05}
 --- !u!1 &951550736322626068
 GameObject:
   m_ObjectHideFlags: 0
@@ -2318,6 +2426,59 @@ MonoBehaviour:
   m_Center: {x: 0, y: 1.7, z: -0.9}
   m_Area: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &3672478855941738308
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6436119083464261793}
+  - component: {fileID: 6800419300485653938}
+  m_Layer: 15
+  m_Name: SoulBlock
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6436119083464261793
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672478855941738308}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4858967265532345877}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &6800419300485653938
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3672478855941738308}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3, y: 3.55, z: 0.5}
+  m_Center: {x: 0, y: 1.725, z: -0.05}
 --- !u!1 &3720592735057421654
 GameObject:
   m_ObjectHideFlags: 0
@@ -3462,6 +3623,7 @@ Transform:
   - {fileID: 3409474254182242681}
   - {fileID: 3991852995263151306}
   - {fileID: 6847349401562616821}
+  - {fileID: 7774684226014671451}
   m_Father: {fileID: 1243939449688623547}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2820411470184560745
@@ -3491,6 +3653,7 @@ MonoBehaviour:
   exitClearance: 0.6
   reentryCooldown: 0.5
   maxStep: 2
+  soulHintDistance: 1.2
 --- !u!114 &727326262012211030
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4577,6 +4740,59 @@ MonoBehaviour:
   m_Center: {x: 0, y: 1.7, z: -0.9}
   m_Area: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &7350749727578249552
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4017756039954204546}
+  - component: {fileID: 3243764305198364122}
+  m_Layer: 15
+  m_Name: SoulBlock
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4017756039954204546
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7350749727578249552}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4075004713345290569}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &3243764305198364122
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7350749727578249552}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3, y: 3.55, z: 0.5}
+  m_Center: {x: 0, y: 1.725, z: -0.05}
 --- !u!1 &7461618510376348098
 GameObject:
   m_ObjectHideFlags: 0
@@ -5095,6 +5311,7 @@ Transform:
   - {fileID: 2299984879453376473}
   - {fileID: 5470078958649690757}
   - {fileID: 7399889739965424242}
+  - {fileID: 6436119083464261793}
   m_Father: {fileID: 1243939449688623547}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1614518412143308947
@@ -5124,6 +5341,7 @@ MonoBehaviour:
   exitClearance: 0.6
   reentryCooldown: 0.5
   maxStep: 2
+  soulHintDistance: 1.2
 --- !u!114 &2368655704383773448
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5390,6 +5608,7 @@ Transform:
   - {fileID: 5303510909170557773}
   - {fileID: 1251586668646048513}
   - {fileID: 1740615995705382192}
+  - {fileID: 8830184427663712997}
   m_Father: {fileID: 1243939449688623547}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2235779699734674333
@@ -5419,6 +5638,7 @@ MonoBehaviour:
   exitClearance: 0.6
   reentryCooldown: 0.5
   maxStep: 2
+  soulHintDistance: 1.2
 --- !u!114 &6564231827405900858
 MonoBehaviour:
   m_ObjectHideFlags: 0
