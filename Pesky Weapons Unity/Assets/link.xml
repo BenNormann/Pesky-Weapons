@@ -1,0 +1,72 @@
+<!--
+  Managed stripping is Low and engine-code stripping is on, so anything Unity cannot
+  see a reference to from a scene, a prefab or code may be cut out of the WebGL player.
+  Pesky authors nearly everything, so most types survive through serialized references;
+  these are the ones resolved by name, created at runtime, or reached only through the
+  engine. Symptom of getting this wrong: "Can't add component because class 'X' doesn't
+  exist!" in the browser console, and an invisible or collider-less world.
+
+  Ported from 'ATCK Unity/Assets/link.xml', trimmed to the assemblies this project
+  actually has: no UnityEngine.TextRenderingModule and no UnityEngine.InputModule (neither
+  package is in Packages/manifest.json), plus UnityEngine.AIModule for the goblin
+  NavMeshAgents and UnityEngine.UIElementsModule for the UI Toolkit menu and HUD.
+-->
+<linker>
+  <!-- weapons, souls, goblins, doors, debris: colliders, bodies, joints -->
+  <assembly fullname="UnityEngine.PhysicsModule">
+    <type fullname="UnityEngine.MeshCollider" preserve="all" />
+    <type fullname="UnityEngine.BoxCollider" preserve="all" />
+    <type fullname="UnityEngine.CapsuleCollider" preserve="all" />
+    <type fullname="UnityEngine.SphereCollider" preserve="all" />
+    <type fullname="UnityEngine.CharacterController" preserve="all" />
+    <type fullname="UnityEngine.Rigidbody" preserve="all" />
+    <type fullname="UnityEngine.CharacterJoint" preserve="all" />
+    <type fullname="UnityEngine.ConfigurableJoint" preserve="all" />
+    <type fullname="UnityEngine.HingeJoint" preserve="all" />
+    <type fullname="UnityEngine.FixedJoint" preserve="all" />
+    <type fullname="UnityEngine.PhysicsMaterial" preserve="all" />
+  </assembly>
+
+  <!-- goblin brains: NavMeshAgent, NavMeshObstacle, the baked surfaces -->
+  <assembly fullname="UnityEngine.AIModule" preserve="all" />
+
+  <!-- effects -->
+  <assembly fullname="UnityEngine.ParticleSystemModule">
+    <type fullname="UnityEngine.ParticleSystem" preserve="all" />
+    <type fullname="UnityEngine.ParticleSystemRenderer" preserve="all" />
+  </assembly>
+
+  <!-- sfx (voice never touches Unity audio; it lives in net.js) -->
+  <assembly fullname="UnityEngine.AudioModule">
+    <type fullname="UnityEngine.AudioSource" preserve="all" />
+    <type fullname="UnityEngine.AudioListener" preserve="all" />
+    <type fullname="UnityEngine.AudioClip" preserve="all" />
+  </assembly>
+
+  <!-- rendering primitives, including the ones remote player views build -->
+  <assembly fullname="UnityEngine.CoreModule">
+    <type fullname="UnityEngine.Light" preserve="all" />
+    <type fullname="UnityEngine.Camera" preserve="all" />
+    <type fullname="UnityEngine.MeshFilter" preserve="all" />
+    <type fullname="UnityEngine.MeshRenderer" preserve="all" />
+    <type fullname="UnityEngine.LineRenderer" preserve="all" />
+    <type fullname="UnityEngine.TrailRenderer" preserve="all" />
+    <type fullname="UnityEngine.Mesh" preserve="all" />
+    <type fullname="UnityEngine.Material" preserve="all" />
+    <type fullname="UnityEngine.RectTransform" preserve="all" />
+  </assembly>
+
+  <!-- canvas plumbing for the world-space name labels -->
+  <assembly fullname="UnityEngine.UIModule">
+    <type fullname="UnityEngine.Canvas" preserve="all" />
+    <type fullname="UnityEngine.CanvasRenderer" preserve="all" />
+    <type fullname="UnityEngine.CanvasGroup" preserve="all" />
+  </assembly>
+
+  <!-- the menu, room page, map and HUD are UXML + USS, resolved by name -->
+  <assembly fullname="UnityEngine.UIElementsModule" preserve="all" />
+  <assembly fullname="Unity.TextMeshPro" preserve="all" />
+
+  <!-- Input System devices and actions are resolved by name -->
+  <assembly fullname="Unity.InputSystem" preserve="all" />
+</linker>
