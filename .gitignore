@@ -1,0 +1,56 @@
+# --- Stray empty Unity shell in the repo root (the real project is "Pesky Weapons Unity/") ---
+/Assets/
+/Library/
+/Logs/
+/Temp/
+/UserSettings/
+/ProjectSettings/
+
+# --- Unity (matches at any depth, so it covers "Pesky Weapons Unity/") ---
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+crashlytics-build.properties
+
+# IDE / solution files Unity regenerates
+.vs/
+.idea/
+.vscode/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Builds
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code local state
+.claude/

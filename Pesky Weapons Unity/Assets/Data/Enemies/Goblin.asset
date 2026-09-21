@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c86793f82cc510749b630eab5c7a6026, type: 3}
+  m_Name: Goblin
+  m_EditorClassIdentifier: Pesky.Data::Pesky.Data.EnemyDef
+  id: 1
+  displayName: Goblin
+  radius: 0.5
+  height: 1.4
+  moveSpeed: 3
+  angularSpeed: 720
+  acceleration: 20
+  maxHp: 30
+  aggroRange: 8
+  attackRange: 1.4
+  windupSeconds: 0.5
+  attackDamage: 15
+  attackKnockback: 8
+  attackCooldown: 1.2
+  knockbackPerDamage: 0.25
+  maxKnockbackSpeed: 9
+  knockbackDamping: 6
+  hitFlashSeconds: 0.12
+  windupSwell: 1.25

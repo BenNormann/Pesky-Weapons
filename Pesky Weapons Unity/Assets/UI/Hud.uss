@@ -1,0 +1,144 @@
+.hud-root {
+    flex-grow: 1;
+    justify-content: space-between;
+    padding: 18px 24px;
+}
+
+.magic-flash {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    background-color: rgba(168, 70, 242, 0.55);
+}
+
+.top-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.flash {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(240, 240, 235);
+    background-color: rgba(10, 12, 16, 0.65);
+    padding: 6px 14px;
+    border-radius: 4px;
+    letter-spacing: 2px;
+}
+
+.tags {
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.tag {
+    font-size: 18px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    padding: 5px 12px;
+    margin-left: 8px;
+    border-radius: 3px;
+    color: rgb(16, 16, 18);
+}
+
+.tag-key {
+    background-color: rgb(219, 181, 61);
+}
+
+.tag-combat {
+    background-color: rgb(199, 61, 41);
+    color: rgb(245, 238, 236);
+}
+
+.centre {
+    align-items: center;
+    justify-content: center;
+}
+
+.prompt {
+    font-size: 22px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(238, 238, 234);
+    background-color: rgba(10, 12, 16, 0.6);
+    padding: 7px 16px;
+    border-radius: 3px;
+}
+
+.anvil-track {
+    width: 220px;
+    height: 8px;
+    margin-top: 8px;
+    background-color: rgba(10, 12, 16, 0.7);
+    border-radius: 2px;
+}
+
+.anvil-fill {
+    height: 100%;
+    width: 0;
+    background-color: rgb(226, 186, 74);
+    border-radius: 2px;
+}
+
+.bottom-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.weapon-panel {
+    min-width: 280px;
+    background-color: rgba(10, 12, 16, 0.6);
+    padding: 10px 14px;
+    border-radius: 4px;
+}
+
+.weapon-name {
+    font-size: 24px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(238, 238, 234);
+}
+
+.hp-track {
+    height: 14px;
+    margin-top: 6px;
+    background-color: rgb(38, 40, 46);
+    border-radius: 2px;
+}
+
+.hp-fill {
+    height: 100%;
+    width: 100%;
+    background-color: rgb(86, 176, 96);
+    border-radius: 2px;
+}
+
+.hp-fill.low {
+    background-color: rgb(199, 61, 41);
+}
+
+.hp-text {
+    font-size: 15px;
+    margin-top: 4px;
+    color: rgb(196, 200, 206);
+}
+
+.modifiers {
+    font-size: 15px;
+    margin-top: 2px;
+    color: rgb(168, 134, 206);
+}
+
+.hint {
+    font-size: 16px;
+    letter-spacing: 1px;
+    color: rgb(196, 200, 206);
+    background-color: rgba(10, 12, 16, 0.5);
+    padding: 6px 12px;
+    border-radius: 3px;
+}

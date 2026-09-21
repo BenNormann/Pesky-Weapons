@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6de812856abacd4bb5fc30b55b8eddb, type: 3}
+  m_Name: Banana
+  m_EditorClassIdentifier: Pesky.Data::Pesky.Data.WeaponDef
+  id: 7
+  displayName: Banana
+  launchSpeed: 13
+  launchTorque: 5
+  mass: 0.5
+  linearDrag: 0.05
+  angularDrag: 1
+  physicsMaterial: {fileID: 13400000, guid: 3a789d4abc804574cb440ba468fa1ec3, type: 2}
+  damage: 6
+  maxHp: 60
+  bladed: 0
+  blunt: 0
+  metal: 0
+  wooden: 0
+  tipAxis: {x: 0, y: 0, z: 1}
+  canRoll: 0
+  rollTorque: 0
+  prefab: {fileID: 6966834834807214727, guid: 576ebd784912c874c8553bdaa532a9a0, type: 3}

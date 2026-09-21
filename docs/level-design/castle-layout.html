@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Pesky Weapons: castle layout</title>
+<style>
+body{font:14px/1.45 system-ui,"Segoe UI",sans-serif;color:#1f2937;background:#fafaf7;margin:0;padding:16px;max-width:900px}
+h1{font-size:20px;margin:0 0 6px} h2{font-size:15px;margin:22px 0 6px;border-bottom:1px solid #d6d3d1;padding-bottom:3px}
+p{margin:6px 0} .hint{color:#57534e;font-size:12px}
+svg{width:100%;height:auto;display:block} svg text{font-size:9px;fill:#1f2937}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px} .card{background:#fff;border:1px solid #d6d3d1;border-radius:6px;padding:4px}
+.w{fill:#fff;stroke:#44403c;stroke-width:2} .lv{stroke:#a8a29e;stroke-dasharray:4 3} .cr{fill:#fff;stroke:#44403c;stroke-width:1.5}
+.big{font-weight:700;font-size:11px} .lab{font-weight:700} .pur{fill:#6d28d9} .red{fill:#b91c1c}
+.path{fill:none;stroke:#c2410c;stroke-width:2.5;stroke-linejoin:round} .sc{fill:none;stroke:#6d28d9;stroke-width:2;stroke-dasharray:5 3}
+.d circle{fill:#fff;stroke:#1f2937;stroke-width:1.2} .d text{text-anchor:middle;font-weight:700}
+.d .rest circle{fill:#bbf7d0} .d .mid circle{fill:#fecaca} .d .orb circle{fill:#fde047} .d .fin circle{fill:#b91c1c} .d .fin text{fill:#fff}
+.c{fill:#f5f5f4;stroke:#78716c} .c.rest{fill:#dcfce7} .c.mid{fill:#fecaca} .c.orb{fill:#fef08a} .c.fin{fill:#fca5a5} .c.stair{fill:#e7e5e4}
+.c.side{fill:#faf5ff;stroke:#6d28d9;stroke-dasharray:3 2} .c.void{fill:none;stroke:#d6d3d1;stroke-dasharray:2 3}
+.n{font-weight:700;font-size:11px} .t{font-weight:700;font-size:9px} .s{font-size:7.5px;fill:#57534e} .k{font-size:7.5px;font-weight:700;fill:#a16207}
+.p{stroke:#c2410c;stroke-width:2.4;fill:none;marker-end:url(#ah)} .br{stroke:#6d28d9;stroke-width:1.6;stroke-dasharray:4 2;fill:none;marker-end:url(#ahb)}
+.lock{stroke:#6d28d9;stroke-width:4} .st{stroke:#44403c;fill:none;stroke-width:1.5}
+table{border-collapse:collapse;width:100%;font-size:12px} th,td{border:1px solid #d6d3d1;padding:3px 5px;text-align:left;vertical-align:top}
+th{background:#e7e5e4} tr.sep td{background:#44403c;color:#fff;font-weight:700} td:first-child{font-weight:700;text-align:center}
+tr.r td{background:#f0fdf4} tr.b td{background:#fef2f2} tr.o td{background:#fefce8} tr.x td{background:#faf5ff}
+.ic{fill:#fff;stroke:#44403c;stroke-width:1} .fl{font-size:7px;fill:#78716c} .nm{font-size:7.6px} .pn{font-size:6.8px} .pl{font-size:8px;font-weight:700;fill:#6d28d9}
+.shaft{fill:#ede9fe;stroke:#6d28d9;stroke-width:1} .sl{font-size:6.5px;font-weight:700;fill:#6d28d9;text-anchor:middle} .stop{fill:#6d28d9}
+.pod{fill:#faf5ff;stroke:#6d28d9;stroke-dasharray:3 2} .podl{stroke:#6d28d9;stroke-dasharray:2 2} .door circle{fill:#6d28d9;stroke:#fff;stroke-width:.8}
+.lg text{font-size:7.5px} .mdoor{fill:#ede9fe;stroke:#6d28d9;stroke-width:2}
+.sh svg{display:inline;width:13px;height:13px;vertical-align:-2px;margin-right:2px} td.sh{white-space:nowrap}
+</style></head><body>
+<h1>Castle layout: two towers, a bridge and a keep</h1>
+<p>You wake as ordinary possessed weapons, locked in the <b>cellars under the back tower</b>. The door at the tower's base is barred
+from outside, so the only way is <b>up</b>. Both towers are <b>tall, slender and round, one room per floor</b>, and the Arch Mage's castle is
+<b>bigger on the inside</b>: a doorway with a glowing purple frame is <b>magic</b>. Launch through it and, with a quick flash, you come out of its
+twin door on another floor with your speed and direction kept. Goblins never use these doors. From the top of the back tower a real
+<b>suspended bridge</b> (broken in the middle) crosses to the <b>main tower</b>; a few floors up is the <b>Magic Orb</b>, then it is floor after
+floor <b>down</b>, the Orb rolling where the others cannot, out through the <b>keep</b> to the front doors, where the arch mage's
+<b>disowned Disciple</b> bursts in. Bring the Orb.</p>
+
+<h2>1. Side-on X-ray</h2>
+<p class="hint">One floor slice = one room. Circles are rooms in path order, F is the floor, the small icon is the room's shape. The lift shaft, the orb pipe and the well are real vertical spaces: they are what makes the height felt.</p>
+<div class="card"><svg viewBox="0 0 760 600" role="img" aria-label="Side view of the castle">
+<defs>
+<marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c2410c"/></marker>
+<marker id="ahb" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6d28d9"/></marker>
+<symbol id="s-rect" viewBox="0 0 12 12"><path class="ic" fill-rule="evenodd" d="M1 3h10v6H1z"/></symbol><symbol id="s-round" viewBox="0 0 12 12"><path class="ic" fill-rule="evenodd" d="M11.0 7.3L9.7 9.7L7.3 11.0L4.7 11.0L2.3 9.7L1.0 7.3L1.0 4.7L2.3 2.3L4.7 1.0L7.3 1.0L9.7 2.3L11.0 4.7z"/></symbol><symbol id="s-oct" viewBox="0 0 12 12"><path class="ic" fill-rule="evenodd" d="M11.0 8.1L8.1 11.0L3.9 11.0L1.0 8.1L1.0 3.9L3.9 1.0L8.1 1.0L11.0 3.9z"/></symbol><symbol id="s-hex" viewBox="0 0 12 12"><path class="ic" fill-rule="evenodd" d="M11.4 6.0L8.7 10.7L3.3 10.7L0.6 6.0L3.3 1.3L8.7 1.3z"/></symbol><symbol id="s-wedge" viewBox="0 0 12 12"><path class="ic" fill-rule="evenodd" d="M6 11.2L0.8 3.6L3.8 1.2L8.2 1.2L11.2 3.6z"/></symbol><symbol id="s-ring" viewBox="0 0 12 12"><path class="ic" fill-rule="evenodd" d="M11.0 8.1L8.1 11.0L3.9 11.0L1.0 8.1L1.0 3.9L3.9 1.0L8.1 1.0L11.0 3.9zM8.0 6.8L6.8 8.0L5.2 8.0L4.0 6.8L4.0 5.2L5.2 4.0L6.8 4.0L8.0 5.2z"/></symbol><symbol id="s-gallery" viewBox="0 0 12 12"><path class="ic" fill-rule="evenodd" d="M0.6 4.2h10.8v3.6H0.6z"/></symbol><symbol id="s-shaft" viewBox="0 0 12 12"><path class="ic" fill-rule="evenodd" d="M4 0.6h4v10.8H4z"/></symbol><symbol id="s-ell" viewBox="0 0 12 12"><path class="ic" fill-rule="evenodd" d="M1.5 1h4.2v5.8h4.8v4.2h-9z"/></symbol><symbol id="s-crescent" viewBox="0 0 12 12"><path class="ic" fill-rule="evenodd" d="M3.2 0.8L7 0.8L10.4 3.6L10.4 8.4L7 11.2L3.2 11.2L6 8.6L6.8 6L6 3.4z"/></symbol>
+</defs>
+<rect x="0" y="520" width="760" height="80" fill="#e7dcc8"/>
+<!-- back tower --><rect class="w" x="50" y="156" width="165" height="390"/><path class="cr" d="M44 156L132 116L221 156z"/>
+<rect class="w" x="33" y="546" width="180" height="38"/><path class="lv" d="M69 546v38M105 546v38M141 546v38M177 546v38"/>
+<path class="lv" d="M50 520h165M50 494h165M50 468h165M50 442h165M50 416h165M50 390h165M50 364h165M50 338h165M50 312h165M50 286h165M50 260h165M50 234h165M50 208h165M50 182h165"/>
+<rect class="shaft" x="71" y="186" width="20" height="368"/><text class="sl" transform="translate(84,340) rotate(-90)">LIFT SHAFT</text>
+<rect class="stop" x="88" y="191" width="8" height="8"/>
+<rect class="stop" x="88" y="451" width="8" height="8"/><text class="pl" x="98" y="458">b</text>
+<rect class="stop" x="88" y="547" width="8" height="8"/><text class="pl" x="98" y="554">a</text>
+<text class="nm" x="51" y="580" text-anchor="middle">Weapon</text>
+<text class="nm" x="87" y="580" text-anchor="middle">Goblin</text>
+<text class="nm" x="123" y="580" text-anchor="middle">Key</text>
+<text class="nm" x="159" y="580" text-anchor="middle">Plate</text>
+<text class="nm" x="195" y="580" text-anchor="middle">Arena</text>
+<text class="fl" x="54" y="528">F1</text><use href="#s-shaft" x="169" y="527" width="12" height="12"/><text class="nm" x="166" y="535.5" text-anchor="end">Rope Room</text>
+<text class="fl" x="54" y="502">F2</text><use href="#s-wedge" x="169" y="501" width="12" height="12"/><text class="nm" x="166" y="509.5" text-anchor="end">Barred Door</text>
+<text class="fl" x="54" y="476">F3</text><use href="#s-hex" x="169" y="475" width="12" height="12"/><text class="nm" x="166" y="483.5" text-anchor="end">Pot Room</text>
+<text class="fl" x="54" y="450">F4</text><use href="#s-oct" x="169" y="449" width="12" height="12"/><text class="nm" x="166" y="457.5" text-anchor="end">Armoury</text>
+<text class="fl" x="54" y="424">F5</text><use href="#s-ell" x="169" y="423" width="12" height="12"/><text class="nm" x="166" y="431.5" text-anchor="end">Carry Room</text>
+<text class="fl" x="54" y="398">F6</text><use href="#s-gallery" x="169" y="397" width="12" height="12"/><text class="nm" x="166" y="405.5" text-anchor="end">Magnet Room</text>
+<text class="fl" x="54" y="372">F7</text><use href="#s-shaft" x="169" y="371" width="12" height="12"/><text class="nm" x="166" y="379.5" text-anchor="end">Beam Climb</text>
+<text class="fl" x="54" y="346">F8</text><use href="#s-ring" x="169" y="345" width="12" height="12"/><text class="nm" x="166" y="353.5" text-anchor="end">Counterweight Room</text>
+<text class="fl" x="54" y="320">F9</text><use href="#s-crescent" x="169" y="319" width="12" height="12"/><text class="nm" x="166" y="327.5" text-anchor="end">Patrol Room</text>
+<text class="fl" x="54" y="294">F10</text><use href="#s-round" x="169" y="293" width="12" height="12"/><text class="nm" x="166" y="301.5" text-anchor="end">Storm Room</text>
+<text class="fl" x="54" y="268">F11</text><use href="#s-ell" x="169" y="267" width="12" height="12"/><text class="nm" x="166" y="275.5" text-anchor="end">Barracks</text>
+<text class="fl" x="54" y="242">F12</text><use href="#s-shaft" x="169" y="241" width="12" height="12"/><text class="nm" x="166" y="249.5" text-anchor="end">Ledge Climb</text>
+<text class="fl" x="54" y="216">F13</text><use href="#s-hex" x="169" y="215" width="12" height="12"/><text class="nm" x="166" y="223.5" text-anchor="end">Scales Room</text>
+<text class="fl" x="54" y="190">F14</text><use href="#s-ring" x="169" y="189" width="12" height="12"/><text class="nm" x="166" y="197.5" text-anchor="end">Shaft Top</text>
+<text class="fl" x="54" y="164">F15</text><use href="#s-round" x="169" y="163" width="12" height="12"/><text class="nm" x="166" y="168" text-anchor="end">Gate Guard</text><text class="nm red" x="166" y="176" text-anchor="end">MID BOSS</text>
+<path class="podl" d="M48 221H50"/><rect class="pod" x="4" y="210" width="44" height="22" rx="3"/><text class="pl" x="8" y="219">c</text><text class="pn" x="16" y="219">Key</text><text class="pn" x="16" y="228">Alcove</text><path class="podl" d="M48 169H50"/><rect class="pod" x="4" y="158" width="44" height="22" rx="3"/><text class="pl" x="8" y="167">d</text><text class="pn" x="16" y="167">Secret</text><text class="pn" x="16" y="176">Room</text>
+<text class="big" x="132" y="98" text-anchor="middle">BACK TOWER</text><text class="s" x="132" y="108" text-anchor="middle">built cellars + 15 floors</text>
+<text class="lab" x="30" y="558" text-anchor="end">START</text><text class="s" x="123" y="595" text-anchor="middle">cellars 1-5: already built, rectangular, ordinary doors</text>
+<path d="M215 496v24" stroke="#7c2d12" stroke-width="6"/><path d="M207 502h16M207 513h16" stroke="#1f2937" stroke-width="2.2"/><text class="lab red" x="238" y="499">barred</text><text class="lab red" x="238" y="508">door</text>
+<!-- bridge --><path d="M215 181H298M326 181H410" stroke="#7c2d12" stroke-width="4"/><path d="M215 140Q312 176 410 140M240 148V181M280 156V181M345 156V181M385 148V181" fill="none" stroke="#7c2d12" stroke-width="1.1"/>
+<text class="nm" x="255" y="193" text-anchor="middle">Near Span</text>
+<text class="nm" x="312" y="193" text-anchor="middle">Ballista Gap</text>
+<text class="nm" x="368" y="193" text-anchor="middle">Far Span</text>
+<text class="lab" x="312" y="207" text-anchor="middle">SUSPENDED BRIDGE</text><text class="s" x="312" y="217" text-anchor="middle">real and outdoors; broken in the middle</text>
+<!-- main tower --><rect class="w" x="410" y="52" width="165" height="468"/><path class="cr" d="M402 52L492 6L583 52z"/>
+<path class="lv" d="M410 494h165M410 468h165M410 442h165M410 416h165M410 390h165M410 364h165M410 338h165M410 312h165M410 286h165M410 260h165M410 234h165M410 208h165M410 182h165M410 156h165M410 130h165M410 104h165M410 78h165"/><path d="M410 182H548" stroke="#44403c" stroke-width="3"/>
+<rect class="shaft" x="548" y="58" width="20" height="142"/><text class="sl" transform="translate(565,130) rotate(-90)">ORB PIPE</text>
+<rect class="shaft" x="548" y="318" width="20" height="170"/><text class="sl" transform="translate(561,420) rotate(-90)">WELL</text><rect class="stop" x="543" y="321" width="8" height="8"/><text class="pl" x="536" y="328">f</text><rect class="stop" x="543" y="477" width="8" height="8"/>
+<text class="fl" x="414" y="502">F1</text><use href="#s-wedge" x="451" y="501" width="12" height="12"/><text class="nm" x="467" y="509.5">Tower Gate</text>
+<text class="fl" x="414" y="476">F2</text><use href="#s-round" x="451" y="475" width="12" height="12"/><text class="nm" x="467" y="483.5">Well Bottom</text>
+<text class="fl" x="414" y="450">F3</text><use href="#s-ell" x="451" y="449" width="12" height="12"/><text class="nm" x="467" y="457.5">Cart Room</text>
+<text class="fl" x="414" y="424">F4</text><use href="#s-round" x="451" y="423" width="12" height="12"/><text class="nm" x="467" y="431.5">Barracks 2</text>
+<text class="fl" x="414" y="398">F5</text><use href="#s-hex" x="451" y="397" width="12" height="12"/><text class="nm" x="467" y="405.5">Coil Room</text>
+<text class="fl" x="414" y="372">F6</text><use href="#s-crescent" x="451" y="371" width="12" height="12"/><text class="nm" x="467" y="379.5">Blade Hall</text>
+<text class="fl" x="414" y="346">F7</text><use href="#s-shaft" x="451" y="345" width="12" height="12"/><text class="nm" x="467" y="353.5">Key Cage</text>
+<text class="fl" x="414" y="320">F8</text><use href="#s-gallery" x="451" y="319" width="12" height="12"/><text class="nm" x="467" y="327.5">Guard Hall</text>
+<text class="fl" x="414" y="294">F9</text><use href="#s-wedge" x="451" y="293" width="12" height="12"/><text class="nm" x="467" y="301.5">Drain Room</text>
+<text class="fl" x="414" y="268">F10</text><use href="#s-gallery" x="451" y="267" width="12" height="12"/><text class="nm" x="467" y="275.5">Seesaw Room</text>
+<text class="fl" x="414" y="242">F11</text><use href="#s-oct" x="451" y="241" width="12" height="12"/><text class="nm" x="467" y="249.5">Rack Room</text>
+<text class="fl" x="414" y="216">F12</text><use href="#s-crescent" x="451" y="215" width="12" height="12"/><text class="nm" x="467" y="223.5">Orb Track</text>
+<text class="fl" x="414" y="190">F13</text><use href="#s-ring" x="451" y="189" width="12" height="12"/><text class="nm" x="467" y="197.5">Pipe Room</text>
+<text class="fl" x="414" y="164">F14</text><use href="#s-oct" x="451" y="163" width="12" height="12"/><text class="nm" x="467" y="171.5">Entry Hall</text>
+<text class="fl" x="414" y="138">F15</text><use href="#s-hex" x="451" y="137" width="12" height="12"/><text class="nm" x="467" y="145.5">Slot Room</text>
+<text class="fl" x="414" y="112">F16</text><use href="#s-round" x="451" y="111" width="12" height="12"/><text class="nm" x="467" y="119.5">Guard Room</text>
+<text class="fl" x="414" y="86">F17</text><use href="#s-oct" x="451" y="85" width="12" height="12"/><text class="nm" x="467" y="93.5">Chandelier Room</text>
+<text class="fl" x="414" y="60">F18</text><use href="#s-round" x="451" y="59" width="12" height="12"/><text class="nm" x="467" y="67.5">Orb Room</text>
+<path class="podl" d="M577 195H575"/><rect class="pod" x="577" y="184" width="44" height="22" rx="3"/><text class="pl" x="581" y="193">e</text><text class="pn" x="589" y="193">Orb</text><text class="pn" x="589" y="202">Crawl</text><path class="podl" d="M408 455H410"/><rect class="pod" x="364" y="444" width="44" height="22" rx="3"/><text class="pl" x="368" y="453">g</text><text class="pn" x="376" y="453">Treasury</text><text class="pn" x="376" y="462"></text>
+<text class="big" x="592" y="30">MAIN TOWER</text><text class="s" x="592" y="40">18 floors</text><text class="lab" x="581" y="68" fill="#a16207">MAGIC ORB</text>
+<!-- keep --><rect class="w" x="575" y="468" width="140" height="52"/><path class="cr" d="M585 468v-8h14v8M615 468v-8h14v8M645 468v-8h14v8M675 468v-8h14v8"/><text class="big" x="645" y="452" text-anchor="middle">KEEP</text><path d="M715 478v42" stroke="#7c2d12" stroke-width="6"/><text class="lab" x="715" y="532" text-anchor="middle">front doors</text>
+<text class="nm" x="598" y="479" text-anchor="middle">Great Hall</text>
+<text class="nm" x="634" y="487" text-anchor="middle">Forge</text>
+<text class="nm" x="670" y="479" text-anchor="middle">Gatehouse</text>
+<text class="nm" x="711" y="487" text-anchor="end">Front Doors</text>
+<circle cx="738" cy="490" r="5" fill="#b91c1c"/><path d="M730 520l8-24 8 24z" fill="#b91c1c"/><path d="M729 508h-8" class="p" style="stroke:#b91c1c"/><text class="lab red" x="757" y="470" text-anchor="end">DISCIPLE</text><text class="s" x="757" y="479" text-anchor="end">final boss</text>
+<path class="br" d="M670 511V548H232V514H221"/><text class="s pur" x="450" y="561" text-anchor="middle">h · yard path: round the outside to lift the bar, and the castle becomes one loop</text>
+<path class="path" d="M51 561H195V169H440V65L450 75H554V185H450L440 195V507L450 516H588L598 502H702"/>
+<path class="st" d="M189 318l12-3l-12-3l12-3l-12-3M434 370l12-3l-12-3l12-3l-12-3"/>
+<g class="door"><circle cx="195" cy="520" r="2.6"/><circle cx="195" cy="494" r="2.6"/><circle cx="195" cy="468" r="2.6"/><circle cx="195" cy="442" r="2.6"/><circle cx="195" cy="416" r="2.6"/><circle cx="195" cy="390" r="2.6"/><circle cx="195" cy="364" r="2.6"/><circle cx="195" cy="338" r="2.6"/><circle cx="195" cy="286" r="2.6"/><circle cx="195" cy="260" r="2.6"/><circle cx="195" cy="234" r="2.6"/><circle cx="195" cy="208" r="2.6"/><circle cx="195" cy="182" r="2.6"/><circle cx="440" cy="494" r="2.6"/><circle cx="440" cy="468" r="2.6"/><circle cx="440" cy="442" r="2.6"/><circle cx="440" cy="416" r="2.6"/><circle cx="440" cy="390" r="2.6"/><circle cx="440" cy="338" r="2.6"/><circle cx="440" cy="312" r="2.6"/><circle cx="440" cy="286" r="2.6"/><circle cx="440" cy="260" r="2.6"/><circle cx="440" cy="234" r="2.6"/><circle cx="440" cy="208" r="2.6"/><circle cx="440" cy="156" r="2.6"/><circle cx="440" cy="130" r="2.6"/><circle cx="440" cy="104" r="2.6"/><circle cx="440" cy="78" r="2.6"/></g>
+<g class="d"><circle cx="51" cy="561" r="8.5"/><text x="51" y="564">1</text><circle cx="87" cy="561" r="8.5"/><text x="87" y="564">2</text><circle cx="123" cy="561" r="8.5"/><text x="123" y="564">3</text><circle cx="159" cy="561" r="8.5"/><text x="159" y="564">4</text><g class="rest"><circle cx="195" cy="561" r="8.5"/><text x="195" y="564">5</text></g><circle cx="195" cy="533" r="8.5"/><text x="195" y="536">6</text><circle cx="195" cy="507" r="8.5"/><text x="195" y="510">7</text><circle cx="195" cy="481" r="8.5"/><text x="195" y="484">8</text><g class="rest"><circle cx="195" cy="455" r="8.5"/><text x="195" y="458">9</text></g><circle cx="195" cy="429" r="8.5"/><text x="195" y="432">10</text><circle cx="195" cy="403" r="8.5"/><text x="195" y="406">11</text><circle cx="195" cy="377" r="8.5"/><text x="195" y="380">12</text><circle cx="195" cy="351" r="8.5"/><text x="195" y="354">13</text><circle cx="195" cy="325" r="8.5"/><text x="195" y="328">14</text><circle cx="195" cy="299" r="8.5"/><text x="195" y="302">15</text><circle cx="195" cy="273" r="8.5"/><text x="195" y="276">16</text><circle cx="195" cy="247" r="8.5"/><text x="195" y="250">17</text><circle cx="195" cy="221" r="8.5"/><text x="195" y="224">18</text><circle cx="195" cy="195" r="8.5"/><text x="195" y="198">19</text><g class="mid"><circle cx="195" cy="169" r="8.5"/><text x="195" y="172">20</text></g><circle cx="255" cy="169" r="8.5"/><text x="255" y="172">21</text><circle cx="312" cy="169" r="8.5"/><text x="312" y="172">22</text><circle cx="368" cy="169" r="8.5"/><text x="368" y="172">23</text><circle cx="440" cy="507" r="8.5"/><text x="440" y="510">41</text><circle cx="440" cy="481" r="8.5"/><text x="440" y="484">40</text><circle cx="440" cy="455" r="8.5"/><text x="440" y="458">39</text><circle cx="440" cy="429" r="8.5"/><text x="440" y="432">38</text><circle cx="440" cy="403" r="8.5"/><text x="440" y="406">37</text><circle cx="440" cy="377" r="8.5"/><text x="440" y="380">36</text><circle cx="440" cy="351" r="8.5"/><text x="440" y="354">35</text><circle cx="440" cy="325" r="8.5"/><text x="440" y="328">34</text><circle cx="440" cy="299" r="8.5"/><text x="440" y="302">33</text><circle cx="440" cy="273" r="8.5"/><text x="440" y="276">32</text><g class="rest"><circle cx="440" cy="247" r="8.5"/><text x="440" y="250">31</text></g><circle cx="440" cy="221" r="8.5"/><text x="440" y="224">30</text><circle cx="440" cy="195" r="8.5"/><text x="440" y="198">29</text><g class="rest"><circle cx="440" cy="169" r="8.5"/><text x="440" y="172">24</text></g><circle cx="440" cy="143" r="8.5"/><text x="440" y="146">25</text><circle cx="440" cy="117" r="8.5"/><text x="440" y="120">26</text><circle cx="440" cy="91" r="8.5"/><text x="440" y="94">27</text><g class="orb"><circle cx="440" cy="65" r="8.5"/><text x="440" y="68">28</text></g><circle cx="598" cy="502" r="8.5"/><text x="598" y="505">42</text><g class="rest"><circle cx="634" cy="502" r="8.5"/><text x="634" y="505">43</text></g><circle cx="670" cy="502" r="8.5"/><text x="670" y="505">44</text><g class="fin"><circle cx="702" cy="502" r="8.5"/><text x="702" y="505">45</text></g></g>
+<g class="lg"><path class="path" d="M230 27h20"/><text x="256" y="30">path, in room order</text>
+<g class="door"><circle cx="240" cy="41" r="2.6"/></g><text x="256" y="44">magic doorway to the next floor</text>
+<path class="st" d="M234 61l12-3l-12-3l12-3"/><text x="256" y="58">real spiral stair (only two)</text>
+<rect class="shaft" x="232" y="64" width="16" height="10"/><text x="256" y="72">real drops: lift shaft, orb pipe, well</text>
+<rect class="pod" x="232" y="78" width="16" height="10" rx="2"/><text x="256" y="86">side room (letter); F = floor number</text></g>
+<g class="d"><g class="rest"><circle cx="240" cy="98" r="5"/></g><g class="mid"><circle cx="318" cy="98" r="5"/></g><g class="orb"><circle cx="240" cy="112" r="5"/></g><g class="fin"><circle cx="318" cy="112" r="5"/></g></g>
+<g class="lg"><text x="250" y="101">rest / anvil</text><text x="328" y="101">mid boss</text><text x="250" y="115">the Orb</text><text x="328" y="115">final boss</text></g>
+</svg></div>
+<h2>2. Maze map: back tower (which door leads where)</h2>
+<p class="hint">A <b>logical</b> map, not a floor plan: each cell is a room on its own floor (see the X-ray), each orange arrow is a doorway,
+and from floor to floor that doorway is magic. Dashed purple = side room. Purple bar = locked door. The centre is the <b>lift shaft</b>,
+switched on from the top (19). Corner icon = room shape.</p>
+<div class="grid2">
+<div class="card"><svg viewBox="0 0 214 222"><text class="t" x="4" y="13">B1 · rooms 1-7: built cellars to ground</text>
+<g transform="translate(4,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-rect" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">3</text><text class="t" x="5" y="28">Key</text><text class="t" x="5" y="38">Climb</text><text class="k" x="5" y="50">KEY up top</text></g>
+<g transform="translate(74,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-rect" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">4</text><text class="t" x="5" y="28">Plate</text><text class="t" x="5" y="38">Room</text><text class="s" x="5" y="50">NEW: Hammer</text></g>
+<g transform="translate(144,22)"><rect class="c rest" width="56" height="56" rx="4"/><use href="#s-rect" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">5</text><text class="t" x="5" y="28">Arena</text><text class="s" x="5" y="39">key door in</text><text class="s" x="5" y="50">anvil, rune</text></g>
+<g transform="translate(4,92)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-rect" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">2</text><text class="t" x="5" y="28">Goblin</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(74,92)"><rect class="c side" width="56" height="56" rx="4"/><use href="#s-shaft" x="41" y="3" width="12" height="12"/><text class="n pur" x="5" y="13">a</text><text class="t" x="5" y="28">Lift</text><text class="t" x="5" y="38">Bottom</text><text class="s" x="5" y="50">opens from 19</text></g>
+<g transform="translate(144,92)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-shaft" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">6</text><text class="t" x="5" y="28">Rope</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(4,162)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-rect" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">1</text><text class="t" x="5" y="28">Weapon</text><text class="t" x="5" y="38">Room</text><text class="k" x="5" y="50">START</text></g>
+<g transform="translate(74,162)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-wedge" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">7</text><text class="t" x="5" y="28">Barred</text><text class="t" x="5" y="38">Door</text><text class="s" x="5" y="50">door up to 8</text></g>
+<g transform="translate(144,162)"><rect class="c stair" width="56" height="56" rx="4"/><text class="s pur" x="5" y="12">magic door: 7</text><path class="mdoor" d="M18 50V28q10 -13 20 0V50"/></g>
+<path class="lock" d="M144 38v24"/>
+<path class="p" d="M32 161V152"/><path class="p" d="M32 91V82"/><path class="p" d="M61 50H70"/><path class="p" d="M131 50H140"/><path class="p" d="M172 79V88"/><path class="p" d="M172 149V158"/><path class="p" d="M143 190H134"/>
+<path class="br" d="M61 120H70"/></svg></div>
+<div class="card"><svg viewBox="0 0 214 222"><text class="t" x="4" y="13">B2 · rooms 8-14: lower floors</text>
+<g transform="translate(4,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-ell" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">10</text><text class="t" x="5" y="28">Carry</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(74,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-gallery" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">11</text><text class="t" x="5" y="28">Magnet</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(144,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-shaft" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">12</text><text class="t" x="5" y="28">Beam</text><text class="t" x="5" y="38">Climb</text></g>
+<g transform="translate(4,92)"><rect class="c rest" width="56" height="56" rx="4"/><use href="#s-oct" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">9</text><text class="t" x="5" y="28">Armoury</text><text class="s" x="5" y="39">anvil</text><text class="s" x="5" y="50">NEW: Staff</text></g>
+<g transform="translate(74,92)"><rect class="c side" width="56" height="56" rx="4"/><use href="#s-wedge" x="41" y="3" width="12" height="12"/><text class="n pur" x="5" y="13">b</text><text class="t" x="5" y="28">Lift</text><text class="t" x="5" y="38">Stop</text><text class="s" x="5" y="50">locked, key: c</text></g>
+<g transform="translate(144,92)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-ring" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">13</text><text class="t" x="5" y="28">Counter-</text><text class="t" x="5" y="38">weight</text></g>
+<g transform="translate(4,162)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-hex" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">8</text><text class="t" x="5" y="28">Pot</text><text class="t" x="5" y="38">Room</text><text class="s" x="5" y="50">in from 7</text></g>
+<g transform="translate(74,162)"><rect class="c stair" width="56" height="56" rx="4"/><text class="s" x="5" y="12">real stair: 15</text><path class="st" d="M10 48h9v-8h9v-8h9v-8h9"/></g>
+<g transform="translate(144,162)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-crescent" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">14</text><text class="t" x="5" y="28">Patrol</text><text class="t" x="5" y="38">Room</text></g>
+<path class="lock" d="M74 108v24"/>
+<path class="p" d="M32 161V152"/><path class="p" d="M32 91V82"/><path class="p" d="M61 50H70"/><path class="p" d="M131 50H140"/><path class="p" d="M172 79V88"/><path class="p" d="M172 149V158"/><path class="p" d="M143 190H134"/>
+<path class="br" d="M61 120H70"/></svg></div>
+<div class="card"><svg viewBox="0 0 214 222"><text class="t" x="4" y="13">B3 · rooms 15-20: top floors</text>
+<g transform="translate(4,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-shaft" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">17</text><text class="t" x="5" y="28">Ledge</text><text class="t" x="5" y="38">Climb</text></g>
+<g transform="translate(74,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-hex" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">18</text><text class="t" x="5" y="28">Scales</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(144,22)"><rect class="c side" width="56" height="56" rx="4"/><use href="#s-wedge" x="41" y="3" width="12" height="12"/><text class="n pur" x="5" y="13">c</text><text class="t" x="5" y="28">Key</text><text class="t" x="5" y="38">Alcove</text><text class="k" x="5" y="50">KEY for b</text></g>
+<g transform="translate(4,92)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-ell" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">16</text><text class="t" x="5" y="28">Barracks</text></g>
+<g transform="translate(74,92)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-ring" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">19</text><text class="t" x="5" y="28">Shaft</text><text class="t" x="5" y="38">Top</text><text class="s" x="5" y="50">winch: lift on</text></g>
+<g transform="translate(144,92)"><rect class="c mid" width="56" height="56" rx="4"/><use href="#s-round" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">20</text><text class="t" x="5" y="28">Gate</text><text class="t" x="5" y="38">Guard</text><text class="s" x="5" y="50">MID BOSS</text></g>
+<g transform="translate(4,162)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-round" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">15</text><text class="t" x="5" y="28">Storm</text><text class="t" x="5" y="38">Room</text><text class="s" x="5" y="50">in from stairs</text></g>
+<g transform="translate(74,162)"><rect class="c void" width="56" height="56" rx="4"/><text class="s" x="5" y="30">no door</text></g>
+<g transform="translate(144,162)"><rect class="c side" width="56" height="56" rx="4"/><use href="#s-hex" x="41" y="3" width="12" height="12"/><text class="n pur" x="5" y="13">d</text><text class="t" x="5" y="28">Secret</text><text class="t" x="5" y="38">Room</text><text class="s" x="5" y="50">cracked wall</text></g>
+<path class="p" d="M32 161V152"/><path class="p" d="M32 91V82"/><path class="p" d="M61 50H70"/><path class="p" d="M102 79V88"/><path class="p" d="M131 120H140"/><path class="p" d="M201 120H209"/>
+<path class="br" d="M131 50H140"/><path class="br" d="M172 149V158"/><text class="s" x="146" y="88">to bridge</text></svg></div>
+<div class="card"><svg viewBox="0 0 214 222"><text class="t" x="4" y="13">Bridge (real and outdoors, west to east)</text>
+<rect x="0" y="66" width="26" height="88" fill="#d6d3d1" stroke="#44403c"/><text class="n" x="13" y="108" text-anchor="middle">20</text><text class="s" x="13" y="120" text-anchor="middle">back</text>
+<rect x="188" y="66" width="26" height="88" fill="#d6d3d1" stroke="#44403c"/><text class="n" x="201" y="108" text-anchor="middle">24</text><text class="s" x="201" y="120" text-anchor="middle">main</text>
+<g transform="translate(30,82)"><rect class="c" width="50" height="56"/><use href="#s-gallery" x="35" y="3" width="12" height="12"/><text class="n" x="5" y="13">21</text><text class="t" x="5" y="28">Near</text><text class="t" x="5" y="38">Span</text></g>
+<g transform="translate(82,82)"><rect class="c void" width="50" height="56"/><use href="#s-gallery" x="35" y="3" width="12" height="12"/><text class="n" x="5" y="13">22</text><text class="t" x="5" y="28">Ballista</text><text class="t" x="5" y="38">Gap</text></g>
+<g transform="translate(134,82)"><rect class="c" width="50" height="56"/><use href="#s-gallery" x="35" y="3" width="12" height="12"/><text class="n" x="5" y="13">23</text><text class="t" x="5" y="28">Far</text><text class="t" x="5" y="38">Span</text></g>
+<path class="p" d="M28 148H184"/>
+<text class="s" x="4" y="172">21: swaying planks and wind.</text>
+<text class="s" x="4" y="184">22: the span is gone. Lie still in the ballista tray and the</text>
+<text class="s" x="4" y="194">goblin crew fires you across (co-op: a friend pulls the lever).</text>
+<text class="s" x="4" y="206">23: narrow deck. Knock goblins off the side.</text>
+<text class="s" x="4" y="40">Hangs between the tower tops. A fall is never a death:</text><text class="s" x="4" y="50">you are put back on the last span you stood on.</text></svg></div>
+</div>
+<h2>3. Maze map: main tower (up to the Orb, then all the way down)</h2>
+<p class="hint">Same kind of map. The bridge comes in at 24. The centre is the Orb Room with its <b>orb pipe</b>, and lower down the <b>well</b>:
+a one-way drop shortcut.</p>
+<div class="grid2">
+<div class="card"><svg viewBox="0 0 214 222"><text class="t" x="4" y="13">M3 · rooms 24-29: top floors</text>
+<g transform="translate(4,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-hex" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">25</text><text class="t" x="5" y="28">Slot</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(74,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-round" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">26</text><text class="t" x="5" y="28">Guard</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(144,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-oct" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">27</text><text class="t" x="5" y="28" style="font-size:8px">Chandelier</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(4,92)"><rect class="c rest" width="56" height="56" rx="4"/><use href="#s-oct" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">24</text><text class="t" x="5" y="28">Entry</text><text class="t" x="5" y="38">Hall</text><text class="s" x="5" y="50">bridge, anvil</text></g>
+<g transform="translate(74,92)"><rect class="c orb" width="56" height="56" rx="4"/><use href="#s-round" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">28</text><text class="t" x="5" y="28">Orb</text><text class="t" x="5" y="38">Room</text><text class="k" x="5" y="50">THE ORB</text></g>
+<g transform="translate(144,92)"><rect class="c stair" width="56" height="56" rx="4"/><text class="s pur" x="5" y="12">magic door: 28</text><path class="mdoor" d="M18 50V28q10 -13 20 0V50"/></g>
+<g transform="translate(4,162)"><rect class="c side" width="56" height="56" rx="4"/><use href="#s-crescent" x="41" y="3" width="12" height="12"/><text class="n pur" x="5" y="13">e</text><text class="t" x="5" y="28">Orb</text><text class="t" x="5" y="38">Crawl</text><text class="s" x="5" y="50">Orb only, rune</text></g>
+<g transform="translate(74,162)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-ring" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">29</text><text class="t" x="5" y="28">Pipe</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(144,162)"><rect class="c stair" width="56" height="56" rx="4"/><text class="s pur" x="5" y="12">magic door: 30</text><path class="mdoor" d="M18 50V28q10 -13 20 0V50"/></g>
+<path class="p" d="M32 91V82"/><path class="p" d="M61 50H70"/><path class="p" d="M131 50H140"/><path class="p" d="M172 79V88"/><path class="p" d="M143 120H134"/><path class="p" d="M102 149V158"/><path class="p" d="M131 190H140"/>
+<path class="br" d="M73 190H64"/></svg></div>
+<div class="card"><svg viewBox="0 0 214 222"><text class="t" x="4" y="13">M2 · rooms 30-35: middle floors</text>
+<g transform="translate(4,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-wedge" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">33</text><text class="t" x="5" y="28">Drain</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(74,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-gallery" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">34</text><text class="t" x="5" y="28">Guard</text><text class="t" x="5" y="38">Hall</text></g>
+<g transform="translate(144,22)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-shaft" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">35</text><text class="t" x="5" y="28">Key</text><text class="t" x="5" y="38">Cage</text><text class="k" x="5" y="50">KEY for g</text></g>
+<g transform="translate(4,92)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-gallery" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">32</text><text class="t" x="5" y="28">Seesaw</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(74,92)"><rect class="c side" width="56" height="56" rx="4"/><use href="#s-shaft" x="41" y="3" width="12" height="12"/><text class="n pur" x="5" y="13">f</text><text class="t" x="5" y="28">Well</text><text class="s" x="5" y="39">one-way drop</text><text class="s" x="5" y="50">down to 40</text></g>
+<g transform="translate(144,92)"><rect class="c stair" width="56" height="56" rx="4"/><text class="s" x="5" y="12">real stair: 36</text><path class="st" d="M10 24h9v8h9v8h9v8h9"/></g>
+<g transform="translate(4,162)"><rect class="c rest" width="56" height="56" rx="4"/><use href="#s-oct" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">31</text><text class="t" x="5" y="28">Rack</text><text class="t" x="5" y="38">Room</text><text class="s" x="5" y="50">anvil, Banana</text></g>
+<g transform="translate(74,162)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-crescent" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">30</text><text class="t" x="5" y="28">Orb</text><text class="t" x="5" y="38">Track</text><text class="s" x="5" y="50">in from door</text></g>
+<g transform="translate(144,162)"><rect class="c void" width="56" height="56" rx="4"/><text class="s" x="5" y="30">no door</text></g>
+<path class="p" d="M73 190H64"/><path class="p" d="M32 161V152"/><path class="p" d="M32 91V82"/><path class="p" d="M61 50H70"/><path class="p" d="M131 50H140"/><path class="p" d="M172 79V88"/>
+<path class="br" d="M102 79V88"/></svg></div>
+<div class="card"><svg viewBox="0 0 214 222"><text class="t" x="4" y="13">M1 · rooms 36-41: bottom floors</text>
+<g transform="translate(4,22)"><rect class="c side" width="56" height="56" rx="4"/><use href="#s-oct" x="41" y="3" width="12" height="12"/><text class="n pur" x="5" y="13">g</text><text class="t" x="5" y="28">Treasury</text><text class="s" x="5" y="39">locked:</text><text class="s" x="5" y="50">key at 35</text></g>
+<g transform="translate(74,22)"><rect class="c void" width="56" height="56" rx="4"/><text class="s" x="5" y="30">no door</text></g>
+<g transform="translate(144,22)"><rect class="c void" width="56" height="56" rx="4"/><text class="s" x="5" y="30">no door</text></g>
+<g transform="translate(4,92)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-ell" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">39</text><text class="t" x="5" y="28">Cart</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(74,92)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-round" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">40</text><text class="t" x="5" y="28">Well</text><text class="t" x="5" y="38">Bottom</text><text class="s" x="5" y="50">f lands here</text></g>
+<g transform="translate(144,92)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-wedge" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">41</text><text class="t" x="5" y="28">Tower</text><text class="t" x="5" y="38">Gate</text><text class="s" x="5" y="50">to keep</text></g>
+<g transform="translate(4,162)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-round" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">38</text><text class="t" x="5" y="28">Barracks</text><text class="t" x="5" y="38">2</text></g>
+<g transform="translate(74,162)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-hex" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">37</text><text class="t" x="5" y="28">Coil</text><text class="t" x="5" y="38">Room</text></g>
+<g transform="translate(144,162)"><rect class="c" width="56" height="56" rx="4"/><use href="#s-crescent" x="41" y="3" width="12" height="12"/><text class="n" x="5" y="13">36</text><text class="t" x="5" y="28">Blade</text><text class="t" x="5" y="38">Hall</text><text class="s" x="5" y="50">in from stairs</text></g>
+<path class="lock" d="M20 78h24"/>
+<path class="p" d="M143 190H134"/><path class="p" d="M73 190H64"/><path class="p" d="M32 161V152"/><path class="p" d="M61 120H70"/><path class="p" d="M131 120H140"/><path class="p" d="M201 120H209"/>
+<path class="br" d="M32 91V82"/></svg></div>
+<div class="card"><svg viewBox="0 0 214 222"><text class="t" x="4" y="13">Keep (west to east, out to the front doors)</text>
+<text class="s" x="4" y="30">One storey, joined to the base of the main tower.</text><text class="s" x="4" y="40">43 is the last anvil and a full rack before the end.</text>
+<rect x="0" y="62" width="22" height="72" fill="#d6d3d1" stroke="#44403c"/><text class="n" x="11" y="100" text-anchor="middle">41</text>
+<g transform="translate(26,70)"><rect class="c" width="44" height="56"/><use href="#s-gallery" x="29" y="3" width="12" height="12"/><text class="n" x="4" y="13">42</text><text class="t" x="4" y="28">Great</text><text class="t" x="4" y="38">Hall</text></g>
+<g transform="translate(72,70)"><rect class="c rest" width="44" height="56"/><use href="#s-oct" x="29" y="3" width="12" height="12"/><text class="n" x="4" y="13">43</text><text class="t" x="4" y="28">Forge</text><text class="s" x="4" y="39">anvil, rack</text></g>
+<g transform="translate(118,70)"><rect class="c" width="44" height="56"/><use href="#s-hex" x="29" y="3" width="12" height="12"/><text class="n" x="4" y="13">44</text><text class="t" x="4" y="28">Gate-</text><text class="t" x="4" y="38">house</text></g>
+<g transform="translate(164,70)"><rect class="c fin" width="46" height="56"/><use href="#s-round" x="31" y="3" width="12" height="12"/><text class="n" x="4" y="13">45</text><text class="t" x="4" y="28">Front</text><text class="t" x="4" y="38">Doors</text><text class="s" x="4" y="50">FINAL BOSS</text></g>
+<path class="p" d="M24 134H204"/><path class="p" style="stroke:#b91c1c" d="M212 62H192"/><text class="s red" x="188" y="65" text-anchor="end">the Disciple bursts in</text>
+<g transform="translate(100,150)"><rect class="c side" width="84" height="40" rx="4"/><use href="#s-gallery" x="69" y="3" width="12" height="12"/><text class="n pur" x="5" y="13">h</text><text class="t" x="18" y="13">Yard Path</text><text class="s" x="5" y="26">round the outside</text><text class="s" x="5" y="35">to the barred door</text></g>
+<path class="br" d="M140 137V147"/>
+<text class="s" x="4" y="206">h: lift the bar on the back tower door from outside and</text><text class="s" x="4" y="216">the whole castle becomes one loop back to the first rack.</text></svg></div>
+</div>
+<h2>4. All rooms in path order</h2>
+<p class="hint">Green = rest / anvil. Yellow = the Orb. Red = boss. Purple = side rooms (letters). NEW = a regular weapon is found here.</p>
+<p class="hint sh">Shapes: <svg viewBox="0 0 12 12"><use href="#s-round"/></svg>Round (12-sided) <svg viewBox="0 0 12 12"><use href="#s-oct"/></svg>Octagon <svg viewBox="0 0 12 12"><use href="#s-hex"/></svg>Hexagon <svg viewBox="0 0 12 12"><use href="#s-wedge"/></svg>Wedge <svg viewBox="0 0 12 12"><use href="#s-ring"/></svg>Ring (round a shaft) <svg viewBox="0 0 12 12"><use href="#s-gallery"/></svg>Long gallery <svg viewBox="0 0 12 12"><use href="#s-shaft"/></svg>Tall shaft <svg viewBox="0 0 12 12"><use href="#s-ell"/></svg>L-shape <svg viewBox="0 0 12 12"><use href="#s-crescent"/></svg>Crescent <svg viewBox="0 0 12 12"><use href="#s-rect"/></svg>Cellar (1-5, already built). Walls are straight segments so rebounds stay readable; round rooms get a disc floor.</p>
+<table><tr><th>#</th><th>Room</th><th>Shape</th><th>Type</th><th>The idea (one line)</th></tr>
+<tr class="sep"><td colspan="5">BACK TOWER · B1 basement</td></tr>
+<tr><td>1</td><td>Weapon Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-rect"/></svg>Cellar (built)</td><td>tutorial</td><td>START. Rack: Sword, Dagger, Mace. Learn look, launch and the one wall jump.</td></tr>
+<tr><td>2</td><td>Goblin Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-rect"/></svg>Cellar (built)</td><td>combat</td><td>One goblin. It ignores you while you lie still; move and it attacks.</td></tr>
+<tr><td>3</td><td>Key Climb</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-rect"/></svg>Cellar (built)</td><td>platforming</td><td>Moving platform and wall jumps up to the KEY. Light weapons only.</td></tr>
+<tr><td>4</td><td>Plate Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-rect"/></svg>Cellar (built)</td><td>puzzle</td><td>Only the heavy Hammer presses the plate: leave your weapon and fly to it as a soul. NEW: Hammer.</td></tr>
+<tr class="r"><td>5</td><td>Arena</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-rect"/></svg>Cellar (built)</td><td>combat + rest</td><td>Key door in. Three goblins, then the Anvil heal and a damage rune.</td></tr>
+<tr><td>6</td><td>Rope Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-shaft"/></svg>Tall shaft</td><td>puzzle</td><td>A rope holds the ramp up. Only a blade cuts it; blunt weapons must swap.</td></tr>
+<tr><td>7</td><td>Barred Door</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-wedge"/></svg>Wedge</td><td>connector</td><td>Ground level. The tower door, locked and barred from outside. So: up, through the first magic doorway.</td></tr>
+<tr class="sep"><td colspan="5">BACK TOWER · B2 middle</td></tr>
+<tr><td>8</td><td>Pot Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-hex"/></svg>Hexagon</td><td>puzzle</td><td>Mirror of 6: the lever hides in big pots and only blunt weapons smash them.</td></tr>
+<tr class="r"><td>9</td><td>Armoury</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-oct"/></svg>Octagon</td><td>rest</td><td>Anvil. NEW: Staff (the only wooden weapon). Locked door to the lift stop (b).</td></tr>
+<tr><td>10</td><td>Carry Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-ell"/></svg>L-shape</td><td>puzzle</td><td>Play dead: a goblin porter picks up still weapons and carries you through its own gate.</td></tr>
+<tr><td>11</td><td>Magnet Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-gallery"/></svg>Long gallery</td><td>puzzle</td><td>A ceiling magnet lifts metal weapons over the pit; the wooden Staff is left behind. Pick who goes first.</td></tr>
+<tr><td>12</td><td>Beam Climb</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-shaft"/></svg>Tall shaft</td><td>platforming</td><td>No ledges: stick a blade into the wooden beams to make your own footholds.</td></tr>
+<tr><td>13</td><td>Counterweight Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-ring"/></svg>Ring</td><td>puzzle</td><td>Park the Hammer on the low pan, fly on as a soul to the weapon on the pan that rose.</td></tr>
+<tr><td>14</td><td>Patrol Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-crescent"/></svg>Crescent</td><td>combat</td><td>A goblin patrol: move only when nobody looks, or fight all four at once.</td></tr>
+<tr class="sep"><td colspan="5">BACK TOWER · B3 top</td></tr>
+<tr><td>15</td><td>Storm Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-round"/></svg>Round</td><td>puzzle</td><td>Open roof: lightning hits metal. Cross as the Staff, or leave a metal weapon standing as the lightning rod.</td></tr>
+<tr><td>16</td><td>Barracks</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-ell"/></svg>L-shape</td><td>combat</td><td>Sleeping goblins and wall racks to hide among. Wake them and it is a big fight.</td></tr>
+<tr><td>17</td><td>Ledge Climb</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-shaft"/></svg>Tall shaft</td><td>platforming</td><td>Outside wall of the tower: wall jumps between narrow ledges.</td></tr>
+<tr><td>18</td><td>Scales Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-hex"/></svg>Hexagon</td><td>puzzle</td><td>Three pans want light, medium, heavy: Dagger, Sword, Hammer, placed one by one with soul swaps.</td></tr>
+<tr><td>19</td><td>Shaft Top</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-ring"/></svg>Ring</td><td>connector</td><td>The winch switches the lift on: shortcut back to the basement rack and the Arena anvil.</td></tr>
+<tr class="b"><td>20</td><td>Gate Guard</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-round"/></svg>Round</td><td>mid boss</td><td>A big shield goblin holds the bridge gate. Heavy weapons break the shield, blades finish it.</td></tr>
+<tr class="sep"><td colspan="5">BRIDGE</td></tr>
+<tr><td>21</td><td>Near Span</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-gallery"/></svg>Long gallery</td><td>platforming</td><td>Swaying planks, gaps and wind.</td></tr>
+<tr><td>22</td><td>Ballista Gap</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-gallery"/></svg>Long gallery</td><td>puzzle</td><td>The middle is gone. Lie still in the ballista tray: you are the ammunition, fired across.</td></tr>
+<tr><td>23</td><td>Far Span</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-gallery"/></svg>Long gallery</td><td>combat</td><td>Narrow deck: knock goblins off the side instead of wearing them down.</td></tr>
+<tr class="sep"><td colspan="5">MAIN TOWER · M3 top</td></tr>
+<tr class="r"><td>24</td><td>Entry Hall</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-oct"/></svg>Octagon</td><td>rest</td><td>Anvil. Catch your breath after the bridge.</td></tr>
+<tr><td>25</td><td>Slot Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-hex"/></svg>Hexagon</td><td>puzzle</td><td>Blade-shaped slots are the levers: the Dagger fits the small one, the Sword the large one.</td></tr>
+<tr><td>26</td><td>Guard Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-round"/></svg>Round</td><td>combat</td><td>Goblins plus a shaman that zaps metal. The Staff is safe.</td></tr>
+<tr><td>27</td><td>Chandelier Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-oct"/></svg>Octagon</td><td>platforming</td><td>Hop from chandelier to chandelier; cut a rope to drop one as a step, or on a goblin.</td></tr>
+<tr class="o"><td>28</td><td>Orb Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-round"/></svg>Round</td><td>reward</td><td>Top of the tower. NEW: the ORB, the only weapon that rolls instead of jumping.</td></tr>
+<tr><td>29</td><td>Pipe Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-ring"/></svg>Ring</td><td>tutorial</td><td>The way down is a round pipe: only the Orb rolls through, then opens the door for the rest.</td></tr>
+<tr class="sep"><td colspan="5">MAIN TOWER · M2 middle</td></tr>
+<tr><td>30</td><td>Orb Track</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-crescent"/></svg>Crescent</td><td>platforming</td><td>Narrow rails and gutters only a rolling Orb can ride.</td></tr>
+<tr class="r"><td>31</td><td>Rack Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-oct"/></svg>Octagon</td><td>rest</td><td>Anvil and a rack of every regular weapon so far. NEW: Banana.</td></tr>
+<tr><td>32</td><td>Seesaw Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-gallery"/></svg>Long gallery</td><td>puzzle</td><td>The floor tilts by weight: park a heavy weapon on one end, roll the Orb up the slope.</td></tr>
+<tr><td>33</td><td>Drain Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-wedge"/></svg>Wedge</td><td>puzzle</td><td>The Orb rolls through a low drain and pulls the lever from behind for everyone else.</td></tr>
+<tr><td>34</td><td>Guard Hall</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-gallery"/></svg>Long gallery</td><td>combat</td><td>Shield goblins in a row: bowl them over with the Orb, then hit them with the heavy weapons.</td></tr>
+<tr><td>35</td><td>Key Cage</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-shaft"/></svg>Tall shaft</td><td>platforming</td><td>A KEY hangs in a cage on a rope: climb and cut it down. Opens the Treasury (g).</td></tr>
+<tr class="sep"><td colspan="5">MAIN TOWER · M1 base</td></tr>
+<tr><td>36</td><td>Blade Hall</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-crescent"/></svg>Crescent</td><td>platforming</td><td>Swinging blades: wall jump over them or roll the Orb under them.</td></tr>
+<tr><td>37</td><td>Coil Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-hex"/></svg>Hexagon</td><td>puzzle</td><td>Sparks will not cross the gaps: leave metal weapons lying as the missing wire, go on as a soul or as the Staff.</td></tr>
+<tr><td>38</td><td>Barracks 2</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-round"/></svg>Round</td><td>combat</td><td>The biggest goblin fight of the tower.</td></tr>
+<tr><td>39</td><td>Cart Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-ell"/></svg>L-shape</td><td>puzzle</td><td>Lie still in the goblins' weapon cart and get wheeled through the guarded gate.</td></tr>
+<tr><td>40</td><td>Well Bottom</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-round"/></svg>Round</td><td>connector</td><td>The well shortcut (f) lands here.</td></tr>
+<tr><td>41</td><td>Tower Gate</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-wedge"/></svg>Wedge</td><td>connector</td><td>Door from the tower base into the keep.</td></tr>
+<tr class="sep"><td colspan="5">KEEP</td></tr>
+<tr><td>42</td><td>Great Hall</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-gallery"/></svg>Long gallery</td><td>combat</td><td>Long tables, many goblins, chandeliers to drop on them.</td></tr>
+<tr class="r"><td>43</td><td>Forge</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-oct"/></svg>Octagon</td><td>rest</td><td>Last anvil and a full rack: choose who carries what into the end.</td></tr>
+<tr><td>44</td><td>Gatehouse</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-hex"/></svg>Hexagon</td><td>puzzle</td><td>The winch needs a heavy weapon left on it; the Orb rolls under the half-raised gate and locks it open.</td></tr>
+<tr class="b"><td>45</td><td>Front Doors</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-round"/></svg>Round</td><td>BOSS</td><td>Freedom, then the Disciple bursts in. Regular weapons bounce off his ward; the Orb cracks it on touch and can keep rolling under his spells. Without the Orb you must drop the door chains on him (cut ropes): the slow, hard way.</td></tr>
+<tr class="sep"><td colspan="5">SIDE ROOMS</td></tr>
+<tr class="x"><td>a</td><td>Lift Bottom</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-shaft"/></svg>Tall shaft</td><td>shortcut</td><td>Bottom of the lift shaft, beside the Goblin Room. Dead until the winch at 19 is turned.</td></tr>
+<tr class="x"><td>b</td><td>Lift Stop</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-wedge"/></svg>Wedge</td><td>shortcut</td><td>Locked door off the Armoury; its key is one turn higher, at c.</td></tr>
+<tr class="x"><td>c</td><td>Key Alcove</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-wedge"/></svg>Wedge</td><td>secret</td><td>Dead end off the Scales Room. KEY for b.</td></tr>
+<tr class="x"><td>d</td><td>Secret Room</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-hex"/></svg>Hexagon</td><td>secret</td><td>Behind a cracked wall only a heavy weapon breaks. A rune.</td></tr>
+<tr class="x"><td>e</td><td>Orb Crawl</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-crescent"/></svg>Crescent</td><td>secret</td><td>A crack only the Orb rolls into. A rune.</td></tr>
+<tr class="x"><td>f</td><td>Well</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-shaft"/></svg>Tall shaft</td><td>shortcut</td><td>One-way drop from the Guard Hall to the Well Bottom (40).</td></tr>
+<tr class="x"><td>g</td><td>Treasury</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-oct"/></svg>Octagon</td><td>secret</td><td>Locked; key from the Key Cage (35). The best rune in the castle.</td></tr>
+<tr class="x"><td>h</td><td>Yard Path</td><td class="sh"><svg viewBox="0 0 12 12"><use href="#s-gallery"/></svg>Long gallery</td><td>shortcut</td><td>Round the outside to unbar the back tower door: the castle becomes one loop.</td></tr>
+</table>
+<p class="hint">Rest rooms: 5, 9, 24, 31, 43 (one every few floors, and one right before the end). New weapons: Hammer 4, Staff 9, Orb 28, Banana 31.</p>
+</body></html>

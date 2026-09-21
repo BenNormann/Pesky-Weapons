@@ -1,0 +1,8 @@
+﻿<Solution>
+  <Project Path="Pesky.Game.csproj" />
+  <Project Path="Pesky.Data.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="Pesky.Editor.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Pesky.Tests.csproj" />
+</Solution>

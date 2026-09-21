@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c86793f82cc510749b630eab5c7a6026, type: 3}
+  m_Name: GoblinPorter
+  m_EditorClassIdentifier: Pesky.Data::Pesky.Data.EnemyDef
+  id: 2
+  displayName: Goblin Porter
+  radius: 0.5
+  height: 1.4
+  moveSpeed: 3
+  angularSpeed: 720
+  acceleration: 20
+  maxHp: 30
+  aggroRange: 7
+  wanderSpeed: 1.1
+  wanderRadius: 4
+  wanderPauseMin: 1.5
+  wanderPauseMax: 3.5
+  curiousRange: 8
+  curiousStopDistance: 1.5
+  curiousSeconds: 4
+  curiousSpeed: 1.8
+  alarmedSeconds: 0.4
+  alertRadius: 6
+  calmSeconds: 5
+  attackRange: 1.4
+  windupSeconds: 0.5
+  strikeSeconds: 0.25
+  strikeHalfAngleDeg: 80
+  strikeReach: 1.7
+  attackDamage: 15
+  attackKnockback: 8
+  attackCooldown: 1.2
+  knockbackPerDamage: 0.25
+  maxKnockbackSpeed: 9
+  knockbackDamping: 6
+  hitFlashSeconds: 0.12
+  windupSwell: 1.25
+  eyeHeight: 1.1
+  sightBlockers:
+    serializedVersion: 2
+    m_Bits: 256
+  viewConeDeg: 110
+  closeSightRange: 1.5
+  patrolSpeed: 1.8
+  patrolArrive: 0.6
+  wakeAnimateRange: 4
+  wakeImpactRange: 8
+  wakeImpactSpeed: 4
+  wakeNeighbourRadius: 6
+  porterReach: 2
+  porterInanimateSeconds: 2
+  porterNoticeRange: 8
+  porterCarrySpeed: 2.2
+  porterPlaceSeconds: 0.6
+  porterCooldownSeconds: 5
+  shieldMaxHp: 0
+  shieldMinMass: 8
+  bladedDamageBonus: 1
+  healthBarShowBelow: 0.999
