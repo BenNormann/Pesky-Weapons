@@ -47,7 +47,7 @@ namespace Pesky.Game
             {
                 WeaponBody w = _inside[i];
                 if (w == null) { _inside.RemoveAt(i); continue; }
-                if (w.IsPossessed && !w.IsBroken) return true;
+                if (w.IsLocallyPossessed && !w.IsBroken) return true;
             }
             return false;
         }

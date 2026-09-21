@@ -12,7 +12,7 @@ namespace Pesky.Game
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class WeaponBody : MonoBehaviour, ISceneId
+    public sealed partial class WeaponBody : MonoBehaviour, ISceneId
     {
         [Header("Identity")]
         [Tooltip("Stable id of this weapon instance inside its scene.")]
@@ -120,6 +120,7 @@ namespace Pesky.Game
             get
             {
                 if (_broken || tuning == null || body == null) return false;
+                if (_remoteDriven) return _remoteAnimate;
                 if (Time.time - _lastAnimateTime < tuning.animateSeconds) return true;
                 return body.linearVelocity.magnitude > tuning.animateSpeed;
             }
@@ -232,6 +233,7 @@ public void HoldAtHome()
         void OnCollisionEnter(Collision collision)
         {
             NoteImpact(collision);
+            NoteBat(collision);
             if (!TryStick(collision)) ReadContacts(collision);
         }
 
@@ -284,6 +286,7 @@ public void HoldAtHome()
 void FixedUpdate()
         {
             if (_broken) return;
+            if (NetFixedUpdate()) return;
 
             if (_stuck)
             {
@@ -322,7 +325,7 @@ void FixedUpdate()
 
         void Update()
         {
-            if (_broken && Time.time >= _respawnAt) Respawn();
+            if (_broken && !_netDriven && Time.time >= _respawnAt) Respawn();
         }
 
         // ---------------------------------------------------------------- movement helpers
@@ -421,7 +424,7 @@ public void Teleport(Vector3 position, Quaternion rotation)
         /// </summary>
         public void CarryTo(Vector3 position, Quaternion rotation)
         {
-            if (body == null || _broken || !_carried) return;
+            if (body == null || _broken || !_carried || _remoteDriven) return;
             body.linearVelocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
             body.position = position;
@@ -556,6 +559,8 @@ public void Teleport(Vector3 position, Quaternion rotation)
         public void ApplyDamage(float amount)
         {
             if (_broken || amount <= 0f) return;
+            // In a session hit points are a host fact: route through the authority (WEAPON_DAMAGED) instead of changing them here.
+            if (_netDriven && _net != null) { _net.RequestDamageWeapon(this, amount, null); return; }
             _hp = Mathf.Max(0f, _hp - amount);
             NotifyCombat();
             if (HpChanged != null) HpChanged(this);

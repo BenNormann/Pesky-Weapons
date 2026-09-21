@@ -1,0 +1,280 @@
+/* The main menu and the room page. One accent (amber), one dark ground, one column. */
+
+.menu-root {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(14, 16, 20);
+    padding: 24px 16px;
+}
+
+.page {
+    width: 100%;
+    max-width: 560px;
+    align-items: stretch;
+}
+
+.game-title {
+    font-size: 54px;
+    -unity-font-style: bold;
+    letter-spacing: 8px;
+    color: rgb(238, 238, 234);
+    -unity-text-align: middle-center;
+    margin: 0 0 4px 0;
+}
+
+.page-title {
+    font-size: 26px;
+    -unity-font-style: bold;
+    letter-spacing: 6px;
+    color: rgb(238, 238, 234);
+    -unity-text-align: middle-center;
+    margin: 0 0 14px 0;
+}
+
+.tagline {
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: rgb(132, 138, 150);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin: 0 0 26px 0;
+}
+
+.card {
+    background-color: rgb(23, 26, 32);
+    border-width: 1px;
+    border-color: rgb(38, 42, 52);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin: 0 0 14px 0;
+}
+
+.field-label {
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(132, 138, 150);
+    margin: 0 0 8px 0;
+}
+
+.row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.grow {
+    flex-grow: 1;
+}
+
+/* ---- fields ---- */
+
+TextField.field {
+    margin: 0 0 12px 0;
+    flex-grow: 1;
+}
+
+TextField.field .unity-base-field__label {
+    display: none;
+}
+
+TextField.field .unity-base-text-field__input {
+    flex-grow: 1;
+    min-height: 42px;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: rgb(238, 238, 234);
+    background-color: rgb(12, 14, 18);
+    border-width: 1px;
+    border-color: rgb(52, 58, 70);
+    border-radius: 4px;
+    padding: 6px 12px;
+    margin: 0;
+}
+
+TextField.field .unity-base-text-field__input:hover {
+    border-color: rgb(70, 78, 92);
+}
+
+TextField.field .unity-base-text-field__input:focus {
+    border-color: rgb(226, 186, 74);
+}
+
+TextField.field:focus .unity-base-text-field__input {
+    border-color: rgb(226, 186, 74);
+}
+
+/* ---- buttons ---- */
+
+Button.button {
+    min-height: 46px;
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(238, 238, 234);
+    background-color: rgb(36, 40, 50);
+    border-width: 1px;
+    border-color: rgb(58, 64, 78);
+    border-radius: 4px;
+    padding: 0 18px;
+    margin: 0 0 10px 0;
+}
+
+Button.button:hover {
+    background-color: rgb(48, 54, 66);
+    border-color: rgb(80, 88, 104);
+}
+
+Button.button:active {
+    background-color: rgb(58, 64, 78);
+}
+
+Button.button:focus {
+    border-color: rgb(226, 186, 74);
+}
+
+Button.button:disabled {
+    opacity: 0.35;
+}
+
+Button.button--primary {
+    color: rgb(18, 18, 20);
+    background-color: rgb(226, 186, 74);
+    border-color: rgb(226, 186, 74);
+}
+
+Button.button--primary:hover {
+    background-color: rgb(240, 204, 108);
+    border-color: rgb(240, 204, 108);
+}
+
+Button.button--primary:focus {
+    border-color: rgb(255, 235, 170);
+}
+
+Button.button--side {
+    margin: 0 0 12px 10px;
+    min-width: 120px;
+}
+
+Button.button--small {
+    min-height: 34px;
+    min-width: 96px;
+    font-size: 13px;
+    margin: 0 0 0 12px;
+}
+
+Button.button--quiet {
+    min-height: 34px;
+    font-size: 13px;
+    color: rgb(120, 126, 138);
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(0, 0, 0, 0);
+    margin: 10px 0 0 0;
+}
+
+Button.button--quiet:hover {
+    color: rgb(200, 204, 212);
+    background-color: rgb(28, 31, 38);
+    border-color: rgb(46, 50, 60);
+}
+
+/* ---- status and captions ---- */
+
+.status {
+    min-height: 34px;
+    font-size: 14px;
+    color: rgb(150, 156, 168);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin: 4px 0 0 0;
+}
+
+.status--error {
+    color: rgb(226, 104, 84);
+}
+
+.caption {
+    font-size: 13px;
+    color: rgb(126, 132, 144);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin: 4px 0 8px 0;
+}
+
+.hint {
+    font-size: 12px;
+    color: rgb(110, 116, 128);
+    white-space: normal;
+    margin: 0 0 12px 2px;
+}
+
+/* ---- the room code ---- */
+
+.room-code {
+    flex-grow: 1;
+    font-size: 32px;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    color: rgb(226, 186, 74);
+    margin: 0;
+}
+
+/* ---- the crew list ---- */
+
+.crew-rows {
+    margin-top: 2px;
+}
+
+.crew-row {
+    flex-direction: row;
+    align-items: center;
+    min-height: 32px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(32, 36, 44);
+}
+
+.crew-row--open {
+    opacity: 0.5;
+}
+
+.slot-chip {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-right: 12px;
+    background-color: rgb(80, 86, 98);
+}
+
+.crew-name {
+    flex-grow: 1;
+    font-size: 16px;
+    color: rgb(228, 228, 224);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.crew-open {
+    flex-grow: 1;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgb(74, 80, 92);
+    margin: 0 0 0 24px;
+}
+
+.badge {
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(214, 218, 226);
+    background-color: rgb(52, 58, 70);
+    border-radius: 3px;
+    padding: 3px 7px;
+    margin: 0 0 0 6px;
+}
+
+.badge--you {
+    color: rgb(18, 18, 20);
+    background-color: rgb(226, 186, 74);
+}

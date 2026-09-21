@@ -29,7 +29,7 @@ namespace Pesky.Game
             WeaponBody w = Weapon(other);
             if (w == null || _inside.Contains(w)) return;
             _inside.Add(w);
-            if (w.IsPossessed && authority != null) authority.SetNearAnvil(this, true);
+            if (w.IsLocallyPossessed && authority != null) authority.SetNearAnvil(this, true);
         }
 
         void OnTriggerExit(Collider other)
@@ -56,7 +56,7 @@ namespace Pesky.Game
             {
                 WeaponBody w = _inside[i];
                 if (w == null) { _inside.RemoveAt(i); continue; }
-                if (w.IsPossessed && !w.IsBroken) return w;
+                if (w.IsLocallyPossessed && !w.IsBroken) return w;
             }
             return null;
         }

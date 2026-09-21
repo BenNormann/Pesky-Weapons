@@ -14,6 +14,8 @@ namespace Pesky.Game
         [SerializeField] int localSpawnIndex;
         [Tooltip("Handed to the soul so every shared state change it makes goes through the authority.")]
         [SerializeField] WorldAuthority authority;
+        [Tooltip("The scene's SessionRunner: the local slot picks the spawn point.")]
+        [SerializeField] SessionRunner session;
 
         public PlayerSoul LocalSoul { get; private set; }
         public WorldAuthority Authority { get { return authority; } }
@@ -29,7 +31,11 @@ namespace Pesky.Game
                 return;
             }
 
-            Transform point = spawnPoints[Mathf.Clamp(localSpawnIndex, 0, spawnPoints.Length - 1)];
+            // One spawn point per player slot; slots past the authored points wrap around.
+            int index = session != null && session.HasSlot
+                ? session.LocalSlot % spawnPoints.Length
+                : Mathf.Clamp(localSpawnIndex, 0, spawnPoints.Length - 1);
+            Transform point = spawnPoints[index];
             LocalSoul = Instantiate(soulPrefab, point.position, Quaternion.identity);
             LocalSoul.name = soulPrefab.name;
             if (orbitCamera != null) orbitCamera.SetLook(point.eulerAngles.y, orbitCamera.RestingPitch);

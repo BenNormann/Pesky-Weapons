@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="menu-root" class="menu-root">
+        <ui:Style src="project://database/Assets/UI/Menu.uss" />
+
+        <ui:VisualElement name="title-page" class="page">
+            <ui:Label name="game-title" class="game-title" text="PESKY WEAPONS" />
+            <ui:Label name="tagline" class="tagline" text="possessed weapons, one labyrinth, and one of you is not helping" />
+
+            <ui:VisualElement name="callsign-card" class="card">
+                <ui:Label class="field-label" text="CALLSIGN" />
+                <ui:TextField name="callsign-field" class="field" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="play-card" class="card">
+                <ui:Button name="host-button" class="button button--primary" text="HOST" />
+                <ui:VisualElement name="join-row" class="row">
+                    <ui:TextField name="code-field" class="field" />
+                    <ui:Button name="join-button" class="button button--side" text="JOIN" />
+                </ui:VisualElement>
+                <ui:Label name="join-hint" class="hint" text="" />
+                <ui:Button name="tutorial-button" class="button" text="TUTORIAL" />
+            </ui:VisualElement>
+
+            <ui:Label name="title-status" class="status" text="" />
+            <ui:Button name="quit-button" class="button button--quiet" text="QUIT" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="room-page" class="page">
+            <ui:Label name="room-title" class="page-title" text="ROOM" />
+
+            <ui:VisualElement name="code-card" class="card">
+                <ui:Label class="field-label" text="ROOM CODE" />
+                <ui:VisualElement name="code-row" class="row">
+                    <ui:Label name="room-code" class="room-code" text="" />
+                    <ui:Button name="copy-button" class="button button--small" text="COPY" />
+                </ui:VisualElement>
+                <ui:Label name="room-addresses" class="caption" text="" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="crew-card" class="card">
+                <ui:Label name="crew-header" class="field-label" text="CREW   0 / 8" />
+                <ui:VisualElement name="crew-rows" class="crew-rows" />
+            </ui:VisualElement>
+
+            <ui:Label name="labyrinth-line" class="caption" text="" />
+            <ui:Label name="room-status" class="status" text="" />
+
+            <ui:VisualElement name="room-buttons" class="row">
+                <ui:Button name="start-button" class="button button--primary grow" text="START" />
+                <ui:Button name="leave-button" class="button button--side grow" text="LEAVE" />
+            </ui:VisualElement>
+
+            <ui:Label name="wait-label" class="caption" text="waiting for the host to start the run" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

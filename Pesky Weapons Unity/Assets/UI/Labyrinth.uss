@@ -1,0 +1,348 @@
+/* The labyrinth layer: compass, the Tab overlay (MAP + PAD), role reveal, result banner.
+   Same ground and amber as the menu. */
+
+.lab-root {
+    flex-grow: 1;
+}
+
+/* ---- compass ----
+   The dial is painted by CompassView with Painter2D: a ring, a GREEN spike towards the doorway to
+   take and, for a Mage alone, a RED one towards the Resurrection Room. Nothing else is on it, so
+   there is no needle, caption or destination label here any more. */
+
+.compass {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    width: 116px;
+    align-items: center;
+}
+
+.compass-dial {
+    width: 104px;
+    height: 104px;
+}
+
+/* ---- role reveal and result ---- */
+
+.role-reveal {
+    position: absolute;
+    top: 22%;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.role-title {
+    font-size: 34px;
+    -unity-font-style: bold;
+    letter-spacing: 6px;
+    color: rgb(238, 238, 234);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.role-reveal.is-mage .role-title {
+    color: rgb(181, 140, 230);
+}
+
+.role-sub {
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: rgb(132, 138, 150);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-top: 8px;
+}
+
+.result-banner {
+    position: absolute;
+    top: 30%;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.result-title {
+    font-size: 44px;
+    -unity-font-style: bold;
+    letter-spacing: 8px;
+    color: rgb(238, 200, 100);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.result-sub {
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: rgb(178, 182, 192);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-top: 10px;
+}
+
+/* ---- the Tab overlay ---- */
+
+.map-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(8, 9, 12, 0.82);
+    align-items: center;
+    justify-content: center;
+}
+
+.map-panel {
+    align-items: center;
+    padding: 18px 22px;
+    background-color: rgb(20, 22, 28);
+    border-width: 1px;
+    border-color: rgb(38, 42, 52);
+    border-radius: 8px;
+}
+
+.tab-bar {
+    flex-direction: row;
+    margin-bottom: 12px;
+}
+
+.tab {
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 5px;
+    color: rgb(132, 138, 150);
+    background-color: rgb(24, 27, 34);
+    border-width: 1px;
+    border-color: rgb(38, 42, 52);
+    border-radius: 4px;
+    padding: 6px 22px;
+    margin: 0 3px;
+}
+
+.tab:hover {
+    background-color: rgb(34, 38, 47);
+}
+
+.tab.is-selected {
+    color: rgb(238, 200, 100);
+    background-color: rgb(40, 36, 24);
+    border-color: rgb(210, 172, 78);
+}
+
+.page {
+    align-items: center;
+}
+
+.map-title {
+    font-size: 20px;
+    -unity-font-style: bold;
+    letter-spacing: 6px;
+    color: rgb(238, 238, 234);
+    margin-bottom: 12px;
+}
+
+.map-grid {
+    align-items: center;
+}
+
+.map-row {
+    flex-direction: row;
+}
+
+.map-tile {
+    width: 86px;
+    height: 86px;
+    margin: 3px;
+    border-width: 1px;
+    border-color: rgb(46, 50, 60);
+    border-radius: 4px;
+    background-color: rgb(26, 29, 36);
+    align-items: center;
+    justify-content: center;
+}
+
+.map-tile.is-visited {
+    background-color: rgb(38, 42, 52);
+}
+
+.map-tile.is-start {
+    border-color: rgb(93, 110, 90);
+}
+
+.map-tile.is-bad {
+    border-color: rgb(150, 66, 60);
+}
+
+.map-tile.is-good {
+    border-color: rgb(210, 172, 78);
+}
+
+.map-tile.is-here {
+    background-color: rgb(58, 52, 30);
+    border-color: rgb(238, 200, 100);
+    border-width: 2px;
+}
+
+.map-tile.is-fixed {
+    opacity: 0.88;
+}
+
+.map-tile.is-drag {
+    opacity: 0.35;
+}
+
+.map-tile.is-drop {
+    border-color: rgb(120, 200, 130);
+    border-width: 2px;
+}
+
+.map-tile.is-pick {
+    border-color: rgb(140, 116, 190);
+}
+
+.map-mark {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgb(150, 156, 168);
+    height: 12px;
+}
+
+.map-glyph {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(238, 238, 234);
+}
+
+.map-name {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgb(132, 138, 150);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    width: 80px;
+}
+
+.map-ghost {
+    position: absolute;
+    width: 68px;
+    height: 68px;
+    border-radius: 4px;
+    border-width: 2px;
+    border-color: rgb(238, 200, 100);
+    background-color: rgba(58, 52, 30, 0.9);
+    align-items: center;
+    justify-content: center;
+}
+
+.map-legend {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgb(110, 116, 128);
+    margin-top: 10px;
+}
+
+/* ---- the shared scratch pad ----
+   The canvas colour is set from ScratchPadView.Canvas at runtime as well, because the eraser paints
+   in exactly that colour and the two must never drift apart. */
+
+.pad-canvas {
+    width: 760px;
+    height: 470px;
+    background-color: rgb(13, 15, 19);
+    border-width: 1px;
+    border-color: rgb(46, 50, 60);
+    border-radius: 4px;
+}
+
+.pad-bar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+/* ---- the mage's bar ---- */
+
+.mage-bar {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: rgb(38, 42, 52);
+    align-items: center;
+}
+
+.mage-hint {
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(181, 140, 230);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.player-chips {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.mage-row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.chip {
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(222, 224, 230);
+    background-color: rgb(30, 33, 41);
+    border-width: 1px;
+    border-color: rgb(58, 62, 74);
+    border-radius: 4px;
+    padding: 5px 10px;
+    margin: 3px;
+}
+
+.chip:hover {
+    background-color: rgb(40, 44, 54);
+}
+
+.chip.is-selected {
+    background-color: rgb(52, 42, 74);
+    border-color: rgb(181, 140, 230);
+}
+
+.chip.is-bent {
+    color: rgb(181, 140, 230);
+}
+
+.chip--bad {
+    color: rgb(226, 120, 110);
+}
+
+.bent-count {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgb(132, 138, 150);
+    margin: 0 10px;
+}
+
+.ring {
+    width: 44px;
+    height: 44px;
+    margin-left: 6px;
+    align-items: center;
+    justify-content: center;
+}
+
+.ring-text {
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(178, 182, 192);
+}

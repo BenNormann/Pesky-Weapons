@@ -194,7 +194,7 @@ namespace Pesky.Game
 
         void BecomeHostile(WeaponBody threat, bool spread)
         {
-            if (_state == State.Dead) return;
+            if (_state == State.Dead || _puppet) return;
             _awake = true;
             if (threat != null) _target = threat;
             if (_target == null) return;
@@ -263,6 +263,7 @@ namespace Pesky.Game
 
         void Update()
         {
+            if (_puppet) { PuppetUpdate(); return; }
             if (_state == State.Dead) return;
 
             float dt = Time.deltaTime;
@@ -577,11 +578,12 @@ namespace Pesky.Game
         void LandHit(Vector3 toTarget)
         {
             float dmg = def != null ? def.attackDamage : 15f;
-            if (!authority.RequestDamageWeapon(_target, dmg, this) || _target.Body == null) return;
+            if (_target.Body == null) return;
             Vector3 push = toTarget.sqrMagnitude > 0.0001f ? toTarget.normalized : transform.forward;
             push = (push + Vector3.up * 0.5f).normalized;
             float kb = def != null ? def.attackKnockback : 8f;
-            _target.Knockback(push * kb); // frees a weapon that is stuck in wood, then shoves it
+            // The damage and the shove travel together (WEAPON_DAMAGED); whoever simulates the weapon applies the shove.
+            authority.RequestEnemyAttack(this, _target, dmg, push * kb);
         }
 
         void TickRecover()

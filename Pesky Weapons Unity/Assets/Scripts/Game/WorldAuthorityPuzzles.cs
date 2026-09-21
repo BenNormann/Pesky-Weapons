@@ -87,101 +87,81 @@ namespace Pesky.Game
         // ------------------------------------------------------------------ request: cut a rope
 
         /// <summary>A weapon struck a rope. Only a bladed weapon, fast enough, cuts it - and only once.</summary>
-        public bool RequestCutRope(int ropeId, WeaponBody weapon, float speed)
+public bool RequestCutRope(int ropeId, WeaponBody weapon, float speed)
         {
             Rope rope = GetRope(ropeId);
             if (rope == null || !rope.CanCut(weapon, speed)) return false;
-            rope.ApplyCut(rope.Clock != null ? rope.Clock.Ms : 0L);
-            if (RopeCut != null) RopeCut(rope, weapon);
-            return true;
+            return NetImpact(Pesky.Protocol.KitKind.Rope, ropeId, 1, weapon, speed);
         }
 
         // ------------------------------------------------------------------ request: smash a pot
 
         /// <summary>A weapon struck a pot. Only a blunt weapon, fast enough, smashes it - and only once.</summary>
-        public bool RequestSmashPot(int potId, WeaponBody weapon, float speed)
+public bool RequestSmashPot(int potId, WeaponBody weapon, float speed)
         {
             Pot pot = GetPot(potId);
             if (pot == null || !pot.CanSmash(weapon, speed)) return false;
-            pot.ApplySmashed();
-            if (PotSmashed != null) PotSmashed(pot, weapon);
-            EvaluateDoors();
-            return true;
+            return NetImpact(Pesky.Protocol.KitKind.Pot, potId, 1, weapon, speed);
         }
 
         // ------------------------------------------------------------------ request: flip a lever
 
         /// <summary>A weapon struck a lever hard enough to flip it. A latching lever only ever goes on.</summary>
-        public bool RequestLeverImpact(int leverId, WeaponBody weapon, float speed)
+public bool RequestLeverImpact(int leverId, WeaponBody weapon, float speed)
         {
             ImpactLever lever = GetLever(leverId);
             if (lever == null || !lever.CanFlip(weapon, speed)) return false;
-            return ApplyLever(lever, !lever.IsOn);
+            return NetImpact(Pesky.Protocol.KitKind.Lever, leverId, (byte)(lever.IsOn ? 0 : 1), weapon, speed);
         }
 
         /// <summary>Set a lever directly (a scripted opening, or a test).</summary>
-        public bool RequestSetLever(int leverId, bool on)
+public bool RequestSetLever(int leverId, bool on)
         {
             ImpactLever lever = GetLever(leverId);
             if (lever == null || lever.IsOn == on) return false;
             if (lever.IsLatching && !on) return false;
-            return ApplyLever(lever, on);
-        }
-
-        bool ApplyLever(ImpactLever lever, bool on)
-        {
-            lever.ApplySet(on);
-            if (LeverChanged != null) LeverChanged(lever, on);
-            // The Winch variant: turning the lever on switches its Lift on for good.
-            if (on && lever.Lift != null) RequestSetLift(lever.Lift.SceneId, true);
-            EvaluateDoors();
-            return true;
+            return NetHostSwitch(Pesky.Protocol.KitKind.Lever, leverId, on);
         }
 
         // ------------------------------------------------------------------ report: counterweight masses
 
         /// <summary>A counterweight pair reports what is standing on its two pans. The host owns the target.</summary>
-        public void ReportCounterweight(int pairId, float massA, float massB, long ms)
+public void ReportCounterweight(int pairId, float massA, float massB, long ms)
         {
             CounterweightPair pair = GetCounterweight(pairId);
             if (pair == null) return;
-            float want = pair.WantedOffset(massA, massB);
-            if (Mathf.Approximately(want, pair.TargetOffset)) return;
-            pair.ApplyTarget(want, ms);
-            if (CounterweightChanged != null) CounterweightChanged(pair, want);
+            // Millimetres on the wire, so compare in millimetres or the pair would re-report every step.
+            float want = Mathf.Round(pair.WantedOffset(massA, massB) * 1000f) * 0.001f;
+            if (Mathf.Abs(want - pair.TargetOffset) < 0.0005f) return;
+            NetCounterweight(pair, want, ms);
         }
 
         // ------------------------------------------------------------------ report: scales
 
         /// <summary>A scales lock reports its pans. Once all three are right at the same moment it latches.</summary>
-        public void ReportScales(int scalesId)
+public void ReportScales(int scalesId)
         {
             ScalesLock lockPiece = GetScales(scalesId);
             if (lockPiece == null || lockPiece.Latched) return;
             if (!lockPiece.AllSatisfied) return;
-            lockPiece.ApplyLatched();
-            if (ScalesLatched != null) ScalesLatched(lockPiece);
-            EvaluateDoors();
+            NetHostSwitch(Pesky.Protocol.KitKind.Scales, scalesId, true);
         }
 
         // ------------------------------------------------------------------ request: lightning
 
         /// <summary>The field's schedule came round and it picked the highest metal weapon inside it.</summary>
-        public bool RequestLightningStrike(int fieldId, WeaponBody weapon)
+public bool RequestLightningStrike(int fieldId, WeaponBody weapon)
         {
             LightningField field = GetLightningField(fieldId);
             if (field == null || weapon == null || weapon.IsBroken) return false;
             if (weapon.Def == null || !weapon.Def.metal) return false;
-            Vector3 point = weapon.Body != null ? weapon.Body.worldCenterOfMass : weapon.transform.position;
-            RequestDamageWeapon(weapon, field.StrikeDamage, null);
-            if (LightningStruck != null) LightningStruck(field, weapon, point);
-            return true;
+            return NetLightning(field, weapon);
         }
 
         // ------------------------------------------------------------------ request: break a cracked wall
 
         /// <summary>A weapon struck a cracked wall. Heavy and fast enough breaks it; anything else puffs.</summary>
-        public bool RequestBreakWall(int wallId, WeaponBody weapon, float speed)
+public bool RequestBreakWall(int wallId, WeaponBody weapon, float speed)
         {
             CrackedWall wall = GetCrackedWall(wallId);
             if (wall == null || wall.IsBroken) return false;
@@ -190,48 +170,37 @@ namespace Pesky.Game
                 if (speed >= 2f) wall.ApplyPuff();
                 return false;
             }
-            wall.ApplyBroken();
-            if (WallBroken != null) WallBroken(wall, weapon);
-            EvaluateDoors();
-            return true;
+            return NetImpact(Pesky.Protocol.KitKind.CrackedWall, wallId, 1, weapon, speed);
         }
 
         // ------------------------------------------------------------------ request: porter gate
 
-        public bool RequestSetPorterGate(int gateId, bool open)
+public bool RequestSetPorterGate(int gateId, bool open)
         {
             PorterGate gate = GetPorterGate(gateId);
             if (gate == null || gate.IsOpen == open) return false;
-            // Validate against the gate's own rule, so a client cannot simply ask for it to be open.
             if (open != gate.WantsOpen()) return false;
-            gate.ApplyOpen(open);
-            if (PorterGateChanged != null) PorterGateChanged(gate, open);
-            return true;
+            return NetHostSwitch(Pesky.Protocol.KitKind.PorterGate, gateId, open);
         }
 
         // ------------------------------------------------------------------ request: porter carry
 
         /// <summary>A porter reached a weapon that has been still long enough and wants to pick it up.</summary>
-        public bool RequestPorterPickUp(GoblinBrain porter, WeaponBody weapon)
+public bool RequestPorterPickUp(GoblinBrain porter, WeaponBody weapon)
         {
             if (porter == null || weapon == null) return false;
             if (!porter.CanPickUp(weapon)) return false;
-            porter.ApplyCarry(weapon);
-            if (PorterPickedUp != null) PorterPickedUp(porter, weapon);
-            return true;
+            return NetPorterCarry(porter, weapon, 1);
         }
 
         /// <summary>
         /// The porter lets go: placed = true when it set the weapon down on its stand, false when the
         /// weapon came alive in its hands (and then it turns hostile).
         /// </summary>
-        public bool RequestPorterDrop(GoblinBrain porter, bool placed)
+public bool RequestPorterDrop(GoblinBrain porter, bool placed)
         {
             if (porter == null || !porter.IsCarrying) return false;
-            WeaponBody weapon = porter.Carried;
-            porter.ApplyDrop(placed);
-            if (PorterDropped != null) PorterDropped(porter, weapon, placed);
-            return true;
+            return NetPorterCarry(porter, porter.Carried, (byte)(placed ? 2 : 0));
         }
 
         /// <summary>Raised by RequestHitEnemy when a shield boss loses its shield.</summary>

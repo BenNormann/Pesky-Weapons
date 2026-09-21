@@ -115,6 +115,7 @@ namespace Pesky.Game
             Index(rooms, _roomById);
             AwakeKit();
             AwakePuzzles();
+            AwakeNet();
             for (int i = 0; i < weapons.Length; i++)
             {
                 if (weapons[i] == null) continue;
@@ -126,6 +127,7 @@ namespace Pesky.Game
         void OnDestroy()
         {
             OnDestroyKit();
+            OnDestroyNet();
             for (int i = 0; i < weapons.Length; i++)
             {
                 if (weapons[i] == null) continue;
@@ -136,6 +138,7 @@ namespace Pesky.Game
 
         void Start()
         {
+            StartNet();
             EvaluateDoors();
         }
 
@@ -163,45 +166,10 @@ namespace Pesky.Game
         }
 
         /// <summary>A weapon struck an enemy. Validates the per target cooldown, applies damage, raises events.</summary>
-        public bool RequestHitEnemy(int weaponId, int enemyId, float relativeSpeed, Vector3 point)
+public bool RequestHitEnemy(int weaponId, int enemyId, float relativeSpeed, Vector3 point)
         {
-            WeaponBody weapon = GetWeapon(weaponId);
-            GoblinBrain enemy = GetEnemy(enemyId);
-            if (weapon == null || enemy == null) return false;
-            if (weapon.IsBroken || enemy.IsDead) return false;
-
-            long key = ((long)weaponId << 32) ^ (uint)enemyId;
-            float last;
-            if (_hitTimes.TryGetValue(key, out last) && Time.time - last < hitCooldown) return false;
-
-            float raw = ImpactDamage(weapon.Def != null ? weapon.Def.damage : 0f, relativeSpeed) * weapon.DamageMultiplier;
-            if (raw <= 0f) return false;
-
-            // The shield boss filters the hit: while its shield holds, only a heavy weapon gets through to
-            // it at all; once the shield is gone a bladed weapon does bonus damage. Ordinary goblins have
-            // no shield and a bonus of 1, so this is the same arithmetic as before for them.
-            GoblinBrain.HitOutcome outcome = enemy.ResolveDamage(weapon, raw);
-            _hitTimes[key] = Time.time;
-
-            Vector3 knockDir = enemy.Centre - point;
-            knockDir.y = 0f;
-            if (knockDir.sqrMagnitude < 0.0001f) knockDir = enemy.transform.forward;
-            knockDir.Normalize();
-
-            Vector3 knock = knockDir * Mathf.Min(outcome.damage * enemy.KnockbackPerDamage, enemy.MaxKnockbackSpeed);
-            enemy.ApplyHit(outcome, knock, weapon);
-            weapon.NotifyCombat();
-            if (EnemyDamaged != null) EnemyDamaged(enemy, weapon, outcome.damage, point);
-            if (outcome.shieldBroke) RaiseShieldBroken(enemy);
-
-            if (!outcome.hitShield && outcome.newHp <= 0f)
-            {
-                SetTargeting(enemy, null);
-                enemy.Kill();
-                if (EnemyDied != null) EnemyDied(enemy, weapon);
-                EvaluateDoors();
-            }
-            return true;
+            // HIT_CLAIM -> host validation -> ENEMY_HEALTH -> OnEnemyHealth (WorldAuthorityNet.cs).
+            return NetHitEnemy(weaponId, enemyId, relativeSpeed, point);
         }
 
         // ------------------------------------------------------------------ request: damage a weapon
@@ -213,49 +181,30 @@ namespace Pesky.Game
 
         public bool RequestDamageWeapon(WeaponBody weapon, float amount, GoblinBrain source)
         {
-            if (weapon == null || weapon.IsBroken || amount <= 0f) return false;
-            weapon.ApplyDamage(amount);
-            if (WeaponDamaged != null) WeaponDamaged(weapon, amount);
-            return true;
+            return NetDamageWeapon(weapon, amount, source, Vector3.zero);
         }
 
         // ------------------------------------------------------------------ request: possess / release / break
 
-        public bool RequestPossess(PlayerSoul soul, WeaponBody weapon)
+public bool RequestPossess(PlayerSoul soul, WeaponBody weapon)
         {
-            if (soul == null || weapon == null) return false;
-            if (soul.IsPossessing || !weapon.IsFree) return false;
-            if (!soul.ApplyPossess(weapon)) return false;
-
-            if (!_possessed.Contains(weapon)) _possessed.Add(weapon);
-            _soulOf[weapon] = soul;
-            if (Possessed != null) Possessed(soul, weapon);
-            return true;
+            // POSSESS_REQ -> WEAPON_OWNER -> ReconcileOwner (WorldAuthorityNet.cs).
+            return NetPossess(soul, weapon);
         }
 
         /// <summary>Q. Out of combat the weapon drops; in combat it breaks (section 3).</summary>
         /// <summary>Q. Out of combat the weapon drops; in combat it breaks (section 3).</summary>
-        public bool RequestRelease(PlayerSoul soul)
+public bool RequestRelease(PlayerSoul soul)
         {
-            if (soul == null || !soul.IsPossessing) return false;
-            WeaponBody weapon = soul.Weapon;
-            if (soul.InCombat) return RequestBreak(weapon);
-
-            soul.ApplyRelease();
-            _possessed.Remove(weapon);
-            _soulOf.Remove(weapon);
-            if (ReleasedWeapon != null) ReleasedWeapon(soul, weapon, false);
-            return true;
+            // RELEASE_REQ: the host drops the weapon (WEAPON_OWNER) or, in combat, breaks it (WEAPON_BROKEN).
+            return NetRelease(soul);
         }
 
         public bool RequestBreak(int weaponId) { return RequestBreak(GetWeapon(weaponId)); }
 
         public bool RequestBreak(WeaponBody weapon)
         {
-            if (weapon == null || weapon.IsBroken) return false;
-            // Break fires WeaponBody.Broken, which OnWeaponBroken turns into WeaponBroken + ReleasedWeapon.
-            weapon.Break();
-            return true;
+            return NetBreak(weapon);
         }
 
         void OnWeaponBroken(WeaponBody weapon)
@@ -275,65 +224,25 @@ namespace Pesky.Game
         // ------------------------------------------------------------------ request: pickup
 
         /// <summary>Touch pickup. Keys go to the party for good; runes attach to the weapon that touched them.</summary>
-        public bool RequestPickup(int pickupId, WeaponBody taker)
+public bool RequestPickup(int pickupId, WeaponBody taker)
         {
-            KeyPickup key;
-            if (_keyById.TryGetValue(pickupId, out key))
-            {
-                if (key.Taken) return false;
-                key.ApplyTaken();
-                bool isNew = _partyKeys.Add(key.KeyId);
-                if (PickupTaken != null) PickupTaken(pickupId, taker);
-                if (isNew && KeyGained != null) KeyGained(key.KeyId);
-                EvaluateDoors();
-                return true;
-            }
-
-            RunePickup rune;
-            if (_runeById.TryGetValue(pickupId, out rune))
-            {
-                if (rune.Taken || !rune.IsAvailable || taker == null || taker.IsBroken) return false;
-                if (rune.Modifier == null) return false;
-                rune.ApplyTaken();
-                taker.AddModifier(rune.Modifier);
-                if (PickupTaken != null) PickupTaken(pickupId, taker);
-                if (ModifierAttached != null) ModifierAttached(taker, rune.Modifier);
-                return true;
-            }
-            return false;
+            return NetPickup(pickupId, taker);
         }
 
         // ------------------------------------------------------------------ request: plate mass report
 
         /// <summary>A plate reports the summed mass of the weapons resting on it. It latches at its threshold.</summary>
-        public void ReportPlateMass(int plateId, float mass)
+public void ReportPlateMass(int plateId, float mass)
         {
-            PressurePlate plate;
-            if (!_plateById.TryGetValue(plateId, out plate)) return;
-            bool wasLatched = plate.Latched;
-            plate.ApplyMass(mass);
-            if (!wasLatched && plate.Latched)
-            {
-                if (PlateLatched != null) PlateLatched(plate);
-                EvaluateDoors();
-            }
+            NetPlateMass(plateId, mass);
         }
 
         // ------------------------------------------------------------------ request: anvil
 
         /// <summary>Held Possess for the full charge next to an anvil, out of combat: full HP.</summary>
-        public bool RequestAnvilUse(int anvilId, WeaponBody weapon)
+public bool RequestAnvilUse(int anvilId, WeaponBody weapon)
         {
-            AnvilStation anvil;
-            if (!_anvilById.TryGetValue(anvilId, out anvil)) return false;
-            if (weapon == null || weapon.IsBroken) return false;
-            PlayerSoul soul = weapon.Possessor as PlayerSoul;
-            if (soul == null || soul.InCombat) return false;
-            if (weapon.Hp >= weapon.MaxHp) return false;
-
-            weapon.RestoreFullHp();
-            if (Healed != null) Healed(weapon);
-            return true;
+            return NetAnvil(anvilId, weapon);
         }
 
         /// <summary>A DoorPrompt trigger reports that the possessed weapon is standing at a closed door.</summary>
@@ -355,11 +264,7 @@ namespace Pesky.Game
 
         public bool RequestDoorCheck(Door door)
         {
-            if (door == null || door.IsOpen) return false;
-            if (!door.ConditionSatisfied(this)) return false;
-            door.ApplyOpen();
-            if (DoorOpened != null) DoorOpened(door);
-            return true;
+            return NetDoorCheck(door);
         }
 
         /// <summary>Re-checks every door. Called on start and whenever an event could have changed a condition.</summary>

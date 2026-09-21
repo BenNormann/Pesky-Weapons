@@ -107,7 +107,7 @@ namespace Pesky.Game
             int found = FindFloor(LocalPoint());
             if (found < 0) found = _current;      // between rooms (a hallway, a shaft): keep what is on
             if (found < 0) return;                // nothing known yet: leave the scene as authored
-            if (found == _current && _appliedOnce) return;
+            if (found == _current && _appliedOnce && !HasRemotePlayers()) return;
             _current = found;
             Apply();
         }
@@ -136,6 +136,7 @@ namespace Pesky.Game
         {
             _wanted.Clear();
             _wanted.Add(_current);
+            AddRemoteFloors();
             Floor here = floors[_current];
             int[] neighbours = here != null ? here.Neighbours : null;
             if (neighbours != null)
@@ -156,6 +157,25 @@ namespace Pesky.Game
                 if (f.Lighting != null && f.Lighting.activeSelf != on) f.Lighting.SetActive(on);
             }
             _appliedOnce = true;
+        }
+
+        readonly List<Vector3> _remotePoints = new List<Vector3>(8);
+
+        bool HasRemotePlayers()
+        {
+            return authority != null && authority.CopyRemotePoints(_remotePoints) > 0;
+        }
+
+        /// <summary>Rooms other players stand in stay live too: on the host their floors carry goblins, sight lines and loose weapons.</summary>
+        void AddRemoteFloors()
+        {
+            if (authority == null) return;
+            int n = authority.CopyRemotePoints(_remotePoints);
+            for (int i = 0; i < n; i++)
+            {
+                int floor = FindFloor(_remotePoints[i]);
+                if (floor >= 0) _wanted.Add(floor);
+            }
         }
 
         void ShowEverything()

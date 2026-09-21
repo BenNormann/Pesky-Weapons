@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="lab-root" class="lab-root" picking-mode="Ignore">
+        <ui:Style src="project://database/Assets/UI/Labyrinth.uss" />
+
+        <ui:VisualElement name="compass" class="compass" picking-mode="Ignore">
+            <ui:VisualElement name="compass-dial" class="compass-dial" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="role-reveal" class="role-reveal" picking-mode="Ignore">
+            <ui:Label name="role-title" class="role-title" text="" picking-mode="Ignore" />
+            <ui:Label name="role-sub" class="role-sub" text="" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="result-banner" class="result-banner" picking-mode="Ignore">
+            <ui:Label name="result-title" class="result-title" text="" picking-mode="Ignore" />
+            <ui:Label name="result-sub" class="result-sub" text="" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="map-overlay" class="map-overlay">
+            <ui:VisualElement name="map-panel" class="map-panel">
+
+                <ui:VisualElement name="tab-bar" class="tab-bar">
+                    <ui:Button name="tab-map" class="tab" text="MAP" />
+                    <ui:Button name="tab-pad" class="tab" text="PAD" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="map-page" class="page">
+                    <ui:Label name="map-title" class="map-title" text="THE LABYRINTH" picking-mode="Ignore" />
+                    <ui:VisualElement name="map-grid" class="map-grid" />
+                    <ui:Label name="map-legend" class="map-legend" picking-mode="Ignore" text="opposite edges wrap.  the one doorway that does not is the exit." />
+                    <ui:VisualElement name="mage-bar" class="mage-bar">
+                        <ui:Label name="mage-hint" class="mage-hint" text="" picking-mode="Ignore" />
+                        <ui:VisualElement name="player-chips" class="player-chips" />
+                        <ui:VisualElement name="mage-row" class="mage-row">
+                            <ui:Button name="bend-badend" class="chip chip--bad" text="BAD END" />
+                            <ui:Button name="bend-clear" class="chip" text="UN-BEND" />
+                            <ui:Label name="bent-count" class="bent-count" text="" picking-mode="Ignore" />
+                            <ui:VisualElement name="swap-ring" class="ring" picking-mode="Ignore">
+                                <ui:Label name="swap-ring-text" class="ring-text" text="SWAP" picking-mode="Ignore" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="bend-ring" class="ring" picking-mode="Ignore">
+                                <ui:Label name="bend-ring-text" class="ring-text" text="BEND" picking-mode="Ignore" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="pad-page" class="page">
+                    <ui:Label name="pad-title" class="map-title" text="SCRATCH PAD" picking-mode="Ignore" />
+                    <ui:VisualElement name="pad-canvas" class="pad-canvas" />
+                    <ui:VisualElement name="pad-bar" class="pad-bar">
+                        <ui:Button name="pad-pen" class="chip" text="PEN" />
+                        <ui:Button name="pad-eraser" class="chip" text="ERASER" />
+                        <ui:Button name="pad-thin" class="chip" text="THIN" />
+                        <ui:Button name="pad-medium" class="chip" text="MEDIUM" />
+                        <ui:Button name="pad-thick" class="chip" text="THICK" />
+                        <ui:Button name="pad-clear" class="chip chip--bad" text="CLEAR" />
+                    </ui:VisualElement>
+                    <ui:Label name="pad-hint" class="map-legend" picking-mode="Ignore" text="left mouse draws   -   right mouse erases   -   everybody on the team sees this" />
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

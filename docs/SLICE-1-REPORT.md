@@ -1,18 +1,23 @@
 # Pesky Weapons — Slice 1 report
 
 ## How to play
-Open `Assets/Scenes/Boot.unity` and press Play; Boot loads `Zone1`. Click in the Game view to lock the
-pointer (Esc frees it). You start as a free soul in Room 1 by a rack of seven weapons: possess one and
-hop it through five rooms to the sealed door.
+Open `Assets/Scenes/Boot.unity` and press Play; Boot loads `MainMenu`, and **TUTORIAL** loads
+`Tutorial` — rooms 1-5 of the old `Zone1` plus a practice labyrinth. (`Zone1` itself is still in the
+project and can be opened straight from the Editor, but it is no longer in the build.) Click in the
+Game view to lock the pointer (Esc frees it). You start as a free soul in Room 1 by a rack of weapons:
+possess one and hop it through five rooms to the arena's far doorway.
 
 ## Controls
 | Input | Free soul | Possessing a weapon |
 |---|---|---|
 | Mouse | look / fly direction | aim — camera pitch sets the launch lift (pitch +20 = 15 deg, -35 = 80 deg) |
 | Space | thrust | launch (0.25 s cooldown; one wall jump per airtime) |
+| Shift | descend | — |
 | E | possess the weapon under the prompt | hold 2 s at the Anvil, out of combat, for full HP |
 | Q | — | release (in combat this breaks the weapon; it respawns on its rack after 10 s) |
-| WASD | — | roll — Orb only, nothing else reads it |
+| WASD | fly | roll — Orb only, nothing else reads it |
+| **Tab** | **hold: the labyrinth map** (compass top left is always on). A Mage's swap-and-bend bar lives inside that overlay and nowhere else; opening it frees the cursor **for a Mage only** | same |
+| Mouse (map open, Mage) | drag a room tile onto a neighbour to swap them; click a crew chip then a tile, or BAD END, to bend that player's compass; UN-BEND to put it back | same |
 | Esc | frees the pointer. The Pause action is bound but no handler listens to it yet |
 
 The HUD shows weapon name, HP, modifiers, the key tag, IN COMBAT, the context prompt and soul hints.
