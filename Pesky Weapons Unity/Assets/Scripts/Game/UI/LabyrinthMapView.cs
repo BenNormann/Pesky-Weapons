@@ -73,7 +73,15 @@ namespace Pesky.Game
         bool _practiceBent;
         CompassTargetKind _practiceKind = CompassTargetKind.GoodEnd;
         int _practiceCell = -1;
-        float _swapFill, _bendFill;
+        float _swapFill, _bendFill;        readonly string[] _chipName = new string[9];
+        readonly CompassTargetKind[] _slotKind = new CompassTargetKind[9];
+        readonly int[] _slotCell = new int[9];
+        int _nonMages;
+        int _maxBent;
+        int _bentNow;
+        string _refusal = "";
+        float _refusalUntil;
+
 
         public LabyrinthMapView(VisualElement overlay)
         {
@@ -299,6 +307,18 @@ namespace Pesky.Game
                     ? _practiceBent
                     : slot >= 0 && slot < 8 && (_bentMask & (1 << slot)) != 0;
                 chip.EnableInClassList("is-bent", bent);
+                // The Mage's own record of where he sent each compass, so the lie is visible to its author.
+                if (slot >= 0 && slot < _chipName.Length)
+                {
+                    Button b = chip as Button;
+                    string name = _chipName[slot];
+                    if (b != null && !string.IsNullOrEmpty(name))
+                    {
+                        CompassTargetKind k = slot == PracticeSlot ? _practiceKind : _slotKind[slot];
+                        int c = slot == PracticeSlot ? _practiceCell : _slotCell[slot];
+                        b.text = bent ? name + "  >  " + TargetLabel(k, c) : name;
+                    }
+                }
             }
         }
 
@@ -313,6 +333,7 @@ namespace Pesky.Game
             chip.style.borderRightColor = colour;
             chip.style.borderTopColor = colour;
             chip.style.borderBottomColor = colour;
+            if (slot >= 0 && slot < _chipName.Length) _chipName[slot] = label;
             chip.userData = slot;
             chip.clicked += delegate { _selectedSlot = _selectedSlot == slot ? -1 : slot; };
             _chipRow.Add(chip);
@@ -328,11 +349,19 @@ namespace Pesky.Game
             int mages = _def != null ? _def.MageCountFor(present) : 1;
             int nonMages = present - mages;
             if (nonMages < 0) nonMages = 0;
-            int maxBent = MaxBent(nonMages, _def != null ? _def.bendFractionLimit : 0.5f);
+            // The practice stand-in is a crew member as far as the lesson is concerned, so a solo tutorial
+            // still has somebody who may be bent.
+            if (!string.IsNullOrEmpty(PracticeName)) nonMages += 1;
+            _nonMages = nonMages;
+            int maxBent = _def != null ? _def.MaxBentFor(nonMages) : (nonMages > 0 ? 1 : 0);
+            _maxBent = maxBent;
+            _bentNow = BitCount(_bentMask) + (_practiceBent ? 1 : 0);
 
             if (_hint != null)
             {
-                _hint.text = _selectedSlot >= 0
+                _hint.text = Time.realtimeSinceStartup < _refusalUntil && !string.IsNullOrEmpty(_refusal)
+                    ? _refusal
+                    : _selectedSlot >= 0
                     ? "PICK A ROOM ON THE MAP, OR BAD END, FOR THAT PLAYER'S COMPASS"
                     : "DRAG A ROOM ONTO A NEIGHBOUR TO SWAP   -   PICK A PLAYER TO BEND THEIR COMPASS";
             }
@@ -365,11 +394,20 @@ namespace Pesky.Game
         }
 
         /// <summary>The largest number of bent players that is still STRICTLY fewer than the fraction of the non-Mages.</summary>
-        public static int MaxBent(int nonMages, float fraction)
+        /// <summary>Where a bent compass is being sent, for the Mage's own chip row.</summary>
+        string TargetLabel(CompassTargetKind kind, int cell)
         {
-            float limit = fraction * nonMages;
-            int max = Mathf.CeilToInt(limit - 0.0001f) - 1;
-            return max < 0 ? 0 : max;
+            if (kind == CompassTargetKind.BadEnd) return "RESURRECTION ROOM";
+            if (kind == CompassTargetKind.Cell) return LabelOfCell(cell).ToUpperInvariant();
+            return "TRUE";
+        }
+
+        /// <summary>A refusal the Mage can read, instead of a bend that simply never happens.</summary>
+        void Refuse(string why)
+        {
+            _refusal = why;
+            _refusalUntil = Time.realtimeSinceStartup + 4f;
+            _selectedSlot = -1;
         }
 
         static int BitCount(byte mask)
@@ -382,20 +420,45 @@ namespace Pesky.Game
         void Bend(CompassTargetKind kind, int cell)
         {
             if (!_mage || _selectedSlot < 0) return;
-            if (_selectedSlot == PracticeSlot)
+            int slot = _selectedSlot;
+            bool undo = kind == CompassTargetKind.GoodEnd;
+            bool already = slot == PracticeSlot
+                ? _practiceBent
+                : slot >= 0 && slot < 8 && (_bentMask & (1 << slot)) != 0;
+
+            // Every refusal the host can make is made here FIRST and said out loud. A bend that vanishes in
+            // silence was the bug: with one or two crew the strict minority is zero and nothing ever happened.
+            if (_bendFill > 0f) { Refuse("THE BEND IS STILL RECHARGING"); return; }
+            if (!undo && !already && _bentNow >= _maxBent)
             {
-                // The stand-in: nothing is asked of the host and nothing is sent. It is a lesson, not a lie.
-                _practiceKind = kind;
-                _practiceBent = kind != CompassTargetKind.GoodEnd;
-                _practiceCell = kind == CompassTargetKind.Cell ? cell : -1;
-                _selectedSlot = -1;
+                Refuse(_maxBent <= 0
+                    ? "THERE IS NOBODY TO BEND"
+                    : "ALREADY BENT " + _bentNow + " OF " + _maxBent + "  -  SET ONE BACK TO TRUE FIRST");
                 return;
             }
-            if (_selectedSlot >= 8) return;
-            byte mask = (byte)(1 << _selectedSlot);
-            if (kind == CompassTargetKind.GoodEnd) _bentMask = (byte)(_bentMask & ~mask);
-            else _bentMask |= mask;
+
+            if (slot >= 0 && slot < _slotKind.Length)
+            {
+                _slotKind[slot] = kind;
+                _slotCell[slot] = kind == CompassTargetKind.Cell ? cell : -1;
+            }
+            _refusal = "";
             _selectedSlot = -1;
+
+            if (slot == PracticeSlot)
+            {
+                // The stand-in is not a peer, so there is nobody for the host to reply to - but it passes
+                // the same cooldown and the same limit as a real crew member and reports the same way.
+                _practiceKind = kind;
+                _practiceBent = !undo;
+                _practiceCell = kind == CompassTargetKind.Cell ? cell : -1;
+                if (BendRequested != null) BendRequested(0, kind, cell);
+                return;
+            }
+            if (slot >= 8) return;
+            byte mask = (byte)(1 << slot);
+            if (undo) _bentMask = (byte)(_bentMask & ~mask);
+            else _bentMask |= mask;
             if (BendRequested != null) BendRequested(mask, kind, cell);
         }
 

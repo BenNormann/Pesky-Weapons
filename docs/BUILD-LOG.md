@@ -1978,3 +1978,60 @@ later full run of the menu item itself — both succeeded. Second: the unused AI
 and after the platform switch (0 CS errors), every player setting read back through the Editor, the
 `DllImport`-to-jslib-export audit, and one complete WebGL build. **The active build target was left
 on WebGL.**
+
+## Feedback round 3 — four play-test notes (2026-09-21)
+
+**Implemented, untested.** Clean compile after every script change (0 CS errors);
+`Pesky > Validate Open Scenes` reads **0 problems** on Boot, MainMenu, Tutorial,
+Labyrinth and Dev/FeelBox; the layer, the collision matrix, every prefab and every
+scene instance read back through the Editor. **Nothing was run — no play mode, no
+tests, no screenshots.** Build target left on **WebGL**.
+
+1. **"All signs are backwards."** The prefabs were not the fault. Measured, not
+   assumed: a `TextMeshPro` mesh renders and reads from its own local **−Z**
+   (mesh normals `(0,0,-1)`, the BL→TL→TR winding, and — decisively — a
+   backface-culled `MeshCollider` raycast that hits the TMP mesh *and* Unity's
+   Quad only from the −Z side; the Quad is the control, and it is the same mesh
+   the MagicDoor's plane yaws 180° to face into the room). So round 2's model was
+   right and `Sign.prefab`'s `Label` is already correct at identity on the board's
+   −Z face — **reverting its yaw would have made every sign blank**, culled from
+   the room and occluded by its own board from behind. The real fault was
+   **placement**: every hand-placed instructional sign in `Tutorial.unity` sat at
+   yaw 0 with its readable −Z face **1.5 m from a wall**, while the 25 prefab-driven
+   `RoomSign`s were right. Seven were yawed 180° — `Sign_Map`, `Sign_Resurrection`,
+   `Sign_Exit`, `Sign_Compass`, `Sign_Mage`, `Sign_1`, `Sign_4`. The doorway
+   `Glyph` / `DestinationName` in `MagicDoor_Grid.prefab` (yaw 180 on a door whose
+   +Z faces the room) and `LabyrinthRoom.prefab`'s `Fixtures/FloorNumber`
+   (rot `(90,0,0)`: readable face up, top of the digit toward the north doorway)
+   were each checked against the same rule and are **correct**; no scene or variant
+   overrides either. New `SceneValidator.CheckSignFacing` flags any sign whose
+   readable side has less room than its back, so this cannot come back.
+2. **Souls can no longer use teleport doors.** New layer **`SoulBarrier` (15)**
+   colliding with **`Soul` (10) and nothing else**; a `SoulBlock` non-trigger
+   `BoxCollider` filling the opening on `MagicDoor.prefab`, `MagicDoor_Grid.prefab`
+   and every labyrinth room prefab (the five shaped ones needed it added directly);
+   `MagicDoor` no longer watches souls for a crossing; and
+   `WorldAuthority.RequestMagicDoorTraverse(door, soul)` returns **false**, so the
+   host refuses a forged traversal too. Weapons, goblins, the NavMesh and the
+   trajectory preview are untouched — no other mask contains layer 15. A soul
+   pushing at an opening gets a HUD banner (`HudController.soulDoorHint`).
+3. **The camera can no longer leave the map.** `OrbitCamera` used to raise its
+   pivot 1 m above the target unconditionally, so against a ceiling the pivot
+   — and therefore the start of the pull-in cast — was already outside the room.
+   Now the pivot is reached by a sphere cast **from the target**, stopping a `skin`
+   short of whatever is in the way, and the pull-in cast starts from that clamped
+   pivot. The probe radius is widened to cover the **near clip plane's far corner**
+   so the plane cannot poke through, and a cast that starts inside a collider
+   narrows its probe instead of snapping the camera onto the pivot. Pulling in is
+   instant, easing back out is smoothed (`distanceEaseTime`). New serialized
+   tunables: `skin`, `pivotProbeRadius`, `fitRadiusToNearClip`, `distanceEaseTime`.
+4. **Compass bend never worked below 4 crew.** `LabyrinthRule.OnBend` refused
+   unless `bentAfter < bendFractionLimit * nonMages`, and a strict minority of 0, 1
+   or 2 non-Mages is **zero** — so in the tutorial and in any small test the host
+   silently refused every bend. New `LabyrinthDef.minBendTargets` (default 1) and
+   `LabyrinthDef.MaxBentFor(nonMages)`, used by the rule *and* by the map view, so
+   the two cannot disagree. Refusals are now said out loud on the Mage's hint line,
+   the practice stand-in passes the same cooldown and the same limit (and counts as
+   one crew member so a solo tutorial has somebody to bend), and each chip shows
+   where that compass was sent. **Not done:** the stand-in still has no grey-box
+   body or world-space compass ring in the practice labyrinth — see the report.

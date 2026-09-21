@@ -367,8 +367,10 @@ namespace Pesky.Session.Rules
 
             // The minority rule: strictly fewer than half of the non-Mage players may be lied to at once,
             // counting both Mages' work together, so two of them cannot bend the whole room between them.
-            float limit = def != null ? def.bendFractionLimit : 0.5f;
-            if (bentAfter >= limit * nonMage) return;
+            // BUT a strict minority of 1 or 2 non-Mages is ZERO, which used to make every bend in the
+            // tutorial and in any small test silently impossible; LabyrinthDef.minBendTargets is the floor.
+            int maxBent = def != null ? def.MaxBentFor(nonMage) : (nonMage > 0 ? 1 : 0);
+            if (bentAfter > maxBent) return;;
 
             _bendUsed[fromSlot] = true;
             _lastBendTick[fromSlot] = tick;

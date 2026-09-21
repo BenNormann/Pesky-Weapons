@@ -399,6 +399,59 @@ Transform:
   - {fileID: 8463949590793459448}
   m_Father: {fileID: 4133387650978314913}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6376138006486770155
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8725912785485032972}
+  - component: {fileID: 8332311582875548442}
+  m_Layer: 15
+  m_Name: SoulBlock
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8725912785485032972
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6376138006486770155}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4133387650978314913}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &8332311582875548442
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6376138006486770155}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3, y: 3.55, z: 0.5}
+  m_Center: {x: 0, y: 1.725, z: -0.05}
 --- !u!1 &7571072181929882000
 GameObject:
   m_ObjectHideFlags: 0
@@ -799,6 +852,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5835537181103844046, guid: e60a9cd5b7ee780499e96fd55535a135, type: 3}
       insertIndex: -1
       addedObject: {fileID: 9187862745854877267}
+    - targetCorrespondingSourceObject: {fileID: 5835537181103844046, guid: e60a9cd5b7ee780499e96fd55535a135, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8725912785485032972}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6312903702287028035, guid: e60a9cd5b7ee780499e96fd55535a135, type: 3}
       insertIndex: -1
@@ -832,6 +888,10 @@ MonoBehaviour:
   twin: {fileID: 0}
   gate: {fileID: 4846620391004043640}
   planeVisual: {fileID: 1933143009793610654}
+  gridDoor: 0
+  labyrinth: {fileID: 0}
+  room: {fileID: 0}
+  doorwayDir: 0
   width: 2.9
   height: 3.45
   exitClearance: 0.6

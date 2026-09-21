@@ -22,7 +22,9 @@ namespace Pesky.Game
 
         [Header("Hints")]
         [SerializeField] string freeHint = "WASD  fly     SPACE  up     SHIFT  down     E  possess";
-        [SerializeField] string possessedHint = "SPACE  launch     Q  release     (no WASD)";
+        [SerializeField] string possessedHint = "SPACE  launch     Q  release     (no WASD)";        [Tooltip("Shown when a free soul pushes at a magic doorway: doorways are solid to souls, only weapons travel.")]
+        [SerializeField] string soulDoorHint = "A SOUL CANNOT USE A DOORWAY  -  POSSESS A WEAPON  (E)  FIRST";
+
 
         [Header("Magic door")]
         [Tooltip("Seconds the purple full-screen flash stays up after the local player goes through a magic door.")]
@@ -70,7 +72,8 @@ namespace Pesky.Game
                 authority.DoorOpened += OnDoorOpened;
                 authority.PlateLatched += OnPlateLatched;
                 authority.EnemyDied += OnEnemyDied;
-                authority.MagicDoorTraversed += OnMagicDoorTraversed;
+                authority.MagicDoorTraversed += OnMagicDoorTraversed;                authority.SoulBlockedByDoor += OnSoulBlockedByDoor;
+
             }
             Refresh();
         }
@@ -86,7 +89,8 @@ namespace Pesky.Game
                 authority.DoorOpened -= OnDoorOpened;
                 authority.PlateLatched -= OnPlateLatched;
                 authority.EnemyDied -= OnEnemyDied;
-                authority.MagicDoorTraversed -= OnMagicDoorTraversed;
+                authority.MagicDoorTraversed -= OnMagicDoorTraversed;                authority.SoulBlockedByDoor -= OnSoulBlockedByDoor;
+
             }
         }
 
@@ -226,7 +230,8 @@ namespace Pesky.Game
         }
         void OnModifierAttached(WeaponBody w, ModifierDef m) { Banner((m != null ? m.displayName : "MODIFIER") + "  ATTACHED", 2.5f); }
         void OnHealed(WeaponBody w) { Banner("REPAIRED", 1.5f); }
-        void OnWeaponBroken(WeaponBody w) { Banner("WEAPON  BROKE", 2f); }
+        void OnWeaponBroken(WeaponBody w) { Banner("WEAPON  BROKE", 2f); }        void OnSoulBlockedByDoor(PlayerSoul s) { Banner(soulDoorHint, 3f); }
+
         void OnDoorOpened(Door d) { Banner("DOOR  OPEN", 2f); }
         void OnPlateLatched(PressurePlate p) { Banner("PLATE  LATCHED", 2f); }
         void OnEnemyDied(GoblinBrain g, WeaponBody by) { Banner("GOBLIN  DOWN", 1.5f); }

@@ -87,6 +87,24 @@ namespace Pesky.Data
 
         [Tooltip("Fraction of the non-Mage players that may be bent at once, exclusive. 0.5 is the minority rule: strictly fewer than half.")]
         [Range(0f, 1f)] public float bendFractionLimit = 0.5f;
+        [Tooltip("However small the room, a Mage may always bend at least this many compasses. Without it the minority rule is ZERO for 0, 1 or 2 non-Mage players, so the host silently refuses every bend in the tutorial and in any small test.")]
+        [Min(0)] public int minBendTargets = 1;
+
+
+        /// <summary>
+        /// How many non-Mage compasses may be bent at once, counting both fragments together. The minority
+        /// rule (strictly fewer than bendFractionLimit of the non-Mages) is the ceiling once the room is big
+        /// enough; below that minBendTargets keeps the power usable instead of silently dead. Never more
+        /// than the number of non-Mages there actually are.
+        /// </summary>
+        public int MaxBentFor(int nonMages)
+        {
+            if (nonMages <= 0) return 0;
+            int strict = Mathf.CeilToInt(bendFractionLimit * nonMages - 0.0001f) - 1;
+            if (strict < 0) strict = 0;
+            int allowed = strict > minBendTargets ? strict : minBendTargets;
+            return allowed > nonMages ? nonMages : allowed;
+        }
 
         [Header("Roles")]
         [Tooltip("How many Mage fragments a small room gets.")]

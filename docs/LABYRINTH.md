@@ -219,10 +219,21 @@ respecting it at once.
 Same silence on every refusal. Checks: the asker is a Mage, their
 `bendCooldownSeconds` has expired, a `Cell` target is in range, the request
 actually changes something, and — the important one — after applying it the
-number of bent players is **strictly fewer than `bendFractionLimit` of the
-non-Mage players**, counting **both Mages' work together**, so two of them cannot
-bend the whole room between them. With the default 0.5 that is the minority rule:
-2 of 5, 1 of 4, 3 of 7.
+number of bent players is at most **`LabyrinthDef.MaxBentFor(nonMages)`**,
+counting **both Mages' work together**, so two of them cannot bend the whole room
+between them. That is the strict minority of `bendFractionLimit` (with the default
+0.5: 2 of 5, 1 of 4, 3 of 7) **but never fewer than `minBendTargets`**, and never
+more than the number of non-Mages there are.
+
+**Fixed in feedback round 3.** The limit used to be the bare strict minority,
+which is **zero** for 0, 1 or 2 non-Mage players — so in the tutorial (the only
+real player is the Mage) and in every 2–3 player test the host refused *every*
+bend, in silence, and the power looked broken. `minBendTargets` (default **1**)
+is the floor. The map view computes the same number from the same
+`LabyrinthDef.MaxBentFor`, counts the tutorial's practice stand-in as one crew
+member, and now **says why** a bend was refused — recharging, or "already bent
+n of max" — on the hint line instead of dropping it silently. The Mage's own
+chips also show where he sent each compass (`NAME > ROOM 7`).
 
 A `GoodEnd` target **un-bends**. Each affected player gets a `COMPASS_TARGETS`
 addressed to them alone, which does not say who did it, or that anybody did.
@@ -302,6 +313,7 @@ All on `Assets/Data/Labyrinth.asset` (`LabyrinthDef`).
 | `swapAcrossWrap` | off | may a drag leave one edge and arrive at the other |
 | `bendCooldownSeconds` | 15 | between one Mage's bends |
 | `bendFractionLimit` | 0.5 | exclusive. 0.5 = strictly fewer than half the non-Mages bent at once |
+| `minBendTargets` | **1** | floor under the minority rule, so a bend is never impossible in a small room or the tutorial. `MaxBentFor(n) = clamp(max(minBendTargets, strictMinority(n)), 0, n)` |
 | `mageBaseCount` | 1 | |
 | `mageSecondFromPlayers` | 6 | a second Mage from this many players up |
 | `mageMaxCount` | 2 | |
