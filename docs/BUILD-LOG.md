@@ -2085,3 +2085,120 @@ doorway alcoves are closed by a World `Back`. Nothing needed fixing.
 
 Runtime helper: a hidden trigger `SphereCollider` ("OrbitCamera Probe", parked at
 y = -10000) exists only because `ComputePenetration` needs a live collider.
+
+## Feedback round 5 — web lag, input spikes, the compass bend, measured in the browser (2026-09-22)
+
+The owner granted an exception for this round: the WebGL build was driven in the
+desktop app's embedded browser pane, two and three tabs at a time, through the
+real trystero + WebRTC path (signalling through a local NIP-01 relay because
+the public relays were flaky that day; ICE, data channels and every game message
+exactly as on two PCs). No Unity play mode, no tests. Clean compile after every
+change; `Pesky > Validate Open Scenes` 0 problems on Boot, MainMenu, Tutorial,
+Labyrinth and Dev/FeelBox; build target WebGL.
+
+### What the numbers said
+
+The pane hides its page, so `requestAnimationFrame` never fires; every
+measurement ran Unity's loop from a `setTimeout` polyfill, which the pane caps at
+about 60 iterations a second. The **frame cost** column (ms of CPU per Unity
+frame, timed around the main-loop callback) is the honest one; "fps" is that
+loop's rate. Canvas 800x450 (round-4 build) / 800x600 (round 5), same machine,
+the Editor idle.
+
+| Configuration | Round-4 build (before) | Round 5 (after) |
+|---|---|---|
+| Main menu, 1 tab | ~63 fps | not re-measured |
+| Labyrinth, 1 tab alone, standing at the rack | **28-41 fps** (frame cost ~30 ms; canvas size made no difference, so CPU-bound) | **50-55 fps, frame cost 10.9 ms** |
+| Labyrinth, 2 tabs (host + client), both running | 31 / 31 fps | 31-35 / 31-35 fps, frame cost 18-19 / 18.5-19.5 ms (builds 1 and 2) |
+| Labyrinth, 3 tabs | third tab could not join (see below) | 34 / 34 / 33 fps, frame cost 17.9 / 16.6 / 18.6 ms |
+| Tutorial, 1 tab (with two other instances alive) | ~34 fps | not re-measured |
+
+- **The lag was rendering and light culling, not the network.** With one tab the
+  round-4 Labyrinth cost ~30 ms a frame: the camera's far plane was 1000 m on a
+  5x5 lattice 200 m apart, so up to 25 rooms, 1,400 renderers, 250 TMP labels
+  and 100 point lights (32 visible on WebGL, 8 per object) went through culling
+  and draw calls every frame, all of it behind walls. The network side is tiny:
+  idle, 2-3 messages and under 0.1 KB a second each way; while a soul flies, POSE
+  goes out at 16-20 Hz (`out=16/s, 0.4 KB/s`); RTT between two tabs on one
+  machine 24-65 ms (the loops run at ~30 fps, so a ping waits a frame each way).
+- **Three tabs on one machine cost each other CPU**, not bandwidth: the per-frame
+  cost of every instance rose from 11 ms alone to 17-19 ms with three running.
+  That is the "3 instances on my own machine" part of the owner's note.
+- **A hidden host tab stops the world.** Chrome gives a background tab no rAF at
+  all. Emulated by stopping the host's loop for 15 s: the client kept running
+  (its own sim ticks on its own clock), the host's remote view froze, `rtt`
+  spiked to 522 ms on the next pong, and when the host's loop resumed both sides
+  were back to normal within a second with no error and no permanent desync
+  (`AdvanceHost` jumps its clock past 5 s behind and re-snapshots everyone). So:
+  the client never breaks, but nothing can make a hidden tab simulate; the
+  host's tab must stay visible (second window or monitor).
+
+### What changed
+
+1. **Room culling** (`LabyrinthDirector`): a room whose anchor is farther than
+   `cullDistance` (150 m; 100 in the tutorial's 120 m practice lattice) from the
+   local player's live body has its renderers and lights switched off; only the
+   room the player stands in draws. Colliders, doorways, physics and loose
+   weapons are untouched, and a weapon parked in a room (anything under a
+   Rigidbody) is never culled with it. `cullFarRooms` turns it off. Main Camera
+   far plane 1000 -> 150 (Labyrinth) / 160 (Tutorial; its hallway run is 115 m).
+2. **MagicDoor sensor range** (`sensorRange`, 40 m): a doorway only watches
+   bodies near it and resolves its twin only when one is; the 100 doorways stop
+   walking the grid table for bodies in other rooms every physics step.
+3. **Mouse-look spike filter**: `LookFilter.cs` (ported from ATCK) inside
+   `OrbitCamera.Update`, tunables on `Assets/Data/LookTuning.asset` (Drop / Scale,
+   300 px, first delta after lock / focus / overlay dropped, default ON). See
+   `docs/SLICE-1.md` section 8. Verified in the browser: `[pesky] look: dropped a
+   spike (300, 144 px ...)` and `dropped the first delta after a lock, focus or
+   overlay change`; the overlay counts them (`lookDrops`). Look deltas were never
+   multiplied by `deltaTime`.
+4. **Debug gate, `?nolock=1` and the F3 overlay**: `DebugGate.cs`,
+   `Plugins/WebGL/PeskyPlatform.jslib` (`Pesky_QueryFlag`, `Pesky_PageHidden`),
+   `DebugOverlay.cs` under `_UI` in Tutorial, Labyrinth and FeelBox,
+   `Session/NetStats.cs` (+ `NetDebug`), `RoomClock.LastRttMs`,
+   `NetSession.PeerCount / TransportName`. See `docs/WEB-BUILD.md` section 9.
+   Under `?debug=1` the map logs every swap / bend request and local refusal,
+   the host rule logs every verdict with its reason, and a peer logs every
+   ROLE_ASSIGN and COMPASS_TARGETS it receives.
+5. **The compass bend works** - and the owner's "still not working" was the
+   stale published build (built 2026-09-21 00:47, before round 3's fix). Verified
+   in two tabs, Mage on the host: `map: bend requested mask=2 target=BadEnd` ->
+   `host: bend ... accepted: COMPASS_TARGETS(BadEnd) sent to slot 1 (1/1 bent)` ->
+   client `reply: COMPASS_TARGETS - this compass now points at BadEnd`, overlay
+   `target=BadEnd`, green spike swung from the south doorway to the north one
+   (toward the Resurrection Room). Verified the other way round too, in the
+   second build (Mage on the client): client `map: bend requested mask=1
+   target=BadEnd` -> host `host: bend mask=1 target=BadEnd cell=0 from slot 1
+   accepted: COMPASS_TARGETS(BadEnd) sent to slot 0 (1/1 bent)` -> host `reply:
+   COMPASS_TARGETS - this compass now points at BadEnd`, overlay `target=BadEnd`,
+   spike E -> N.
+6. **Tutorial practice dummy**: `PracticeDummy.cs` and a grey-box figure
+   (`Room6_MageTutorial/PracticeDummy`: capsule, head, a disc and a glowing
+   spike on a pivot, "DUMMY" label) in the Entry Hall of the practice
+   labyrinth. Its spike is aimed with `CompassModel.TryAim` from the target the
+   map's practice chip holds (`LabyrinthHud.TryGetPracticeCompass`), spins in
+   its target room, and swings when the Mage bends it. Implemented and
+   validator-clean; not driven in the browser (the lesson room is deep in the
+   tutorial).
+
+Two builds were made (the budget allowed three). The second added only:
+`[pesky]` console lines without stack traces (`LogOption.NoStacktrace`, so a
+browser console reads as one line each), and the room culling reading the local
+body live through an optional `PlayerSpawner` reference on `LabyrinthDirector`
+(a doorway moves the body in FixedUpdate; the sim's row trails it by a POSE
+interval, which could leave the new room dark for a frame or two). Both scenes
+re-wired and saved; validator 0 problems on all five scenes; `Builds/Web` is
+that second build (2026-09-22 14:44), unpublished.
+
+### Found on the way (not fixed, for the owner)
+
+- **Peer discovery can deadlock when two peers announce at the same moment.**
+  Twice in the pane a second joiner exchanged offer/answer with an existing peer
+  but the trystero "hello" never completed (`could not connect to peer ... after
+  exchanging SDP`); a second JOIN a few seconds later always worked, and a
+  joiner that arrived while the host had been announcing for a while connected
+  first time. This is inside trystero's negotiation, not in Pesky's code; it may
+  be the pane's timing (three ~30 fps loops on one machine). If the owner sees a
+  join fail on the first try between real machines, retry once before digging.
+- The pane blocks the microphone, so every tab offered hidden (`.local`) host
+  candidates; the two tabs still connected through mDNS on this machine.

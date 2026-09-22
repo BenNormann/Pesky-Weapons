@@ -139,10 +139,16 @@ namespace Pesky.Game
         }
 
         /// <summary>The flat world direction from the player to one doorway of the room they are standing in.</summary>
-        bool TryAim(int cell, int doorway, Vector3 from, out MagicDoor door, out Vector3 direction)
+bool TryAim(int cell, int doorway, Vector3 from, out MagicDoor door, out Vector3 direction)
+        {
+            return TryAim(labyrinth, cell, doorway, from, out door, out direction);
+        }
+
+        /// <summary>The flat world direction from a point to one doorway of the room in a cell. Shared with the tutorial's practice dummy.</summary>
+        public static bool TryAim(LabyrinthDirector labyrinth, int cell, int doorway, Vector3 from, out MagicDoor door, out Vector3 direction)
         {
             direction = Vector3.forward;
-            door = labyrinth.DoorwayOf(cell, doorway);
+            door = labyrinth != null ? labyrinth.DoorwayOf(cell, doorway) : null;
             if (door == null) return false;
             Vector3 flat = door.transform.position - from;
             flat.y = 0f;

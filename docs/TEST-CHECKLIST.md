@@ -448,3 +448,49 @@ Solo first, then with two instances.
   `ALREADY BENT n OF max`.
 - With **3 players** (1 Mage, 2 crew) a bend must now land — this is the case
   that silently failed. With 5 crew the limit must still be 2.
+
+## 6. Feedback round 5 (web performance, input spikes, the compass bend)
+
+### 6.1 Numbers before feelings
+
+- Open the web build with `?debug=1`, press **F3**: the overlay must appear
+  (fps, fixed/frame, role, peers, rtt, in/out, poseIn, cell, compass). The
+  browser console must carry a `[pesky] dbg ...` line every 5 s.
+- Alone in the Labyrinth the frame rate must be far above the round-4 build's
+  (about 30 fps uncapped on the test machine); only the room you stand in is
+  drawn (walk through a doorway: the new room is there at once, nothing pops
+  late). Loose weapons left in another room must still be there when you return.
+- Two tabs / two machines: `peers=1` on both, `poseIn` about 20 Hz while the
+  other player moves and about 1 Hz while still, `rtt` a few ms on one machine.
+- Hide the **host** tab for ten seconds: the client's `simLag` climbs and its
+  remote view freezes; when the host tab returns the client must catch up within
+  a second or two and never stay frozen. Hide a **client** tab instead: the host
+  is unaffected, the client catches up on return.
+
+### 6.2 The spike filter
+
+- Under pointer lock, flick the mouse as hard as you can, alt-tab away and back,
+  open and close the Tab map: the view must never jerk, and each of those must
+  add to `lookDrops` on the overlay (with `[pesky] look: ...` in the console).
+- `Assets/Data/LookTuning.asset`: turn `filterSpikes` off and repeat to compare;
+  try `Scale` mode.
+
+### 6.3 The bend, for real, in two tabs
+
+- Start a room with two players. The role reveal names the Mage; on the Mage's
+  page hold **Tab**, click the other player's chip, then **BAD END**. The Mage's
+  console must show `map: bend requested ...`; the **host's** console `host:
+  bend ... accepted: COMPASS_TARGETS(BadEnd) sent to slot n`; the bent player's
+  console `reply: COMPASS_TARGETS - this compass now points at BadEnd`, and its
+  overlay `target=BadEnd`. The bent player's green spike must now point along
+  the path to the Resurrection Room and **spin inside it**; **TRUE** on the chip
+  must send it back (`target=GoodEnd`).
+- Do it once with the Mage as host and once with the Mage as client.
+
+### 6.4 The tutorial dummy
+
+- In the practice labyrinth a grey figure (**DUMMY**) stands in the Entry Hall
+  with a disc and a glowing spike over its head. Its spike must point at the
+  doorway a truthful compass would take. Hold Tab, click **DUMMY**, then **BAD
+  END**: the spike must swing to the doorway toward the Resurrection Room; pick a
+  room instead: it points that way; pick the Entry Hall itself: it spins.

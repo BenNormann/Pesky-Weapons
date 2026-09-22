@@ -332,22 +332,40 @@ namespace Pesky.Game
             _map.SetCooldowns(swapLeft, swapSeconds, bendLeft, bendSeconds);
         }
 
-        void OnSwapRequested(int cellA, int cellB)
+void OnSwapRequested(int cellA, int cellB)
         {
             if (authority == null) return;
+            DebugGate.Log("map: swap requested " + cellA + " <-> " + cellB);
             _swapSentAt = Time.time;
             _swapSentA = cellA;
             _swapSentB = cellB;
             authority.RequestRoomSwap(cellA, cellB);
         }
 
-        void OnBendRequested(byte slotMask, CompassTargetKind kind, int cell)
+void OnBendRequested(byte slotMask, CompassTargetKind kind, int cell)
         {
             if (authority == null) return;
+            DebugGate.Log("map: bend requested mask=" + slotMask + " target=" + kind + " cell=" + cell
+                + (slotMask == 0 ? " (practice stand-in: local only, nothing is sent)" : ""));
             // The host answers the bent players alone and never this peer, so the ring is optimistic:
             // it starts on the ASK. A refusal only makes this map more cautious than the host is.
             StartBendCooldown();
+            if (slotMask == 0) return;
             authority.RequestCompassBend(slotMask, kind, cell);
+        }
+
+        /// <summary>
+        /// The practice stand-in's compass as the Mage set it on the map. False (and the truthful GoodEnd)
+        /// while it is not bent. Read by the tutorial's PracticeDummy, which draws it in the world.
+        /// </summary>
+        public bool TryGetPracticeCompass(out CompassTargetKind kind, out int cell)
+        {
+            kind = CompassTargetKind.GoodEnd;
+            cell = LabyrinthGrid.NoCell;
+            if (_map == null || !_map.PracticeBent) return false;
+            kind = _map.PracticeKind;
+            cell = _map.PracticeCell;
+            return true;
         }
 
         void StartBendCooldown()

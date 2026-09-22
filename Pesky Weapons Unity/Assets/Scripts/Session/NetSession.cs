@@ -47,6 +47,10 @@ namespace Pesky.Session
         /// <summary>True once the sim mirrors the host (always on the host).</summary>
         public bool IsSynced { get; internal set; }
         public byte LocalSlot => Slots.LocalSlot;
+        /// <summary>How many other peers the transport is connected to right now.</summary>
+        public int PeerCount => Transport != null && Transport.PeerIds != null ? Transport.PeerIds.Count : 0;
+        /// <summary>The concrete transport's type name (Loopback, Tcp, WebRtc), for the debug overlay. Game cannot name the type itself.</summary>
+        public string TransportName => Transport != null ? Transport.GetType().Name.Replace("Transport", "") : "";
         public SessionPhase Phase => Sim != null ? Sim.Phase : SessionPhase.Lobby;
 
         internal Inbox Inbox { get; } = new Inbox();
@@ -97,6 +101,7 @@ namespace Pesky.Session
             Pending.Clear();
             Pinger.Disarm();
             Snapshots.Clear();
+            NetStats.Reset();
             _router.Reset();
             _join.Reset();
 
@@ -132,7 +137,9 @@ namespace Pesky.Session
             if (!IsHost && HostId != null && Pinger.Due(Clock.Tick))
             {
                 var ping = Pinger.Next(Clock.Tick, Clock.LocalMs);
-                Transport.SendTo(HostId, ping.Encode());
+                var pingBytes = ping.Encode();
+                NetStats.CountOut(pingBytes.Length, 1);
+                Transport.SendTo(HostId, pingBytes);
             }
             if (IsHost) AdvanceHost();
             else AdvanceClient();
@@ -184,6 +191,7 @@ public void SendNow(byte[] payload)
             {
                 _router.AcceptPose(LocalSlot, flags, pos, rot, vel, seq);
             }
+            NetStats.CountOut(payload.Length, PeerCount);
             Transport.Broadcast(payload);
         }
 

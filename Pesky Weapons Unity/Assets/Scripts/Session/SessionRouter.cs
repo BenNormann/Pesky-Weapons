@@ -180,6 +180,7 @@ void OnTransform(string peerId, byte[] payload)
             var slot = _s.Slots.SlotOf(peerId);
             if (slot == Wire.NoSlot) return;
             if (!M0Messages.TryDecodePose(payload, out var flags, out var pos, out var rot, out var vel, out var seq)) return;
+            NetStats.CountPoseIn();
             AcceptPose(slot, flags, pos, rot, vel, seq);
         }
 

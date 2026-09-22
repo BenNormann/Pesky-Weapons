@@ -270,3 +270,92 @@ build produces: `integer modulus may be much slower…`), and
 and `com.unity.visualscripting` are all in `manifest.json` without the game
 using any of them. Removing the ones that are not needed is the cheapest way to
 get the download below 16 MB if that ever matters.
+
+---
+
+## 9. Debugging a web build: the URL flags, the F3 overlay and driving a page by hand
+
+Added in feedback round 5. Everything here is gated by
+`Assets/Scripts/Game/DebugGate.cs` (ported from ATCK): it is **on in the Editor
+and in development builds, and on a release page only when the URL carries
+`?debug=1`**. A page without the flag builds none of it - the overlay component
+disables itself in `Awake`, `DebugGate.Log` prints nothing, and the Session
+assembly's `NetDebug` lines stay silent.
+
+| Flag | Effect |
+|---|---|
+| `?debug=1` | Opens the gate: F3 overlay, `[pesky]` console lines (look-filter drops, map requests, host verdicts, reply deliveries). Read through `Assets/Plugins/WebGL/PeskyPlatform.jslib`'s `Pesky_QueryFlag`. |
+| `?debug=1&nolock=1` | Pointer-lock bypass for browsers that refuse pointer lock (the desktop app's browser pane). Every "is the pointer locked" gate (`OrbitCamera.PointerLocked` -> `DebugGate.PointerLocked`) answers yes, the lock is **never requested** (`OrbitCamera.LockPointer` returns at once), and mouse look reads the same `Look` deltas. Off in the Editor, off without `?debug=1`. |
+| `?debug=1&overlay=1` | The overlay is shown from the first frame instead of waiting for F3. |
+
+**The overlay** (`Assets/Scripts/Game/DebugOverlay.cs`, a `DebugOverlay` object
+under `_UI` in Tutorial, Labyrinth and Dev/FeelBox; a code-built UI Toolkit
+label on the shared `UiPanelSettings`, sorting order 100). **F3** toggles it
+(`keys.js` already swallows the browser's own F3). It shows, refreshed once a
+second:
+
+```
+fps=31.2 fixed/frame=1.87(max 3)
+role=host transport=WebRtc slot=0 peers=1 rtt=- simLag=0t phase=Playing
+in=21/s,1.3KB/s out=44/s,2.9KB/s poseIn=20Hz
+cell=12 target=GoodEnd role=Weapon compass=N lookDrops=0 lock=yes
+```
+
+- `fps` is a one-second average of `Update` calls; `fixed/frame` the physics
+  steps per rendered frame (max in the window).
+- `rtt` is the last `CLOCK_PING` round trip (`RoomClock.LastRttMs`); the host
+  shows `-`. `simLag` is `RoomClock.Tick - WorldSim.Tick`: how many ticks the sim
+  is behind the room clock (it climbs while a tab is stalled and the catch-up cap
+  of 20 ticks per frame works it off).
+- `in` / `out` are transport messages and payload bytes per second, counted at
+  the Session boundary (`NetStats`: FRAMEs, raw POSE, pings, pongs; not the base64
+  and WebRTC framing the browser adds). `poseIn` is the rate of raw POSE (0x01)
+  arriving from other peers.
+- `cell` / `target` / `role` / `compass` come from the local sim: the compass
+  target kind (GoodEnd, BadEnd, Cell#n), this peer's role, and the doorway the
+  green spike names (N/E/S/W or `spin`). `red=` appears on a Mage's machine.
+- `lookDrops` / `lookScaled` are the spike filter's counters, `lock` the pointer
+  lock as gameplay sees it, and `TAB-HIDDEN` appears while `document.hidden`.
+
+The same numbers go to the browser console every 5 s as one line, `[pesky] dbg
+...`, so a console dump (or an agent's `read_console_messages`) tells the story
+without a screenshot. Other `[pesky]` lines under the gate: `look: dropped ...`,
+`map: bend requested ...`, `map: refused locally - ...`, `host: bend ... accepted /
+refused: <why>`, `host: swap ... accepted / refused`, `reply: ROLE_ASSIGN ...`,
+`reply: COMPASS_TARGETS ...`. Note that on a `?debug=1` page **the host's own
+console names who it bent and why it refused** - the wire stays silent, the
+page does not.
+
+### Driving a page by hand (an embedded browser or an automation harness)
+
+- Keys reach Unity only as `KeyboardEvent`s on the focused `#unity-canvas` with
+  `key`, `code` **and** `keyCode` set (a synthetic event without `code` /
+  `keyCode` is ignored for Backspace, arrows and friends; printable characters
+  need a `keypress` with `charCode` as well). Mouse buttons must be
+  `PointerEvent`s (`pointerdown` / `pointerup` beside `mousedown` / `mouseup`).
+- A hidden or occluded page gets **no `requestAnimationFrame` at all**, which
+  stops Unity's main loop dead (Unity WebGL is rAF-driven unless
+  `Application.targetFrameRate` is set). For a headless measurement, polyfill it
+  before or after load - `window.requestAnimationFrame = cb =>
+  setTimeout(() => cb(performance.now()), 0)` - and read the *uncapped* frame
+  rate from the overlay; it then reflects CPU frame cost, not vsync.
+- Signalling goes through public Nostr relays that come and go. For a local
+  two-tab test with no relay dependence, run any NIP-01 relay on localhost and,
+  **before the first `HOST` / `JOIN` click** (trystero fixes its relay list on
+  the page's first `joinRoom`), replace `window.trystero` with a wrapper whose
+  `joinRoom` merges `relayConfig: { urls: ['ws://127.0.0.1:8091'], redundancy: 1 }`
+  into the config. A 90-line Python relay (`websockets`) was enough for round 5.
+
+### What a hidden host tab does to everyone
+
+A background tab in Chrome gets no rAF, so a **hidden host stops ticking**: its
+`WorldSim` freezes, POSE stops, clients' `simLag` climbs and their remote views
+freeze; when the tab returns, `NetSession.AdvanceHost` catches up at most 20
+ticks per frame and, past 5 s behind, jumps the clock and re-snapshots everyone
+(`ResnapshotAll`). Clients never desync permanently - they wait or re-request a
+snapshot (`RESYNC_REQ` after 5 s behind) - but nothing can make a hidden tab
+simulate. `PlayerSettings.runInBackground` only keeps the game alive on
+**focus loss** (alt-tab to Discord with the tab still visible), not on
+visibility loss. Play with **the host's tab visible** - a second window, a
+second monitor, or simply the host not tabbing away; if the host must be in a
+background tab, every client will see the world stall until it comes back.

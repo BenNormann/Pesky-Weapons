@@ -307,8 +307,17 @@ namespace Pesky.Session.Rules
         {
             // Silence is the answer to everything. A weapon that sends one of these to see what happens
             // gets precisely what a Mage on cooldown gets: no reply, no event, no console line.
-            if (sim == null || events == null || !_roundOpen) return;
-            if (fromSlot >= Wire.MaxPlayers || !_mage[fromSlot]) return;
+            // ON THE WIRE. The host's own debug console (NetDebug: the Editor, development builds, ?debug=1 pages) does say why.
+            if (sim == null || events == null || !_roundOpen)
+            {
+                NetDebug.Log("host: intent 0x" + MessageInfo.IdOf(payload).ToString("X2") + " from slot " + fromSlot + " refused: no round open");
+                return;
+            }
+            if (fromSlot >= Wire.MaxPlayers || !_mage[fromSlot])
+            {
+                NetDebug.Log("host: intent 0x" + MessageInfo.IdOf(payload).ToString("X2") + " from slot " + fromSlot + " refused: not a Mage");
+                return;
+            }
             LabyrinthDef def = sim.Data != null ? sim.Data.labyrinth : null;
             if (MessageInfo.IdOf(payload) == MsgId.SwapReq) OnSwap(fromSlot, payload, sim, def, tick, events);
             else OnBend(fromSlot, payload, sim, def, tick, events);
@@ -323,10 +332,18 @@ namespace Pesky.Session.Rules
             // The asset owns this number and nothing else does. The 60 here is only what a session with
             // no LabyrinthDef at all would use; it matches the asset so the two can never disagree.
             uint cooldown = Ticks(def != null ? def.swapCooldownSeconds : 60f);
-            if (_swapUsed[fromSlot] && tick < _lastSwapTick[fromSlot] + cooldown) return;
+            if (_swapUsed[fromSlot] && tick < _lastSwapTick[fromSlot] + cooldown)
+            {
+                NetDebug.Log("host: swap " + req.cellA + "<->" + req.cellB + " from slot " + fromSlot + " refused: cooldown, " + (_lastSwapTick[fromSlot] + cooldown - tick) + " ticks left");
+                return;
+            }
             bool wrap = def != null && def.swapAcrossWrap;
             // Adjacency, the three fixed rooms and "every room can still reach the Exit" all live in here.
-            if (!grid.CanSwap(req.cellA, req.cellB, wrap)) return;
+            if (!grid.CanSwap(req.cellA, req.cellB, wrap))
+            {
+                NetDebug.Log("host: swap " + req.cellA + "<->" + req.cellB + " from slot " + fromSlot + " refused: not swappable (adjacency, a fixed room, or the Exit would become unreachable)");
+                return;
+            }
 
             _swapUsed[fromSlot] = true;
             _lastSwapTick[fromSlot] = tick;
@@ -335,6 +352,7 @@ namespace Pesky.Session.Rules
             msg.cellA = req.cellA;
             msg.cellB = req.cellB;
             events.Emit(msg.Encode());
+            NetDebug.Log("host: swap " + req.cellA + "<->" + req.cellB + " from slot " + fromSlot + " accepted, LAB_SWAPPED at tick " + msg.header.tick);
         }
 
         void OnBend(byte fromSlot, byte[] payload, WorldSim sim, LabyrinthDef def, uint tick, EventSink events)
@@ -344,8 +362,17 @@ namespace Pesky.Session.Rules
             LabyrinthGrid grid = sim.Labyrinth.Grid;
             if (grid == null) return;
             uint cooldown = Ticks(def != null ? def.bendCooldownSeconds : 15f);
-            if (_bendUsed[fromSlot] && tick < _lastBendTick[fromSlot] + cooldown) return;
-            if (req.target == CompassTargetKind.Cell && !grid.InRange(req.cell)) return;
+            string what = "bend mask=" + req.slots + " target=" + req.target + " cell=" + req.cell + " from slot " + fromSlot;
+            if (_bendUsed[fromSlot] && tick < _lastBendTick[fromSlot] + cooldown)
+            {
+                NetDebug.Log("host: " + what + " refused: cooldown, " + (_lastBendTick[fromSlot] + cooldown - tick) + " ticks left");
+                return;
+            }
+            if (req.target == CompassTargetKind.Cell && !grid.InRange(req.cell))
+            {
+                NetDebug.Log("host: " + what + " refused: cell out of range");
+                return;
+            }
 
             bool bend = req.target != CompassTargetKind.GoodEnd;
             int nonMage = 0;
@@ -363,14 +390,22 @@ namespace Pesky.Session.Rules
                 if (after != _bent[i]) changes = true;
                 else if (after && (_bendKind[i] != req.target || _bendCell[i] != req.cell)) changes = true;
             }
-            if (nonMage == 0 || !changes) return;
+            if (nonMage == 0 || !changes)
+            {
+                NetDebug.Log("host: " + what + " refused: " + (nonMage == 0 ? "no non-Mage players present" : "nothing would change (a named slot is absent, a Mage, or already set that way)"));
+                return;
+            }
 
             // The minority rule: strictly fewer than half of the non-Mage players may be lied to at once,
             // counting both Mages' work together, so two of them cannot bend the whole room between them.
             // BUT a strict minority of 1 or 2 non-Mages is ZERO, which used to make every bend in the
             // tutorial and in any small test silently impossible; LabyrinthDef.minBendTargets is the floor.
             int maxBent = def != null ? def.MaxBentFor(nonMage) : (nonMage > 0 ? 1 : 0);
-            if (bentAfter > maxBent) return;;
+            if (bentAfter > maxBent)
+            {
+                NetDebug.Log("host: " + what + " refused: " + bentAfter + " bent would exceed the limit of " + maxBent + " for " + nonMage + " non-Mages");
+                return;
+            }
 
             _bendUsed[fromSlot] = true;
             _lastBendTick[fromSlot] = tick;
@@ -388,6 +423,7 @@ namespace Pesky.Session.Rules
                 msg.cell = bend ? req.cell : (ushort)0;
                 // To that player alone, and it does not say who did it or that anybody did.
                 events.Reply((byte)i, msg.Encode());
+                NetDebug.Log("host: " + what + " accepted: COMPASS_TARGETS(" + req.target + (bend && req.target == CompassTargetKind.Cell ? " " + req.cell : "") + ") sent to slot " + i + " (" + bentAfter + "/" + maxBent + " bent)");
             }
         }
 

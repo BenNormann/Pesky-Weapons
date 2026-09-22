@@ -57,6 +57,8 @@ namespace Pesky.Game
         [Tooltip("A step longer than this in one physics tick is a teleport or a respawn, never a crossing.")]
         [SerializeField] float maxStep = 2f;        [Tooltip("A free soul cannot use a magic door: the doorway is SOLID to it. When a soul presses on the opening from this far in front of the plane, the HUD reminds the player to possess a weapon first. 0 = no reminder.")]
         [SerializeField] float soulHintDistance = 1.2f;
+        [Tooltip("A body farther than this from the doorway is not watched this physics step. With a hundred doorways in the scene the scan stays cheap, and nothing can cross a plane it is not near: the next near step records a fresh 'before' and maxStep rejects any leap from a stale one. 0 = watch everything.")]
+        [SerializeField] float sensorRange = 40f;
 
 
         readonly Dictionary<Rigidbody, Vector3> _previous = new Dictionary<Rigidbody, Vector3>();
@@ -179,10 +181,14 @@ namespace Pesky.Game
 
         // ---------------------------------------------------------------- sensing
 
-        void FixedUpdate()
+void FixedUpdate()
         {
             if (authority == null) return;
-            bool passable = IsPassable;
+            float rangeSq = sensorRange * sensorRange;
+            Vector3 here = transform.position;
+            // Resolving the twin walks the grid table; it is only done once a body is actually near.
+            bool passableKnown = false;
+            bool passable = false;
 
             IReadOnlyList<WeaponBody> weapons = authority.Weapons;
             for (int i = 0; i < weapons.Count; i++)
@@ -190,6 +196,8 @@ namespace Pesky.Game
                 WeaponBody w = weapons[i];
                 if (w == null || w.Body == null) continue;
                 if (w.IsBroken) { _previous.Remove(w.Body); continue; }
+                if (sensorRange > 0f && (w.Body.position - here).sqrMagnitude > rangeSq) continue;
+                if (!passableKnown) { passable = IsPassable; passableKnown = true; }
                 if (Watch(w.Body, w.Body.worldCenterOfMass, passable)) authority.RequestMagicDoorTraverse(this, w);
             }
 
@@ -202,6 +210,7 @@ namespace Pesky.Game
                 PlayerSoul s = souls[i];
                 if (s == null || s.Body == null) continue;
                 _previous.Remove(s.Body);
+                if (sensorRange > 0f && (s.Body.position - here).sqrMagnitude > rangeSq) continue;
                 if (!s.IsPossessing && PressingOnTheOpening(s.Body)) authority.NoteSoulBlockedByDoor(this, s);
             }
         }

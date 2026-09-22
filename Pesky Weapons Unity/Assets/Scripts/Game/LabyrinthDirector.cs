@@ -30,6 +30,18 @@ namespace Pesky.Game
         [Tooltip("Every authored room. Order does not matter: each one carries its own room id.")]
         [SerializeField] LabyrinthRoom[] rooms = new LabyrinthRoom[0];
 
+        [Header("Culling")]
+        [Tooltip("A room whose anchor is farther than this from the local player has its renderers and lights switched off. Rooms sit 200 m apart on the lattice (120 in the tutorial), so this keeps exactly the room the player is in drawn. Nothing else in a room is touched: doorways, colliders, physics and loose weapons keep working everywhere, and a weapon parked in a room is never culled with it.")]
+        [SerializeField] float cullDistance = 150f;
+        [Tooltip("Off = every room draws all the time, the way it did before feedback round 5 (a hundred lights and fourteen hundred renderers in the frustum).")]
+        [SerializeField] bool cullFarRooms = true;
+        [Tooltip("The local player's body, read live for the culling so the room a doorway just put the player in is drawn on the same frame. Without it the culling follows the sim's pose row, which trails the body by up to a POSE interval.")]
+        [OptionalRef][SerializeField] PlayerSpawner spawner;
+
+        Renderer[][] _roomRenderers;
+        Light[][] _roomLights;
+        bool[] _roomDrawn;
+
         readonly Dictionary<int, LabyrinthRoom> _byRoomId = new Dictionary<int, LabyrinthRoom>();
         NetSession _session;
         int _localCell = LabyrinthGrid.NoCell;
@@ -79,12 +91,86 @@ namespace Pesky.Game
             }
             if (_session == null)
                 Debug.LogError("LabyrinthDirector has no SessionRunner: no grid, no doorways, no compass.", this);
+            BuildCullTables();
         }
 
-        void Update()
+        /// <summary>What each room owns that can be switched off when the player is far away: its renderers (not a traveller's) and its lights.</summary>
+        void BuildCullTables()
+        {
+            _roomRenderers = new Renderer[rooms.Length][];
+            _roomLights = new Light[rooms.Length][];
+            _roomDrawn = new bool[rooms.Length];
+            List<Renderer> keep = new List<Renderer>(128);
+            for (int i = 0; i < rooms.Length; i++)
+            {
+                _roomDrawn[i] = true;
+                LabyrinthRoom room = rooms[i];
+                if (room == null)
+                {
+                    _roomRenderers[i] = new Renderer[0];
+                    _roomLights[i] = new Light[0];
+                    continue;
+                }
+                keep.Clear();
+                Renderer[] all = room.GetComponentsInChildren<Renderer>(true);
+                for (int r = 0; r < all.Length; r++)
+                {
+                    // A weapon parked in a room is a traveller, not furniture: it leaves with a player and is never culled with the room.
+                    if (all[r].GetComponentInParent<Rigidbody>() != null) continue;
+                    keep.Add(all[r]);
+                }
+                _roomRenderers[i] = keep.ToArray();
+                _roomLights[i] = room.GetComponentsInChildren<Light>(true);
+            }
+        }
+
+void Update()
         {
             Vector3 pos;
-            _localCell = TryLocalPosition(out pos) ? CellAt(pos) : LabyrinthGrid.NoCell;
+            bool has = TryLocalPosition(out pos);
+            _localCell = has ? CellAt(pos) : LabyrinthGrid.NoCell;
+            if (!cullFarRooms) return;
+            // The live body, when there is one: a MagicDoor moves it in FixedUpdate and the sim's row only
+            // learns of it with the next POSE, so the culling must not wait for the row.
+            Vector3 livePos;
+            if (TryLiveLocalPosition(out livePos)) RefreshCulling(true, livePos);
+            else RefreshCulling(has, pos);
+        }
+
+        /// <summary>The local player's body as the scene has it right now: the possessed weapon, else the soul. False without a spawner or a soul.</summary>
+        bool TryLiveLocalPosition(out Vector3 pos)
+        {
+            pos = Vector3.zero;
+            PlayerSoul soul = spawner != null ? spawner.LocalSoul : null;
+            if (soul == null) return false;
+            WeaponBody weapon = soul.Weapon;
+            if (weapon != null && weapon.Body != null) pos = weapon.Body.position;
+            else if (soul.Body != null) pos = soul.Body.position;
+            else pos = soul.transform.position;
+            return true;
+        }
+
+        /// <summary>
+        /// Draws the rooms near the local player and nothing else. Twenty-five distance checks a frame,
+        /// and a room's renderers and lights are only touched when its state flips. With no local pose yet
+        /// (before the first POSE) everything is drawn.
+        /// </summary>
+        void RefreshCulling(bool hasPosition, Vector3 pos)
+        {
+            if (_roomDrawn == null || _roomDrawn.Length != rooms.Length) return;
+            float limitSq = cullDistance * cullDistance;
+            for (int i = 0; i < rooms.Length; i++)
+            {
+                LabyrinthRoom room = rooms[i];
+                if (room == null) continue;
+                bool drawn = !hasPosition || (room.Anchor.position - pos).sqrMagnitude <= limitSq;
+                if (drawn == _roomDrawn[i]) continue;
+                _roomDrawn[i] = drawn;
+                Renderer[] rs = _roomRenderers[i];
+                for (int r = 0; r < rs.Length; r++) if (rs[r] != null) rs[r].enabled = drawn;
+                Light[] ls = _roomLights[i];
+                for (int l = 0; l < ls.Length; l++) if (ls[l] != null) ls[l].enabled = drawn;
+            }
         }
 
         // ---------------------------------------------------------------- rooms and cells
