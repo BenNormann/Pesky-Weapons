@@ -2035,3 +2035,53 @@ tests, no screenshots.** Build target left on **WebGL**.
    one crew member so a solo tutorial has somebody to bend), and each chip shows
    where that compass was sent. **Not done:** the stand-in still has no grey-box
    body or world-space compass ring in the practice labyrinth — see the report.
+
+## Feedback round 4: camera (2026-09-21)
+
+Owner: "When looking up from a weapon the camera clips through the floors too."
+Implemented, untested (compile clean, scene validator 0 problems on the five scenes).
+
+**What was wrong** (`Assets/Scripts/Game/OrbitCamera.cs`, round 3's version):
+1. `ClampPivot` gave up and left the pivot **on the target** whenever a 0.2 m sphere
+   at the target touched World. A weapon lying on a floor has its origin ~3 cm above
+   it, so that was *always* true: the pivot sat on the floor, never 1 m up.
+2. `FreeDistance` clamped its answer to `minDistance` (0.1): with the pivot on the
+   floor and the view pitched up, the camera was pushed 0.1 m along a **downward**
+   vector no matter what the casts said, i.e. to or under the floor surface.
+3. The scene cameras had **near clip 0.3**, so "cover the near plane" asked for a
+   ~0.5 m probe. It never fits near a floor, was always halved down to ~3 cm, and at
+   that size it protects nothing (and, still overlapping, the sphere cast really is
+   blind to the floor, as the owner suspected).
+
+**What it does now.** One probe sphere (`collisionRadius`, never smaller than the
+near clip plane's far corner needs) is walked target -> anchor -> pivot -> camera,
+every link starting where the previous one was proven free:
+- `FreeAnchor`: the probe (+`skin`) at the target is pushed out of floor / wall /
+  corner with `OverlapSphere` + `ComputePenetration` (nearest-point fallback), and
+  must not end up across a surface (`Linecast`). In a gap too tight for it (under a
+  rail) the probe **shrinks** (bisection down to `minProbeRadius`) and the camera's
+  **near clip plane shrinks with it**, so the plane is always inside a free sphere.
+- `LiftPivot`: sphere sweep from the anchor up to the raised pivot, eased like the
+  distance (down at once, up gently), then settled.
+- `Free`: sphere cast **plus** a plain ray (hard limit, backs off the full radius).
+  No forced minimum distance any more: distance 0 is the (free) pivot.
+- `Settle`: the final camera position is depenetrated again and line-checked
+  against the pivot; if anything is between them the camera stays on the pivot.
+- `OrbitPitch`: with the pivot held against a floor or roof (under a rail, a soul
+  at the ceiling) the orbit **flattens** by up to `maxPitchEase` to keep
+  `comfortDistance` instead of landing on the target; the view keeps its full pitch.
+- Mask is still World only (layer 8); SoulBarrier (15) never blocks the camera.
+
+Tunables (Collision header): `collisionMask` 256, `collisionRadius` 0.25, `skin`
+0.04 (was 0.08), `minProbeRadius` 0.05, `comfortDistance` 1 (0 = off),
+`maxPitchEase` 25, `distanceEaseTime` 0.12. Removed: `minDistance`,
+`pivotProbeRadius`, `fitRadiusToNearClip`.
+
+Scenes: Main Camera **near clip 0.3 -> 0.1** and `skin` 0.04 in Tutorial, Labyrinth
+and Dev/FeelBox. Geometry audit (read-only): every floor / wall / roof / ledge /
+step / rack piece in those scenes and in the room + piece prefabs has an enabled
+non-trigger collider on World, none thinner than 0.2 m except the rack rails;
+doorway alcoves are closed by a World `Back`. Nothing needed fixing.
+
+Runtime helper: a hidden trigger `SphereCollider` ("OrbitCamera Probe", parked at
+y = -10000) exists only because `ComputePenetration` needs a live collider.

@@ -431,6 +431,13 @@ Solo first, then with two instances.
   corner, in the **Round**, **Octagon**, **L-shape**, **Long Gallery** and
   **Tall Shaft** rooms, and as a **possessed weapon**.
 - Nothing should pop: the camera may snap **in** but must ease back **out**.
+- **Round 4 - look straight up from a surface.** Possess a weapon and let it come
+  to **rest on the floor**, then pitch the view **fully up** and sweep the yaw all
+  the way round: no black void along the bottom of the screen, no seeing under the
+  floor. Repeat lying on the **rack plinth beside / under the rails**, **against a
+  wall**, and **in a corner**; then as a **soul pressed into the ceiling** looking
+  fully down and fully up. Under a rail / at the ceiling the camera should stay
+  about 1 m back with the target low (or high) in frame rather than land on it.
 
 ### 5.4 The Mage's compass bend actually lands
 
