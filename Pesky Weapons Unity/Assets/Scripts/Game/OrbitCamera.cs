@@ -5,8 +5,9 @@ namespace Pesky.Game
 {
     /// <summary>
     /// Third-person orbit camera. Yaw and pitch come from the Look action only; the pivot follows the
-    /// target's POSITION (SmoothDamp), so the weapon's rotation can never affect the view. A spherecast
-    /// against World pulls the camera in. Click locks the pointer, Pause (Esc) frees it. No zoom.
+    /// target's POSITION (SmoothDamp), so the weapon's rotation can never affect the view. A probe sphere
+    /// big enough to hold the near clip plane is walked from the target to the camera through free space
+    /// only, so the view can never be outside World. Click locks the pointer, Pause (Esc) frees it. No zoom.
     /// Pitch convention: positive looks down at the target.
     /// </summary>
     [DisallowMultipleComponent]
@@ -31,17 +32,22 @@ namespace Pesky.Game
         [SerializeField] float followSmoothTime = 0.08f;
 
         [Header("Collision")]
+        [Tooltip("World only. Souls' barriers, weapons and enemies never block the camera.")]
         [SerializeField] LayerMask collisionMask = 256;
+        [Tooltip("Radius of the probe that carries the pivot and the camera. Widened by itself if the near clip plane needs more.")]
         [SerializeField] float collisionRadius = 0.25f;
-        [SerializeField] float minDistance = 0.1f;
-        [Tooltip("How far short of a surface the pivot and the camera stop, so neither ever rests inside it.")]
-        [SerializeField] float skin = 0.08f;
-        [Tooltip("Radius of the cast that lifts the pivot off the target. Narrower than the camera probe so the pivot can still rise in a tight room.")]
-        [SerializeField] float pivotProbeRadius = 0.2f;
-        [Tooltip("On: the pull-in probe is widened to cover the near clip plane, so the plane cannot poke through a wall.")]
-        [SerializeField] bool fitRadiusToNearClip = true;
+        [Tooltip("Gap kept between the probe and a surface.")]
+        [SerializeField] float skin = 0.04f;
+        [Tooltip("In a gap too tight for it the probe shrinks down to this, and the near clip plane shrinks with it.")]
+        [SerializeField] float minProbeRadius = 0.05f;
+        [Tooltip("Pivot held against a floor or roof: the orbit flattens to keep this distance rather than land on the target. 0 = off.")]
+        [SerializeField] float comfortDistance = 1f;
+        [Tooltip("Most the orbit may flatten away from the view pitch, degrees. Under half the vertical FOV keeps the target on screen.")]
+        [SerializeField] float maxPitchEase = 25f;
         [Tooltip("Seconds to ease back OUT once geometry stops blocking. Pulling IN is instant.")]
         [SerializeField] float distanceEaseTime = 0.12f;
+
+        const float NearMargin = 0.01f;
 
         InputAction _look;
         InputAction _pause;
@@ -52,7 +58,14 @@ namespace Pesky.Game
         bool _inputEnabled = true;
         float _distance;
         float _distanceVelocity;
+        float _lift = 1f;
+        float _liftVelocity;
+        float _ease;
+        float _easeVelocity;
+        float _baseNear = 0.1f;
         Camera _camera;
+        SphereCollider _probe;
+        readonly Collider[] _overlaps = new Collider[16];
 
         public float Yaw { get { return _yaw; } }
         public float Pitch { get { return _pitch; } }
@@ -67,7 +80,10 @@ namespace Pesky.Game
         void Awake()
         {
             _pitch = Mathf.Clamp(restingPitch, minPitch, maxPitch);
-            _yaw = transform.eulerAngles.y;            _distance = distance;
+            _yaw = transform.eulerAngles.y;
+            _distance = distance;
+            _camera = GetComponent<Camera>();
+            if (_camera != null) _baseNear = _camera.nearClipPlane;
 
             if (target != null) _pivot = target.position + pivotOffset;
         }
@@ -87,15 +103,24 @@ namespace Pesky.Game
             FreePointer();
         }
 
+        void OnDestroy()
+        {
+            if (_probe != null) Destroy(_probe.gameObject);
+        }
+
         public void SetTarget(Transform newTarget, bool snap)
         {
             target = newTarget;
             if (snap && target != null)
             {
                 _pivot = target.position + pivotOffset;
-                _pivotVelocity = Vector3.zero;                _distance = distance;
+                _pivotVelocity = Vector3.zero;
+                _distance = distance;
                 _distanceVelocity = 0f;
-
+                _lift = 1f;
+                _liftVelocity = 0f;
+                _ease = 0f;
+                _easeVelocity = 0f;
             }
         }
 
@@ -148,80 +173,216 @@ namespace Pesky.Game
 
         void LateUpdate()
         {
+            Vector3 targetPosition = target != null ? target.position : _pivot;
             if (target != null)
-                _pivot = Vector3.SmoothDamp(_pivot, target.position + pivotOffset, ref _pivotVelocity, followSmoothTime);
+                _pivot = Vector3.SmoothDamp(_pivot, targetPosition + pivotOffset, ref _pivotVelocity, followSmoothTime);
 
-            Vector3 anchor = target != null ? target.position : _pivot;
-            Vector3 pivot = ClampPivot(anchor, _pivot);
+            // One chain of same-sized probes, target -> anchor -> pivot -> camera, each link starting where the
+            // last one was proven free. A cast is blind to whatever it STARTS inside, so no link may start in World.
+            float r = FullRadius();
+            Vector3 anchor = FreeAnchor(targetPosition, ref r);
+            FitNearClip(r);
+            Vector3 pivot = LiftPivot(anchor, _pivot + (anchor - targetPosition), r);
 
             Quaternion rotation = Quaternion.Euler(_pitch, _yaw, 0f);
-            Vector3 back = rotation * Vector3.back;
-            float wanted = FreeDistance(pivot, back);
+            Vector3 back = Quaternion.Euler(OrbitPitch(pivot, r), _yaw, 0f) * Vector3.back;
+            float wanted = Free(pivot, back, distance, r);
+            // A flattened orbit looks past the target, so it stays close.
+            wanted = Mathf.Min(wanted, Mathf.Lerp(distance, comfortDistance, Mathf.Abs(_ease) / 5f));
 
             // In at once - geometry must never cut the view - and out again gently, so the camera does not pop.
-            if (wanted <= _distance || distanceEaseTime <= 0f) _distance = wanted;
-            else _distance = Mathf.SmoothDamp(_distance, wanted, ref _distanceVelocity, distanceEaseTime);
-            _distance = Mathf.Clamp(_distance, minDistance, distance);
+            _distance = EaseOut(_distance, wanted, ref _distanceVelocity);
 
-            transform.SetPositionAndRotation(pivot + back * _distance, rotation);
+            transform.SetPositionAndRotation(Settle(pivot, pivot + back * _distance, r), rotation);
+        }
+
+        /// <summary>Down to the limit at once, back up to it over distanceEaseTime.</summary>
+        float EaseOut(float current, float limit, ref float velocity)
+        {
+            if (limit <= current || distanceEaseTime <= 0f)
+            {
+                velocity = 0f;
+                return limit;
+            }
+            return Mathf.Min(limit, Mathf.SmoothDamp(current, limit, ref velocity, distanceEaseTime));
         }
 
         /// <summary>
-        /// The pivot rides pivotOffset above the target. Against a ceiling (or any wall) that raised point
-        /// ends up on the FAR side of the slab, and then everything cast from it starts outside the room -
-        /// which is how the camera used to get out of the map. So the pivot is reached by a cast FROM THE
-        /// TARGET, and stops a skin short of whatever is in the way: it can never cross a surface the target
-        /// has not crossed. Identical for weapons and souls - it only knows the target's position.
+        /// A free point for the probe at the target. A weapon lying on a floor or against a wall has its
+        /// origin INSIDE the probe's reach of that surface, so the probe is pushed clear first. In a gap too
+        /// tight for it (under a rail) the probe shrinks until it fits; 'r' returns the size that did.
         /// </summary>
-        Vector3 ClampPivot(Vector3 anchor, Vector3 wanted)
+        Vector3 FreeAnchor(Vector3 at, ref float r)
+        {
+            Vector3 best;
+            if (Fits(at, r, out best)) return best;
+
+            float lo = Mathf.Min(minProbeRadius, r);
+            float hi = r;
+            r = lo;
+            // Buried in geometry (spawn, a warp): nothing fits, stay on the target.
+            if (!Fits(at, lo, out best)) return at;
+            for (int i = 0; i < 4; i++)
+            {
+                float mid = 0.5f * (lo + hi);
+                Vector3 p;
+                if (Fits(at, mid, out p)) { lo = mid; best = p; }
+                else hi = mid;
+            }
+            r = lo;
+            return best;
+        }
+
+        bool Fits(Vector3 at, float r, out Vector3 p)
+        {
+            p = at;
+            if (!Depenetrate(ref p, r)) return false;
+            // Pushed out on the far side of a thin piece: not the target's space.
+            return !Blocked(at, p);
+        }
+
+        /// <summary>
+        /// The pivot rides pivotOffset above the target, reached by a sweep FROM the anchor so it can never
+        /// cross a surface the target has not crossed (a roof, a rail, a ledge). Identical for weapons and
+        /// souls. The lift eases like the distance: down at once, up again gently.
+        /// </summary>
+        Vector3 LiftPivot(Vector3 anchor, Vector3 wanted, float r)
         {
             Vector3 delta = wanted - anchor;
             float len = delta.magnitude;
             if (len < 1e-4f) return anchor;
             Vector3 dir = delta / len;
-            float r = Mathf.Max(0.01f, pivotProbeRadius);
-            // The target itself is buried in geometry (spawn, a warp): leave the pivot on it.
-            if (Physics.CheckSphere(anchor, r, collisionMask, QueryTriggerInteraction.Ignore)) return anchor;
-            RaycastHit hit;
-            if (Physics.SphereCast(anchor, r, dir, out hit, len, collisionMask, QueryTriggerInteraction.Ignore))
-                len = Mathf.Max(0f, hit.distance - skin);
-            return anchor + dir * len;
-        }
-
-        /// <summary>How far back the camera may sit before it would cut into the world.</summary>
-        float FreeDistance(Vector3 pivot, Vector3 back)
-        {
-            float r = CastRadius();
-            // A cast reports nothing for what it ALREADY overlaps. Rather than snap the camera onto the
-            // pivot (a pop), narrow the probe until it fits in the space the pivot is actually in.
-            int guard = 0;
-            while (r > 0.03f && guard++ < 6 && Physics.CheckSphere(pivot, r, collisionMask, QueryTriggerInteraction.Ignore))
-                r *= 0.5f;
-
-            float d = distance;
-            RaycastHit hit;
-            if (Physics.SphereCast(pivot, r, back, out hit, d, collisionMask, QueryTriggerInteraction.Ignore))
-                d = hit.distance - skin;
-            // A thin edge the sphere slipped around still stops a plain ray.
-            if (d > 0f && Physics.Raycast(pivot, back, out hit, d, collisionMask, QueryTriggerInteraction.Ignore))
-                d = Mathf.Min(d, hit.distance - skin);
-            return Mathf.Clamp(d, minDistance, distance);
+            _lift = EaseOut(_lift, Free(anchor, dir, len, r) / len, ref _liftVelocity);
+            return Settle(anchor, anchor + dir * (len * _lift), r);
         }
 
         /// <summary>
-        /// The pull-in probe's radius. Kept at least as wide as the near clip plane's far corner, so the
-        /// plane itself cannot poke through the surface the sphere stopped against.
+        /// Where the camera sits on its orbit: the view pitch, unless the pivot is held against a floor or a
+        /// roof (under a rail, a soul at the ceiling). There the orbit flattens to keep comfortDistance
+        /// instead of landing on the target. The VIEW always keeps the full pitch.
         /// </summary>
-        float CastRadius()
+        float OrbitPitch(Vector3 pivot, float r)
+        {
+            float ease = 0f;
+            if (comfortDistance > 0f)
+            {
+                float up = Mathf.Asin(Mathf.Clamp01(Free(pivot, Vector3.up, comfortDistance, r) / comfortDistance)) * Mathf.Rad2Deg;
+                float down = Mathf.Asin(Mathf.Clamp01(Free(pivot, Vector3.down, comfortDistance, r) / comfortDistance)) * Mathf.Rad2Deg;
+                ease = Mathf.Clamp(Mathf.Clamp(_pitch, -down, up) - _pitch, -maxPitchEase, maxPitchEase);
+            }
+            _ease = Mathf.SmoothDamp(_ease, ease, ref _easeVelocity, distanceEaseTime);
+            return _pitch + _ease;
+        }
+
+        /// <summary>How far the probe can travel from a FREE point before it would touch World.</summary>
+        float Free(Vector3 from, Vector3 dir, float max, float r)
+        {
+            float d = max;
+            RaycastHit hit;
+            if (Physics.SphereCast(from, r, dir, out hit, max, collisionMask, QueryTriggerInteraction.Ignore))
+                d = hit.distance - skin;
+            // The hard limit. A plain ray has no size to start inside anything, and it also catches a thin
+            // edge the sphere slipped around.
+            if (d > 0f && Physics.Raycast(from, dir, out hit, d + r, collisionMask, QueryTriggerInteraction.Ignore))
+                d = Mathf.Min(d, hit.distance - r - skin);
+            return Mathf.Max(0f, d);
+        }
+
+        /// <summary>The last word on a probe position: pushed clear of World, and never across a surface from 'from'.</summary>
+        Vector3 Settle(Vector3 from, Vector3 p, float r)
+        {
+            Vector3 q = p;
+            // No room for the skin as well: the swept position itself is still free.
+            if (!Depenetrate(ref q, r)) q = p;
+            return Blocked(from, q) ? from : q;
+        }
+
+        /// <summary>World between two points. A plain line: it has no size to start inside anything.</summary>
+        bool Blocked(Vector3 a, Vector3 b)
+        {
+            return (b - a).sqrMagnitude > 1e-8f && Physics.Linecast(a, b, collisionMask, QueryTriggerInteraction.Ignore);
+        }
+
+        /// <summary>
+        /// Pushes the probe (plus skin) out of the World it overlaps, a few rounds for corners.
+        /// False = the probe does not fit here.
+        /// </summary>
+        bool Depenetrate(ref Vector3 p, float r)
+        {
+            float fat = r + skin;
+            SphereCollider probe = Probe(fat);
+            for (int round = 0; round < 4; round++)
+            {
+                int n = Physics.OverlapSphereNonAlloc(p, fat, _overlaps, collisionMask, QueryTriggerInteraction.Ignore);
+                bool moved = false;
+                for (int i = 0; i < n; i++)
+                {
+                    Collider c = _overlaps[i];
+                    Vector3 dir;
+                    float depth;
+                    if (Physics.ComputePenetration(probe, p, Quaternion.identity, c, c.transform.position, c.transform.rotation, out dir, out depth) && depth > 1e-4f)
+                    {
+                        p += dir * depth;
+                        moved = true;
+                        continue;
+                    }
+                    // Only touching, or a pair the solver will not take: the nearest point does the same job.
+                    MeshCollider mesh = c as MeshCollider;
+                    if (mesh != null && !mesh.convex) continue;
+                    Vector3 away = p - c.ClosestPoint(p);
+                    float gap = away.magnitude;
+                    if (gap > 1e-4f && gap < fat - 1e-4f)
+                    {
+                        p += away * ((fat - gap) / gap);
+                        moved = true;
+                    }
+                }
+                if (!moved) break;
+            }
+            return !Physics.CheckSphere(p, r, collisionMask, QueryTriggerInteraction.Ignore);
+        }
+
+        /// <summary>
+        /// ComputePenetration wants a live collider for the probe's shape. It is only ever given poses, so the
+        /// real one is parked far below the level where it touches nothing.
+        /// </summary>
+        SphereCollider Probe(float radius)
+        {
+            if (_probe == null)
+            {
+                GameObject go = new GameObject("OrbitCamera Probe");
+                go.hideFlags = HideFlags.HideInHierarchy;
+                go.layer = 2; // Ignore Raycast
+                go.transform.position = new Vector3(0f, -10000f, 0f);
+                _probe = go.AddComponent<SphereCollider>();
+                _probe.isTrigger = true;
+            }
+            _probe.radius = radius;
+            return _probe;
+        }
+
+        /// <summary>The probe at full size: never smaller than the near clip plane's far corner needs.</summary>
+        float FullRadius()
         {
             float r = Mathf.Max(0.01f, collisionRadius);
-            if (!fitRadiusToNearClip) return r;
-            if (_camera == null) _camera = GetComponent<Camera>();
             if (_camera == null) return r;
-            float near = _camera.nearClipPlane;
-            float h = near * Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            return Mathf.Max(r, _baseNear * NearReach() + NearMargin);
+        }
+
+        /// <summary>A shrunken probe takes the near clip plane in with it, so the plane never pokes out of the probe.</summary>
+        void FitNearClip(float r)
+        {
+            if (_camera == null) return;
+            float near = Mathf.Min(_baseNear, Mathf.Max(0.01f, (r - NearMargin) / NearReach()));
+            if (!Mathf.Approximately(near, _camera.nearClipPlane)) _camera.nearClipPlane = near;
+        }
+
+        /// <summary>Distance from the camera to a corner of the near clip plane, per metre of near clip.</summary>
+        float NearReach()
+        {
+            float h = Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
             float w = h * _camera.aspect;
-            return Mathf.Max(r, Mathf.Sqrt(near * near + h * h + w * w) + 0.01f);
+            return Mathf.Sqrt(1f + h * h + w * w);
         }
     }
 }
