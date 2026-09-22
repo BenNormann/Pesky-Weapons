@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Pesky.Data;
 
 namespace Pesky.Game
 {
@@ -20,6 +21,8 @@ namespace Pesky.Game
         [SerializeField] string pauseAction = "Pause";
         [Tooltip("Degrees per unit of the Look action.")]
         [SerializeField] float lookSensitivity = 2f;
+        [Tooltip("The mouse-look spike filter's tunables (Assets/Data/LookTuning.asset).")]
+        [SerializeField] LookTuning lookTuning;
 
         [Header("Orbit")]
         [Tooltip("Set at runtime by the PlayerSoul; empty in the authored scene.")]
@@ -56,6 +59,7 @@ namespace Pesky.Game
         float _yaw;
         float _pitch;
         bool _inputEnabled = true;
+        readonly LookFilter _filter = new LookFilter();
         float _distance;
         float _distanceVelocity;
         float _lift = 1f;
@@ -72,8 +76,20 @@ namespace Pesky.Game
         public float RestingPitch { get { return restingPitch; } }
         public Transform Target { get { return target; } }
         /// <summary>False = ignore the mouse (pause menus, automated probes). SetLook still works.</summary>
-        public bool InputEnabled { get { return _inputEnabled; } set { _inputEnabled = value; } }
-        public bool PointerLocked { get { return Cursor.lockState == CursorLockMode.Locked; } }
+        public bool InputEnabled
+        {
+            get { return _inputEnabled; }
+            set
+            {
+                // Re-enabled after an overlay: the next delta is whatever piled up meanwhile, not a movement.
+                if (value && !_inputEnabled) _filter.SkipNext();
+                _inputEnabled = value;
+            }
+        }
+        /// <summary>The mouse-look spike filter, for the debug overlay's counters.</summary>
+        public LookFilter Filter { get { return _filter; } }
+        /// <summary>The real lock, or the ?nolock=1 bypass standing in for it on a page that will not grant one.</summary>
+        public bool PointerLocked { get { return DebugGate.PointerLocked; } }
         /// <summary>Full 3D view direction (yaw and pitch).</summary>
         public Vector3 Forward { get { return Quaternion.Euler(_pitch, _yaw, 0f) * Vector3.forward; } }
 
@@ -144,8 +160,10 @@ namespace Pesky.Game
         }
 
 
-        public void LockPointer()
+public void LockPointer()
         {
+            // Under the ?nolock=1 harness bypass the page will never grant the lock, so it is never asked for either.
+            if (DebugGate.PointerLockBypass) return;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
@@ -156,18 +174,22 @@ namespace Pesky.Game
             Cursor.visible = true;
         }
 
-        void Update()
+void Update()
         {
             if (_pause != null && _pause.WasPressedThisFrame()) FreePointer();
 
             Mouse mouse = Mouse.current;
-            if (_inputEnabled && !PointerLocked && Application.isFocused && mouse != null && mouse.leftButton.wasPressedThisFrame)
+            bool locked = PointerLocked;
+            _filter.Track(locked, Application.isFocused || DebugGate.PointerLockBypass);
+            if (_inputEnabled && !locked && Application.isFocused && mouse != null && mouse.leftButton.wasPressedThisFrame)
                 LockPointer();
 
-            if (_look != null && _inputEnabled && PointerLocked)
+            if (_look != null && _inputEnabled && locked)
             {
-                Vector2 look = _look.ReadValue<Vector2>() * lookSensitivity;
-                SetLook(_yaw + look.x, _pitch - look.y);
+                // The Look action is a per-frame pixel delta: it is never scaled by deltaTime (a hitch would
+                // become a huge turn), and it goes through the spike filter first.
+                Vector2 look = _filter.Filter(_look.ReadValue<Vector2>(), lookTuning) * lookSensitivity;
+                if (look.sqrMagnitude > 0f) SetLook(_yaw + look.x, _pitch - look.y);
             }
         }
 

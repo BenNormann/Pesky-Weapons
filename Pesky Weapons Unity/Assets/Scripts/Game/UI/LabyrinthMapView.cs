@@ -37,6 +37,11 @@ namespace Pesky.Game
         /// <summary>The chip slot the stand-in uses: out of the eight real ones, so no player can share it.</summary>
         const int PracticeSlot = 8;
 
+        /// <summary>The practice stand-in's compass as the Mage set it: bent at all, to what kind of target, to which cell. Read by the tutorial's PracticeDummy.</summary>
+        public bool PracticeBent { get { return _practiceBent; } }
+        public CompassTargetKind PracticeKind { get { return _practiceKind; } }
+        public int PracticeCell { get { return _practiceCell; } }
+
         const float GhostHalf = 34f;
 
         readonly VisualElement _overlay;
@@ -403,8 +408,9 @@ namespace Pesky.Game
         }
 
         /// <summary>A refusal the Mage can read, instead of a bend that simply never happens.</summary>
-        void Refuse(string why)
+void Refuse(string why)
         {
+            DebugGate.Log("map: refused locally - " + why);
             _refusal = why;
             _refusalUntil = Time.realtimeSinceStartup + 4f;
             _selectedSlot = -1;

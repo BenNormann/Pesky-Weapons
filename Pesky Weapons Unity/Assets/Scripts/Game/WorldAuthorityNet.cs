@@ -701,10 +701,21 @@ namespace Pesky.Game
         /// A reply the host addressed to this peer alone. The session has already applied it to this sim;
         /// this only lets the HUD notice. Nothing here is forwarded, echoed or logged: it is a secret.
         /// </summary>
-        void OnNetReply(byte id, byte[] payload)
+void OnNetReply(byte id, byte[] payload)
         {
-            if (id == MsgId.RoleAssign) { if (RoleLearned != null) RoleLearned(); }
-            else if (id == MsgId.CompassTargets) { if (CompassRetargeted != null) CompassRetargeted(); }
+            if (id == MsgId.RoleAssign)
+            {
+                DebugGate.Log("reply: ROLE_ASSIGN - this peer is a " + LocalRole);
+                if (RoleLearned != null) RoleLearned();
+            }
+            else if (id == MsgId.CompassTargets)
+            {
+                CompassTargetsMsg m;
+                if (CompassTargetsMsg.TryDecode(payload, out m))
+                    DebugGate.Log("reply: COMPASS_TARGETS - this compass now points at " + m.target
+                        + (m.target == CompassTargetKind.Cell ? " cell " + m.cell : ""));
+                if (CompassRetargeted != null) CompassRetargeted();
+            }
         }
 
         // ---- IHostWorld ----

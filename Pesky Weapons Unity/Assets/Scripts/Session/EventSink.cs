@@ -104,6 +104,7 @@ namespace Pesky.Session
             }
             var peerId = _slots != null ? _slots.PeerIdOf(slot) : "";
             if (peerId.Length == 0 || _transport == null) return;
+            NetStats.CountOut(payload.Length, 1);
             _transport.SendTo(peerId, payload);
         }
 

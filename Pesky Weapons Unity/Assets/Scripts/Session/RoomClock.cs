@@ -37,6 +37,9 @@ namespace Pesky.Session
 
         public int Samples => _sampleCount;
 
+        /// <summary>The round trip of the last CLOCK_PING, milliseconds; -1 before the first pong. Always -1 on the host.</summary>
+        public long LastRttMs { get; private set; } = -1;
+
         /// <summary>Default: a Stopwatch. Tests pass their own millisecond source.</summary>
         public RoomClock(Func<long> localMsSource = null)
         {
@@ -97,6 +100,7 @@ namespace Pesky.Session
             if (IsHost) return;
             var rtt = clientRecvMs - clientSendMs;
             if (rtt < 0) rtt = 0;
+            LastRttMs = rtt;
             var offset = hostRoomMs + rtt / 2 - clientRecvMs;
             _samples[_sampleNext] = offset;
             _sampleNext = (_sampleNext + 1) % SampleCount;

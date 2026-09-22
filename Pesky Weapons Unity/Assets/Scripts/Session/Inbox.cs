@@ -38,6 +38,7 @@ namespace Pesky.Session
 
         public void Push(InboxKind kind, string peerId, byte[] payload)
         {
+            if (kind == InboxKind.Message && payload != null) NetStats.CountIn(payload.Length);
             var item = new InboxItem();
             item.kind = kind;
             item.peerId = peerId;

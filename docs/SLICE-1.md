@@ -114,3 +114,28 @@ Moving things are a pure function of a shared clock (`LevelClock.Ms`), never of 
   prompt, IN COMBAT tag, soul hints.
 - After every script change: wait for compile, read the console, fix errors before moving on.
   Save scenes. Never hand-write .unity / .prefab / .asset / .meta files.
+
+## 8. Mouse-look spike filter (feedback round 5)
+
+Chrome under pointer lock occasionally reports a huge single-frame mouse delta for
+no reason at all; on the web that used to land as a wild camera jerk. Every mouse
+delta now goes through `Assets/Scripts/Game/LookFilter.cs` (ported from ATCK's
+LookFilter) inside `OrbitCamera.Update`, the only consumer of the `Look` action
+(the soul's flight and the launch aim read the camera's yaw / pitch, never the
+raw delta). The tunables live on **`Assets/Data/LookTuning.asset`**
+(`Pesky.Data.LookTuning`, referenced by every scene's `OrbitCamera`):
+
+| Field | Default | Meaning |
+|---|---|---|
+| `filterSpikes` | on | Master switch. |
+| `spikeMode` | Drop | `Drop` throws the frame's delta away; `Scale` keeps its direction and shrinks it to `scaleToPixels`. |
+| `spikePixels` | 300 | A single frame's delta longer than this many pixels is a spike (18,000 px/s at 60 fps; a hard flick at 20 fps is about 150). Raise it if slow frames make real flicks trip the filter. |
+| `scaleToPixels` | 40 | Scale mode only: the length a spike is shrunk to. |
+| `dropFirstDeltaAfterLock` | on | The first non-zero delta after the pointer lock is acquired, after the window regains focus, and after the Tab overlay closes (`OrbitCamera.InputEnabled` false -> true) is discarded: it carries the cursor's jump to the centre and whatever the Input System accumulated while nobody read it. |
+| `logDrops` | on | Print every dropped / scaled delta (`[pesky] look: ...`) where DebugGate is open. |
+
+Two classic causes were checked and are not present: the delta is a per-frame
+pixel count multiplied by `lookSensitivity` only, **never by `deltaTime`** (a
+hitch would otherwise become a huge turn), and the first delta after a lock /
+overlay change is consumed rather than applied. The debug overlay's `lookDrops`
+counter and the console lines show the filter engaging.

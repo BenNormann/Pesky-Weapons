@@ -74,7 +74,9 @@ namespace Pesky.Session
                 if (lane.queue.Count == 0) continue;
                 _packing.Clear();
                 if (TakeFrame(lane.queue, _packing) == 0) continue;
-                transport.SendTo(lane.peerId, Frame.Pack(_packing));
+                var frame = Frame.Pack(_packing);
+                NetStats.CountOut(frame.Length, 1);
+                transport.SendTo(lane.peerId, frame);
             }
             _packing.Clear();
         }

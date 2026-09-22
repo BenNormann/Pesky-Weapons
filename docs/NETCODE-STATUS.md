@@ -1337,3 +1337,20 @@ build target is now WebGL; the Editor still uses `TcpTransport` / `LoopbackTrans
 because every browser-only path is guarded with `UNITY_WEBGL && !UNITY_EDITOR`.
 Still not done from that list: `JOIN_REFUSED`, `Editor/PhysicsLayerSetup.cs`, the EditMode test
 harness. See `docs/WEB-BUILD.md`.
+
+## Feedback round 5 — counters and debug lines in the Session assembly (2026-09-22)
+
+Nothing on the wire changed (`Wire.ProtocolVersion` untouched). Three read-only
+additions for the debug overlay (`docs/WEB-BUILD.md` section 9):
+
+| File | Change |
+|---|---|
+| `Scripts/Session/NetStats.cs` | new. Interlocked cumulative counters: bytes / messages in (`Inbox.Push`, every transport message), bytes / messages out (`Outbox.Flush` per FRAME, `NetSession.SendNow` per peer, the clock ping, `EventSink.ReplyNow`), raw POSE count in (`SessionRouter.OnTransform`). `NetSession.Start` resets them. Payload bytes only: base64 and WebRTC framing are not counted. |
+| `Scripts/Session/NetStats.cs` (`NetDebug`) | `NetDebug.Enabled` is armed by Game's `DebugGate` at startup (`RuntimeInitializeOnLoadMethod`). `LabyrinthRule` logs every SWAP_REQ / COMPASS_BEND_REQ it handles and why it refused (no round, not a Mage, cooldown with ticks left, adjacency, out of range, nothing would change, over the minority limit) or accepted (which slot got COMPASS_TARGETS, n/max bent). Off unless the page is `?debug=1`, a development build or the Editor; the wire stays silent. |
+| `Scripts/Session/RoomClock.cs` | `LastRttMs`: the last CLOCK_PING round trip. |
+| `Scripts/Session/NetSession.cs` | `PeerCount`, `TransportName`: Game cannot name the Transport types. |
+
+Measured in two browser tabs on one machine: idle 2-3 messages and under 0.1 KB
+per second each way; a flying soul streams POSE at 16-20 Hz; RTT 24-65 ms with
+both loops at about 30 fps. The host's tab going hidden freezes the host (no
+rAF), not the client, and the client recovers when it returns; see BUILD-LOG.
