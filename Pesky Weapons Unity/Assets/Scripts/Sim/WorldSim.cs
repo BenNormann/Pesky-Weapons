@@ -61,6 +61,8 @@ namespace Pesky.Sim
         public LabyrinthState Labyrinth { get; }
         /// <summary>The team's shared scratch pad: the drawing everybody can see and add to. Public, never a secret.</summary>
         public ScratchPadState Pad { get; }
+        /// <summary>The simplified run: the room sequence and the timer. Public, never a secret (docs/RUN.md).</summary>
+        public RunState Run { get; }
 
 
         public WorldSim(GameData data, uint seed)
@@ -76,6 +78,7 @@ namespace Pesky.Sim
             Labyrinth.Rebuild(data != null ? data.labyrinth : null, seed);
             Pad = new ScratchPadState();
             Pad.Configure(data != null ? data.labyrinth : null);
+            Run = new RunState();
 
             Phase = SessionPhase.Lobby;
             EndReason = SessionEndReason.HostEnded;
@@ -117,6 +120,7 @@ namespace Pesky.Sim
                 // The layout is a function of the seed, so a client that learns the real seed generates
                 // the same labyrinth the host did. LAB_LAYOUT then confirms it cell for cell.
                 Labyrinth.Rebuild(Data != null ? Data.labyrinth : null, msg.worldSeed);
+                Run.ResetRound();
             }
             if (msg.floorId != 0) FloorId = msg.floorId;
             SetPhase(msg.phase, msg.phaseStartTick);
@@ -252,6 +256,9 @@ namespace Pesky.Sim
         /// <summary>The sim keeps nothing from a bat; it only has to accept it so the event reaches Game on every peer.</summary>
         public void Apply(in BatEventMsg msg) { }
 
+        /// <summary>A Mage's nudge keeps nothing in the sim: the target's owner applies it to its own body. Kept so the event reaches Game.</summary>
+        public void Apply(in NudgeEventMsg msg) { }
+
         // ---- enemies ----
 
         public void Apply(in EnemyStateMsg msg)
@@ -348,6 +355,23 @@ namespace Pesky.Sim
             Pad.Apply(msg);
         }
 
+        // ---- the run ----
+        // Like the labyrinth, the run does NOT bump WorldSim.Rev. Views watch RunState.Rev instead.
+        public void Apply(in RunLayoutMsg msg)
+        {
+            Run.Apply(msg);
+        }
+
+        public void Apply(in RunStartMsg msg)
+        {
+            Run.Apply(msg);
+        }
+
+        /// <summary>A curse keeps nothing in the sim: the victim's own machine applies it (Game). The case exists so a client's router passes it on to Game, like BAT_EVENT and NUDGE_EVENT.</summary>
+        public void Apply(in CurseEventMsg msg)
+        {
+        }
+
 
         /// <summary>A Reply meant for this peer alone: its own secret role. It is never sent on again.</summary>
         public void Apply(in RoleAssignMsg msg)
@@ -391,6 +415,9 @@ namespace Pesky.Sim
                 case SnapshotPartKind.Pad:
                     Pad.Write(w);
                     return true;
+                case SnapshotPartKind.Run:
+                    Run.Write(w);
+                    return true;
 
             }
             return false;
@@ -431,6 +458,9 @@ namespace Pesky.Sim
                 case SnapshotPartKind.Pad:
                     Pad.Read(r);
                     return !r.Failed;
+                case SnapshotPartKind.Run:
+                    Run.Read(r);
+                    return !r.Failed;
 
             }
             return false;
@@ -447,6 +477,7 @@ namespace Pesky.Sim
             WritePart(SnapshotPartKind.Kit, w);
             WritePart(SnapshotPartKind.Labyrinth, w);
             WritePart(SnapshotPartKind.Pad, w);
+            WritePart(SnapshotPartKind.Run, w);
 
             var bytes = w.ToArray();
             return SimHash.Fnv1a64(bytes, 1, bytes.Length - 1);

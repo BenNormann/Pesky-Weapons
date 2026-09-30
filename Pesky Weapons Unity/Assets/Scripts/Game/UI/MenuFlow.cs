@@ -45,8 +45,8 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] GameData tutorialData;
 
         [Header("Scenes")]
-        [Tooltip("Loaded on START, by every peer. It does not exist yet: a missing scene shows a message.")]
-        [SerializeField] string labyrinthScene = SceneNames.Labyrinth;
+        [Tooltip("Loaded on START, by every peer: the run (docs/RUN.md). A missing scene shows a message.")]
+        [SerializeField] string labyrinthScene = SceneNames.Run;
         [Tooltip("Loaded by TUTORIAL. Zone1 until the tutorial stage builds its own.")]
         [SerializeField] string tutorialScene = SceneNames.Tutorial;
 
@@ -57,9 +57,8 @@ namespace Pesky.Game
         [SerializeField] float joinTimeoutSeconds = 12f;
 
         [Header("Room page")]
-        [SerializeField] string smallLabyrinth = "LABYRINTH   small   -   one floor, few rooms";
-        [SerializeField] string mediumLabyrinth = "LABYRINTH   medium   -   one floor, more rooms";
-        [SerializeField] string largeLabyrinth = "LABYRINTH   large   -   two floors";
+        [Tooltip("The run line when gameData has no RunDef to read the numbers from. With one it says '<rooms> rooms, <m:ss>'.")]
+        [SerializeField] string runLine = "5 rooms, 5:00";
 
         readonly MenuView _view = new MenuView();
         NetSession _session;
@@ -199,7 +198,7 @@ namespace Pesky.Game
             }
             if (!IsInBuild(labyrinthScene))
             {
-                _view.SetStatus("the labyrinth scene (\"" + labyrinthScene + "\") is not in the build settings yet", true);
+                _view.SetStatus("the run scene (\"" + labyrinthScene + "\") is not in the build settings yet", true);
                 return;
             }
             // Every peer, this one included, loads the level from its own PhaseChanged.
@@ -312,7 +311,7 @@ namespace Pesky.Game
         void OnPhaseChanged(SessionPhase phase)
         {
             if (_loading) return;
-            if (phase == SessionPhase.Playing) LoadScene(labyrinthScene, "the labyrinth");
+            if (phase == SessionPhase.Playing) LoadScene(labyrinthScene, "the run");
             else if (phase == SessionPhase.Ended) ShowRoom("the run is over", false);
         }
 
@@ -381,7 +380,13 @@ namespace Pesky.Game
 
         string LabyrinthLine(int crew)
         {
-            string size = crew <= 3 ? smallLabyrinth : crew <= 5 ? mediumLabyrinth : largeLabyrinth;
+            string size = runLine;
+            RunDef run = gameData != null ? gameData.run : null;
+            if (run != null)
+            {
+                int whole = Mathf.CeilToInt(run.timerSeconds);
+                size = run.roomsPerRun + " rooms, " + (whole / 60) + ":" + (whole % 60).ToString("00");
+            }
             return size + "   for " + crew + (crew == 1 ? " weapon" : " weapons");
         }
 

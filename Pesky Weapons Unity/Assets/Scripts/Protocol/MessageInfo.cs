@@ -42,6 +42,12 @@ namespace Pesky.Protocol
             t[WeaponDamagedMsg.Id] = WeaponDamagedMsg.Kind;
             t[BatClaimMsg.Id] = BatClaimMsg.Kind;
             t[BatEventMsg.Id] = BatEventMsg.Kind;
+            t[NudgeReqMsg.Id] = NudgeReqMsg.Kind;
+            t[NudgeEventMsg.Id] = NudgeEventMsg.Kind;
+            t[NudgeRefusedMsg.Id] = NudgeRefusedMsg.Kind;
+            t[CurseReqMsg.Id] = CurseReqMsg.Kind;
+            t[CurseEventMsg.Id] = CurseEventMsg.Kind;
+            t[CurseRefusedMsg.Id] = CurseRefusedMsg.Kind;
 
             t[SwapReqMsg.Id] = SwapReqMsg.Kind;
             t[CompassBendReqMsg.Id] = CompassBendReqMsg.Kind;
@@ -65,6 +71,9 @@ namespace Pesky.Protocol
             t[KitStateMsg.Id] = KitStateMsg.Kind;
             t[KitReqMsg.Id] = KitReqMsg.Kind;
             t[WorldResetMsg.Id] = WorldResetMsg.Kind;
+
+            t[RunLayoutMsg.Id] = RunLayoutMsg.Kind;
+            t[RunStartMsg.Id] = RunStartMsg.Kind;
 
             
 t[MsgId.Frame] = MsgKind.Container;

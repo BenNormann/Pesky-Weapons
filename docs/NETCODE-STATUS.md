@@ -1354,3 +1354,208 @@ Measured in two browser tabs on one machine: idle 2-3 messages and under 0.1 KB
 per second each way; a flying soul streams POSE at 16-20 Hz; RTT 24-65 ms with
 both loops at about 30 fps. The host's tab going hidden freezes the host (no
 rAF), not the client, and the client recovers when it returns; see BUILD-LOG.
+
+## Feedback round 6 — the Mage's nudge / pull (2026-09-22)
+
+**Implemented, untested.** Checks made: a clean compile after every script
+change (0 errors, 0 warnings), and the edit-mode scene validator on `Tutorial`
+and `Labyrinth` (0 problems each) after wiring and saving them. **Nothing was
+run: no play mode, no test, no socket, no build.** The design and every tunable
+are in `docs/LABYRINTH.md` section 13.
+
+`Wire.ProtocolVersion` is now **5** (reason: three new ids, and POSE's flags
+byte gained a value — `Airborne` — that a version-4 host would ignore).
+
+### F6.1 The three messages, 0x29-0x2B (friend ballistics' domain)
+
+Built like BAT_CLAIM / BAT_EVENT: an intent from the asker, a validated event to
+everybody, the target's owner applies it. `Protocol/Messages/NudgeMessages.cs`.
+
+| Id | Name | Kind | Bytes | Layout after the type byte |
+|---|---|---|---|---|
+| 0x29 | NUDGE_REQ | Intent | 9 | `targetSlot u8 (0xFE = NudgeReqMsg.PracticeTarget, the tutorial dummy), mode u8 (NudgeMode: 0 Nudge, 1 Pull), viewDir i16 x3` (the Mage's view as a unit vector, through the `Vel3` codec: 1/256 per component) |
+| 0x2A | NUDGE_EVENT | Event | 13 | `tick u32, targetSlot u8, mode u8, velocityChange i16 x3 (1/256 m/s)` — **no requester field** |
+| 0x2B | NUDGE_REFUSED | **Reply** | 5 | `reason u8 (NudgeRefusal: 0 NoTarget, 1 NotAirborne, 2 OutOfRange, 3 NoLineOfSight, 4 Cooldown), targetSlot u8, waitTenths u16` (cooldown left, 0.1 s) — to the asker alone |
+
+0x2C-0x2F are free. `MessageInfo` has all three; `MessageApplier.Apply` has a
+case for NUDGE_EVENT and `WorldSim.Apply(in NudgeEventMsg)` is empty (the sim
+keeps nothing; the case exists so a client's `SessionRouter.ApplyEvent` passes
+it on to Game, exactly like BAT_EVENT). NUDGE_REFUSED reaches Game through
+`NetSession.ReplyReceived` (`ApplyReply` ignores it: it is not a sim secret).
+Nothing is snapshotted.
+
+### F6.2 POSE flags byte, as of protocol 5
+
+`flags u8` = `1 Teleport | 2 Animate | 4 Soul | 8 Airborne`. **Airborne** is
+set by `PoseStreamer` when the local player possesses a weapon whose body is not
+kinematic, `!IsGrounded` (which includes the tuning's `groundedGrace` and counts
+a blade stuck in wood as grounded), not racked (`IsHeldAtHome`) and not carried
+by a porter. Never on a soul. A change of the bit is a change of flags, so it
+goes out on the next 20 Hz slot rather than waiting for the 1 s keepalive. The
+byte already rode POSE and the Players snapshot row, so no layout moved.
+
+### F6.3 Who decides
+
+`LabyrinthRule` is the validator for NUDGE_REQ too (registered in
+`HostAuthority.CreateDefault()` beside SWAP_REQ and COMPASS_BEND_REQ), because
+"is the asker a Mage" is its secret table. **No round / not a Mage: silent**, like
+every Mage intent — no reply, no event, only a NetDebug line. After that every
+refusal is a NUDGE_REFUSED to the asker's slot (`EventSink.Reply`, so a host
+Mage gets it through `LocalReply`). Checks, in order: cooldown
+(`nudgeCooldown`, per Mage, only spent on an accepted nudge); target (another
+present slot with `weaponId != NoId`, not `Soul`, at least one POSE — or the
+dummy via `IHostWorld.TryGetPracticeTarget`); Airborne bit (`requireAirborne`);
+`nudgeRange` between the two streamed poses; `IHostWorld.HasLineOfSight`
+(new: `WorldAuthority` answers with `Physics.Linecast` against its
+`sightMask`, default World = layer 8, triggers ignored, both ends +0.3 m). The
+vector: NUDGE = the request's view direction (replaced by the line to the target
+if it is zero or points away from it), PULL = target to asker; normalised, times
+`nudgeImpulse` / `pullImpulse`, times the two-fragment scale.
+
+**Two fragments.** Counted from the rule's own `_mage` table among present
+slots. With two, the nudge is scaled by `twoFragmentScale` unless the last
+accepted nudge on the same target came from the **other** Mage within
+`coSignWindow`, in which case it is full strength and the pair is spent. Per
+target the rule keeps `_nudgedBy` / `_nudgedAtTick` (index 8 is the dummy);
+cleared at round open and close.
+
+**Owner applies.** `WorldAuthority.OnNudgeEvent` on every peer: if
+`targetSlot == LocalSlot` and the local soul is possessing, `Knockback(dv)` on
+its weapon; if it is the dummy and this peer is the host, `PracticeDummy.Nudge`.
+`dv` is first clamped to `max(nudgeImpulse, pullImpulse)` from this peer's own
+`LabyrinthDef`. Then the C# event `Nudged(targetSlot, mode, dv)` — no author —
+which `MageNudge` uses for the soul-only wisp.
+
+### F6.4 Secrecy, checked
+
+- NUDGE_EVENT has no requester field; nothing in Game stores who asked.
+- NUDGE_REFUSED goes to one peer id; a weapon never sends a NUDGE_REQ at all
+  (`WorldAuthority.RequestNudge` returns false unless `LocalRole == Mage`), and a
+  hand-made one is refused in silence.
+- Logs that name slots are `NetDebug.Log` (host: `host: nudge Pull on slot 1
+  from slot 0 accepted: NUDGE_EVENT dv=4.0 m/s ...`, or `refused: OutOfRange`)
+  and `DebugGate.Log` (Mage: `nudge: Nudge requested on slot 1`, `nudge: refused
+  locally - NotAirborne`; `reply: NUDGE_REFUSED - Cooldown, 5.2 s left`). Both
+  exist only in the Editor, development builds and `?debug=1` pages — the same
+  gate as the round-5 bend lines. The host's line names the asker **on the
+  host's own console**, as the bend lines already do.
+- The marker, the refusal line and the NUDGE ring are drawn only on the Mage's
+  machine; the ring only inside the MAP tab.
+
+### F6.5 Riskiest untested assumptions
+
+1. **Nothing has been run.** Not solo, not in two tabs.
+2. **Airborne lags.** The host sees the bit up to one POSE interval (50 ms) plus
+   latency late, and `IsGrounded` has its grace, so a target that just landed can
+   still be nudged and one that just left the floor can be refused. The event
+   is applied on arrival whatever the target is doing by then (a nudge that lands
+   after touchdown is a small slide).
+3. **The Mage aims at the rendered remote view** (100 ms behind); the host
+   measures range between streamed poses. Near the 12 m edge they can disagree.
+4. **Knockback unsticks and un-racks.** `WeaponBody.Knockback` calls
+   `ReleaseHold` and `Unstick`; if a nudge arrives after the target stuck itself
+   in wood, it is pulled out.
+5. **The dummy's airborne test is its own contacts** (`OnCollisionStay`, normal
+   y > 0.5, 0.08 s grace, `sleepThreshold = 0` so it never sleeps and goes
+   quiet). If the floor contact is flaky the host may think it is always in the
+   air, which only makes the lesson easier.
+6. **Line of sight is World only.** Doors, gates and other kit on other layers do
+   not block it; souls' barriers do not either.
+
+## Round 8 — the simplified run: sequence, timer, curses (2026-09-29)
+
+**Implemented, untested.** Checks made: a clean compile after every script change, every
+new message encoded and decoded once in the Editor (sizes as listed), the Run snapshot part
+written and read back through `WorldSim.WritePart / ReadPart`, and the edit-mode scene
+validator on `Boot`, `MainMenu`, `Tutorial`, `Run` and `Dev/FeelBox` (0 problems each).
+**Nothing was run: no play mode, no test, no socket, no build.** The design, every tunable
+and the scene are in `docs/RUN.md`.
+
+`Wire.ProtocolVersion` is now **6** (reason: five new ids and a new snapshot part; a
+version-5 peer would drop RUN_LAYOUT and mis-size the snapshot table array).
+
+### R8.1 The five messages
+
+| Id | Name | Kind | Bytes | Layout after the type byte |
+|---|---|---|---|---|
+| 0x60 | RUN_LAYOUT | State | 2 + 2n | `count u8, roomIds u16 x count` — the run's rooms in order (5 rooms: 12 bytes) |
+| 0x61 | RUN_START | Event | 13 | `tick u32, startTick u32, deadlineTick u32` — room-clock sim ticks |
+| 0x2C | CURSE_REQ | Intent | 3 | `targetSlot u8 (0xFE = the tutorial dummy), curse u8 (CurseKind 1-5)` |
+| 0x2D | CURSE_EVENT | Event | 9 | `tick u32, targetSlot u8, curse u8, durationTenths u16` — **no requester field** |
+| 0x2E | CURSE_REFUSED | **Reply** | 5 | `reason u8 (CurseRefusal: 0 NoTarget, 1 OutOfRange, 2 Cooldown, 3 NoSuchCurse), targetSlot u8, waitTenths u16` — to the asker alone |
+
+The run domain is **0x60-0x6F** (0x62-0x6F free); the curses take 0x2C-0x2E beside the
+nudge (0x2F free). `MessageInfo` has all five. `MessageApplier.Apply` has cases for
+RUN_LAYOUT, RUN_START and CURSE_EVENT; `WorldSim.Apply(in CurseEventMsg)` is empty (the sim
+keeps nothing; the case exists so a client's `SessionRouter.ApplyEvent` passes it on to Game,
+exactly like NUDGE_EVENT). CURSE_REFUSED reaches Game through `NetSession.ReplyReceived`
+(`ApplyReply` ignores it). `RoundOutcome` gained `TimedOut = 3`; ROUND_RESULT and SESSION_END
+are reused unchanged.
+
+**Snapshot.** `SnapshotPartKind.Run = 7`, `End = 8` (SnapshotReceiver sizes its array from
+`End`, so the bump is required). Appended to `SnapshotCodec.Order` and `WorldSim.Hash`. Body:
+`count u8, roomIds u16 x count, started bool, startTick u32, deadlineTick u32`. Seal and door
+states need nothing new: every lever and gate is a kit piece on KIT_STATE and in the Kit part.
+
+### R8.2 Who decides
+
+`GameData.mode` (new enum `GameMode { Labyrinth, Run }`, both assets `Run`) selects the rules
+on the host and the HUD on every peer.
+
+- **`LabyrinthRule`** in run mode keeps only the secret Mage table (`AssignRoles` ->
+  ROLE_ASSIGN to each Mage alone, the same path) and the nudge validator; it skips the grid
+  rebuild, LAB_LAYOUT, the respawns, the swap, the bend and both labyrinth endings. SWAP_REQ
+  and COMPASS_BEND_REQ are refused in silence in run mode. New accessors for the same host:
+  `IsRunMode(sim)`, `RoundOpen`, `IsMage(slot)`, `MageMask(sim)`.
+- **`RunRule`** (`Session/Rules/RunRule.cs`, registered right after it, validator for
+  CURSE_REQ) opens on the first `Playing` tick, then every 4 ticks: until the host's scene
+  answers `IHostWorld.CollectRunPool` it waits (the scene is loading); then draws
+  `roomsPerRun` distinct rooms (partial Fisher-Yates on `WorldSeed ^ PhaseStartTick *
+  2654435761 ^ 0x52554E`) and emits RUN_LAYOUT; then asks `IHostWorld.CollectRunPlaces`
+  (streamed poses against the scene's rooms: `RunPlace` Start / Rooms / Exit / Unknown); the
+  first scan with anybody in Rooms or Exit emits RUN_START (`deadline = now + timerSeconds`);
+  after that the deadline (Mage wins, `TimedOut`, `SESSION_END(CrewLost)`) is checked before
+  the gathering (every present non-Mage in Exit at once, `Escaped`, `SESSION_END(Escaped)`).
+- **CURSE_REQ**: not a Mage / no round -> silent. Then, each a CURSE_REFUSED to the asker:
+  curse id in 1..5; the Mage's **shared** cooldown (`curseCooldown`, spent only on success);
+  target = another present slot holding a weapon, not a soul, with a POSE (or the dummy via
+  `TryGetPracticeTarget`); `curseRange` between the two streamed poses. No airborne check, no
+  line of sight. Accepted -> CURSE_EVENT with `curseDuration` and no author.
+- **`IHostWorld`** gained `CollectRunPool(List<ushort>)` and `CollectRunPlaces(RunPlace[])`;
+  `WorldAuthority` answers through its new `[OptionalRef] run` (a `RunDirector`); a scene
+  without one returns false and the run rule waits forever (the tutorial).
+
+### R8.3 Owner applies
+
+`WorldAuthority.OnCurseEvent`: if `targetSlot == LocalSlot` -> the C# event `Cursed(kind,
+seconds)` -> `CurseEffects` (the victim's own launch hook, camera sway, physics material,
+blindness sheet, HUD line); if it is the dummy and this peer is the host ->
+`PracticeDummy.Curse`. **Every other peer does nothing**: no wisp, no marker, no line.
+`WorldAuthority.RequestCurse` returns false unless `LocalRole == Mage`, so a weapon's number
+key is not even a packet. RUN_START / RUN_LAYOUT are read by `RunHud` (the timer) and
+`RunDirector` (door resolution) off `sim.Run`; nothing in Game stores anything else.
+
+### R8.4 Secrecy, checked
+
+- CURSE_EVENT has no requester field; the victim's screen says what, never who.
+- CURSE_REFUSED goes to one peer id; a hand-made CURSE_REQ from a weapon is silent.
+- The Mage's two rings and the refusal line exist only on a Mage's `RunHud`
+  (display:none otherwise); the curse line exists only on the victim's.
+- `NetDebug` / `DebugGate` lines (`host: curse Blindness on slot 1 from slot 0 accepted`,
+  `curse: refused locally - OutOfRange`, `curse: Heavy on me for 20.0 s`) are Editor /
+  development / `?debug=1` only, as before. The host's console names the asker, as the nudge
+  lines already do.
+
+### R8.5 Riskiest untested assumptions
+
+1. **Nothing has been run.**
+2. **RUN_LAYOUT waits for the host's scene**: the first second of a run has doors that lead
+   nowhere. If `WorldAuthority` on the host registers later than expected, longer.
+3. **A late joiner's Run part** carries the sequence and the deadline; its doors resolve as
+   soon as the snapshot lands. Not exercised.
+4. **RunRule ends the round through the same ROUND_RESULT + SESSION_END pair** the labyrinth
+   used; `SessionRunner`'s trip to the menu is unchanged and untested for this path.
+5. **`Painter2D.Fill(FillRule.OddEven)`** for the blindness hole: compiled, never drawn.
+6. **The Input System `Curse1..5` actions** were added through `InputActionSetupExtensions`
+   and the asset's JSON rewritten (as the nudge bindings were); the asset reloaded with the
+   five bindings, but no key has been pressed.

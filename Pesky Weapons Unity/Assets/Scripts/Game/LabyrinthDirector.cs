@@ -26,6 +26,10 @@ namespace Pesky.Game
         [Tooltip("Labels and thresholds when the session has no GameData (opening the scene straight from the Editor).")]
         [OptionalRef][SerializeField] LabyrinthDef fallbackDef;
 
+        [Header("Run mode (docs/RUN.md)")]
+        [Tooltip("Set in the Run scene: the doorways then resolve from the run's room sequence instead of the grid table, and the Exit is the Exit room's south doorway. Empty in the labyrinth.")]
+        [OptionalRef][SerializeField] RunDirector run;
+
         [Header("Rooms")]
         [Tooltip("Every authored room. Order does not matter: each one carries its own room id.")]
         [SerializeField] LabyrinthRoom[] rooms = new LabyrinthRoom[0];
@@ -68,6 +72,9 @@ namespace Pesky.Game
                 return fallbackDef;
             }
         }
+
+        /// <summary>The run director when this scene plays the simplified run; null in the labyrinth.</summary>
+        public RunDirector Run { get { return run; } }
 
         /// <summary>Which cell the local player is standing in, or NoCell. Refreshed once a frame.</summary>
         public int LocalCell { get { return _localCell; } }
@@ -249,6 +256,7 @@ void Update()
         /// </summary>
         public MagicDoor ResolveTwin(MagicDoor door)
         {
+            if (run != null) return run.ResolveTwin(door);
             int cell = DestinationCell(door);
             if (cell == LabyrinthGrid.NoCell) return null;
             LabyrinthRoom room = RoomInCell(cell);
@@ -268,6 +276,7 @@ void Update()
         /// <summary>True for the one doorway in the grid that leads out instead of next door.</summary>
         public bool IsExit(MagicDoor door)
         {
+            if (run != null) return run.IsExit(door);
             LabyrinthGrid g = Grid;
             if (g == null || door == null || door.Room == null) return false;
             int cell = g.CellOfRoom(door.Room.RoomId);
@@ -277,6 +286,7 @@ void Update()
         /// <summary>The truthful name of whatever a doorway leads to right now. Glyphs never lie; compasses do.</summary>
         public string DestinationLabel(MagicDoor door)
         {
+            if (run != null) return run.DestinationLabel(door);
             if (IsExit(door)) return "EXIT";
             LabyrinthGrid g = Grid;
             int cell = DestinationCell(door);
@@ -288,6 +298,7 @@ void Update()
 
         public string DestinationGlyph(MagicDoor door)
         {
+            if (run != null) return IsExit(door) ? "!" : "";
             if (IsExit(door)) return "!";
             LabyrinthGrid g = Grid;
             int cell = DestinationCell(door);

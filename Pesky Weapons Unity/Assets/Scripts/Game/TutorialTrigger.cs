@@ -26,6 +26,9 @@ namespace Pesky.Game
         [Tooltip("Optional: the labyrinth HUD to wake up (compass, map, role reveal).")]
         [OptionalRef][SerializeField] LabyrinthHud wakeHud;
 
+        [Tooltip("Optional: the run HUD to wake up (timer, rings, role reveal) for the Mage lesson.")]
+        [OptionalRef][SerializeField] RunHud wakeRunHud;
+
         [Tooltip("Optional: needed only by the trigger that ends the tutorial, because the host ends the run.")]
         [OptionalRef][SerializeField] SessionRunner sessionRunner;
 
@@ -54,6 +57,7 @@ namespace Pesky.Game
                 if (deactivate[i] != null) deactivate[i].SetActive(false);
 
             if (wakeHud != null) wakeHud.Wake();
+            if (wakeRunHud != null) wakeRunHud.Wake();
             if (!endsTutorial) return;
 
             // Offline, this is the host: EndRun puts the sim in Ended, SessionRunner sees the phase

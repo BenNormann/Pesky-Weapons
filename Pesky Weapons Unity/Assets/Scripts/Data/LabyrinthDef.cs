@@ -106,6 +106,31 @@ namespace Pesky.Data
             return allowed > nonMages ? nonMages : allowed;
         }
 
+        [Header("Mage: nudge / pull (left / right click on a player in the air)")]
+        [Tooltip("Metres from the Mage's own body to the target, checked by the host on the streamed positions.")]
+        [Min(0f)] public float nudgeRange = 12f;
+
+        [Tooltip("Seconds between one Mage's nudges or pulls (one cooldown for both clicks).")]
+        [Min(0f)] public float nudgeCooldown = 8f;
+
+        [Tooltip("Velocity change of a NUDGE (left click), m/s, along the Mage's view direction. Doubled to 8 by the 2026-09-29 simplification: it should read as a jump that went badly wrong.")]
+        [Min(0f)] public float nudgeImpulse = 8f;
+
+        [Tooltip("Velocity change of a PULL (right click), m/s, toward the Mage's body.")]
+        [Min(0f)] public float pullImpulse = 8f;
+
+        [Tooltip("With two fragments in the round a nudge lands at this fraction of its strength, unless the other fragment nudged the SAME target within coSignWindow seconds before it: then it lands at full strength.")]
+        [Range(0f, 1f)] public float twoFragmentScale = 0.6f;
+
+        [Tooltip("Seconds within which the second fragment's nudge on the same target counts as co-signed.")]
+        [Min(0f)] public float coSignWindow = 1f;
+
+        [Tooltip("Only a player in the air (POSE Airborne bit) can be nudged. Off = anybody holding a weapon.")]
+        public bool requireAirborne = true;
+
+        [Tooltip("Half-angle of the cone around the centre of the Mage's screen in which a body is picked as the target, degrees. Client side only.")]
+        [Range(1f, 45f)] public float nudgeAimCone = 8f;
+
         [Header("Roles")]
         [Tooltip("How many Mage fragments a small room gets.")]
         public int mageBaseCount = 1;

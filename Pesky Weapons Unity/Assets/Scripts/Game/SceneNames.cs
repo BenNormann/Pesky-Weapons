@@ -13,8 +13,11 @@ namespace Pesky.Game
         /// <summary>Build index 1: the title and the room page.</summary>
         public const string MainMenu = "MainMenu";
 
-        /// <summary>The generated labyrinth every run is played in. Not built yet; loads are guarded.</summary>
+        /// <summary>The labyrinth grid scene (docs/LABYRINTH.md). Set aside: it exists but is out of the build.</summary>
         public const string Labyrinth = "Labyrinth";
+
+        /// <summary>Build index 3: the simplified run (docs/RUN.md), which START loads.</summary>
+        public const string Run = "Run";
 
         /// <summary>The tutorial level. Zone1 until the tutorial stage builds its own.</summary>
         public const string Tutorial = "Zone1";

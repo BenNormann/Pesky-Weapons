@@ -1,0 +1,249 @@
+/* The run layer (docs/RUN.md): the timer, the Mage's ability bar at the bottom of the screen,
+   the victim's curse line, the blindness sheet, the role reveal and the result banner.
+   Same ground and amber as the menu and the weapon HUD. Nothing sits by the crosshair.
+   Sizes are panel pixels (UiPanelSettings scales with the screen from 1920 x 1080). */
+
+.run-root {
+    flex-grow: 1;
+}
+
+/* ---- the timer, top centre, everybody's ---- */
+
+.timer {
+    position: absolute;
+    top: 16px;
+    left: 0;
+    right: 0;
+    font-size: 30px;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    color: rgb(238, 200, 100);
+    -unity-text-align: middle-center;
+}
+
+.timer.is-idle {
+    color: rgb(132, 138, 150);
+}
+
+.timer.is-warning {
+    color: rgb(235, 72, 60);
+}
+
+/* ---- the Mage's ability bar: centred at the bottom, Mage only (RunHud + AbilityBar build the slots) ---- */
+
+.ability-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 18px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.ability {
+    width: 88px;
+    margin-left: 4px;
+    margin-right: 4px;
+    align-items: center;
+}
+
+.ability--gap {
+    margin-left: 28px;
+}
+
+.ability-frame {
+    width: 72px;
+    height: 72px;
+    padding: 5px;
+    background-color: rgba(10, 12, 16, 0.72);
+    border-width: 2px;
+    border-color: rgba(238, 238, 234, 0.2);
+    border-radius: 6px;
+    transition-property: scale, border-color;
+    transition-duration: 0.12s, 0.12s;
+}
+
+.ability-icon {
+    flex-grow: 1;
+    border-radius: 3px;
+    align-items: center;
+    justify-content: center;
+}
+
+.ability-glyph {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgba(238, 238, 234, 0.85);
+    -unity-text-align: middle-center;
+}
+
+/* the cooldown: a dark sheet from the top, as tall as the fraction left, so the tile refills from below */
+.ability-shade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 0;
+    background-color: rgba(0, 0, 0, 0.66);
+    border-radius: 4px;
+}
+
+.ability-time {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: none;
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(238, 200, 100);
+    -unity-text-align: middle-center;
+}
+
+.ability-key {
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(238, 200, 100);
+}
+
+.ability-key--long {
+    font-size: 11px;
+    top: 3px;
+}
+
+.ability-name {
+    margin-top: 5px;
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(178, 182, 192);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.ability.is-cooling .ability-glyph {
+    color: rgba(238, 238, 234, 0.35);
+}
+
+.ability.is-cooling .ability-time {
+    display: flex;
+}
+
+.ability.is-cooling .ability-name {
+    color: rgb(112, 116, 126);
+}
+
+.ability.is-pulse .ability-frame {
+    scale: 1.14 1.14;
+    border-color: rgb(238, 200, 100);
+}
+
+/* ---- the quiet line: why a nudge or a curse did not happen ---- */
+
+.note {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 58%;
+    font-size: 14px;
+    color: rgba(217, 204, 242, 0.6);
+    -unity-text-align: middle-center;
+}
+
+/* ---- the curse on THIS player ---- */
+
+.curse-status {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 68%;
+    align-items: center;
+}
+
+.curse-name {
+    font-size: 20px;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    color: rgb(181, 140, 230);
+    -unity-text-align: middle-center;
+}
+
+.curse-time {
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: rgb(178, 182, 192);
+    -unity-text-align: middle-center;
+    margin-top: 4px;
+}
+
+/* ---- blindness: painted by RunHud (a dark sheet with a round hole) ---- */
+
+.blind-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* ---- role reveal and result ---- */
+
+.role-reveal {
+    position: absolute;
+    top: 22%;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.role-title {
+    font-size: 34px;
+    -unity-font-style: bold;
+    letter-spacing: 6px;
+    color: rgb(238, 238, 234);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.role-reveal.is-mage .role-title {
+    color: rgb(181, 140, 230);
+}
+
+.role-sub {
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: rgb(132, 138, 150);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-top: 8px;
+}
+
+.result-banner {
+    position: absolute;
+    top: 30%;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.result-title {
+    font-size: 44px;
+    -unity-font-style: bold;
+    letter-spacing: 8px;
+    color: rgb(238, 200, 100);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.result-sub {
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: rgb(178, 182, 192);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-top: 10px;
+}

@@ -5013,6 +5013,7 @@ Transform:
   - {fileID: 988650621}
   - {fileID: 1163879394}
   - {fileID: 1850189135}
+  - {fileID: 1821733070}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1315989177 stripped
@@ -7888,6 +7889,66 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67af5dad7b096c14a8a9ad2d54f4ea25, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.RoomVolume
+--- !u!1 &1821733069
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1821733070}
+  - component: {fileID: 1821733071}
+  m_Layer: 0
+  m_Name: MageNudge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1821733070
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1821733069}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1305334875}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1821733071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1821733069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f9816522ae35534c810bffb7d40938c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.MageNudge
+  authority: {fileID: 1960929547}
+  spawner: {fileID: 988650622}
+  labyrinth: {fileID: 1243569090}
+  hud: {fileID: 1158185750}
+  orbitCamera: {fileID: 354245134}
+  controls: {fileID: -944628639613478452, guid: d7fa017c9d71d80479773323f7966a5d, type: 3}
+  actionMap: Gameplay
+  nudgeActionName: Nudge
+  pullActionName: Pull
+  markerPrefab: {fileID: 7586966538070820046, guid: 8a6e18ccff53e514db159eaebc0542f6, type: 3}
+  wispPrefab: {fileID: 6204481024813859476, guid: b84ececbbf7bccd40962113c9a51502c, type: 3}
+  markerHeight: 1.1
+  markerSpinDegreesPerSecond: 90
+  sightMask:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!1 &1825360105 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1112198121056279661, guid: 5c62ec90619a61d40a79f6a9a66513a4, type: 3}
@@ -9681,6 +9742,10 @@ MonoBehaviour:
   lifts: []
   sessionRunner: {fileID: 881703863}
   labyrinth: {fileID: 1243569090}
+  practiceDummy: {fileID: 0}
+  sightMask:
+    serializedVersion: 2
+    m_Bits: 256
   ropes: []
   pots: []
   levers: []

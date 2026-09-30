@@ -3,25 +3,25 @@
 Agreed work not yet built, in rough order. Update when something lands.
 
 ## Next round
-- **Mage nudge / pull** (left / right click): a small mid-air impulse on a friend with line of
-  sight, short range, short cooldown; leaves a faint wisp only souls can see. Owner approved
-  2026-09-22.
+- Invisibility (leaves a decoy body as an alibi)
+- Goblin commands (attack me, call a patrol, mark a friend, wake sleepers) - the map is
+  gone, so they need a new way to be given
+- Lights out for one room
 
 ## Mage powers still unbuilt
-- Invisibility (leaves a decoy body as an alibi)
-- Goblin commands via the map (attack me, call a patrol, mark a friend, wake sleepers)
-- Lights out for one room
-- Hex: short temporary curses
 - Fun on-screen effect only the Mage sees
 
-## Labyrinth and rules
-- Crossing the Exit doorway should end the round (today: gather near it)
-- Player death: nothing calls ReportPlayerDown yet, so respawn-with-group and the legend
-  reset never run; nothing awards legend
-- Loose (unheld) weapons are not position-synced after release
-- Real 1x2 rooms in the grid (LABYRINTH.md lists what is needed)
+## The run (docs/RUN.md)
+- Real pool rooms with their own completion conditions (today: 23 blank rooms with a
+  placeholder lever seal); the shaped room prefabs and the kit inventory are for this
+- What is behind the rack room's RESERVED door
 - Curse draft at checkpoints; the shop-window epilogue
-- Real puzzle rooms from the kit inventory and the shaped room prefabs
+- Player death: nothing calls ReportPlayerDown yet; nothing awards legend
+- Loose (unheld) weapons are not position-synced after release
+
+## Labyrinth (set aside 2026-09-29, kept in the project)
+- Crossing the Exit doorway should end the round (today: gather near it)
+- Real 1x2 rooms in the grid (LABYRINTH.md lists what is needed)
 
 ## Multiplayer polish
 - JOIN_REFUSED so "room full" reaches the joiner
@@ -32,5 +32,23 @@ Agreed work not yet built, in rough order. Update when something lands.
 - TURN relay provider for restrictive networks (hook: window.PESKY_ICE_SERVERS)
 
 ## Other
+- Remove Unity's AI packages (com.unity.ai.assistant, com.unity.ai.inference / Sentis): they
+  produce the repeating NoSubscription console errors and all 364 shader warnings in a web
+  build, and nothing uses them.
 - Game name (shortlist given 2026-09-22; owner to pick or redirect)
 - Tutorial: teach the two-player verbs once a second local player is possible
+
+## Done
+- **The simplified run** (docs/RUN.md), 2026-09-29: five pool rooms in a row picked per run,
+  two-door rooms with a placeholder lever seal on the exit door, a 5:00 timer from the first
+  player leaving the rack, the crew wins in the Exit room, the Mage wins on the deadline; the
+  labyrinth grid / map / pad / compass / Resurrection Room set aside. Implemented, untested.
+- **Curses (Hex)**, 2026-09-29: keys 1-5, Magnetic / Nausea / Slippery / Blindness / Heavy,
+  20 s each on one shared 30 s cooldown, 15 m, cast on the player under the crosshair; the
+  host validates, only the victim applies and sees it, nothing says who. Implemented,
+  untested. See RUN.md sections 4.5 and 5, NETCODE-STATUS round 8.
+- **Nudge doubled** to 8 m/s (nudgeImpulse, pullImpulse), 2026-09-29.
+- **Mage nudge / pull** (left / right click), 2026-09-22: a small mid-air impulse on another
+  player (or the tutorial dummy) in the air, in sight and in range, on a cooldown; the host
+  validates, the target's owner applies it, a free soul sees a faint wisp, nothing says who did
+  it. Implemented, untested. See NETCODE-STATUS "Feedback round 6" and LABYRINTH section 13.

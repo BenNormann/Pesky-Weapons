@@ -71,6 +71,16 @@ namespace Pesky.Game
         SphereCollider _probe;
         readonly Collider[] _overlaps = new Collider[16];
 
+        float _swayYaw;
+        float _swayRoll;
+
+        /// <summary>A visual wobble added to the view (NAUSEA curse): degrees of yaw and roll. The aim (Yaw / Pitch) is untouched. Zero clears it.</summary>
+        public void SetSway(float yawDegrees, float rollDegrees)
+        {
+            _swayYaw = yawDegrees;
+            _swayRoll = rollDegrees;
+        }
+
         public float Yaw { get { return _yaw; } }
         public float Pitch { get { return _pitch; } }
         public float RestingPitch { get { return restingPitch; } }
@@ -188,7 +198,7 @@ void Update()
             {
                 // The Look action is a per-frame pixel delta: it is never scaled by deltaTime (a hitch would
                 // become a huge turn), and it goes through the spike filter first.
-                Vector2 look = _filter.Filter(_look.ReadValue<Vector2>(), lookTuning) * lookSensitivity;
+                Vector2 look = _filter.Filter(_look.ReadValue<Vector2>(), lookSensitivity, lookTuning); // degrees
                 if (look.sqrMagnitude > 0f) SetLook(_yaw + look.x, _pitch - look.y);
             }
         }
@@ -206,8 +216,9 @@ void Update()
             FitNearClip(r);
             Vector3 pivot = LiftPivot(anchor, _pivot + (anchor - targetPosition), r);
 
-            Quaternion rotation = Quaternion.Euler(_pitch, _yaw, 0f);
-            Vector3 back = Quaternion.Euler(OrbitPitch(pivot, r), _yaw, 0f) * Vector3.back;
+            // The sway is a curse's doing (NAUSEA): a visual wobble on top of the look, never part of the aim.
+            Quaternion rotation = Quaternion.Euler(_pitch, _yaw + _swayYaw, _swayRoll);
+            Vector3 back = Quaternion.Euler(OrbitPitch(pivot, r), _yaw + _swayYaw, 0f) * Vector3.back;
             float wanted = Free(pivot, back, distance, r);
             // A flattened orbit looks past the target, so it stays close.
             wanted = Mathf.Min(wanted, Mathf.Lerp(distance, comfortDistance, Mathf.Abs(_ease) / 5f));

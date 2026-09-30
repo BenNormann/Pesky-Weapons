@@ -27,5 +27,7 @@ namespace Pesky.Protocol
         Escaped = 1,
         /// <summary>A majority of the players stood in the Resurrection Room at once: the Mage wins.</summary>
         Resurrected = 2,
+        /// <summary>The run's timer ran out before the crew stood in the Exit room: the Mage wins.</summary>
+        TimedOut = 3,
     }
 }

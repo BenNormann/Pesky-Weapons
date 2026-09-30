@@ -37,6 +37,12 @@ namespace Pesky.Session.Rules
         readonly uint[] _lastBendTick = new uint[Wire.MaxPlayers];
         readonly bool[] _bendUsed = new bool[Wire.MaxPlayers];
         readonly int[] _shuffle = new int[Wire.MaxPlayers];
+        readonly uint[] _lastNudgeTick = new uint[Wire.MaxPlayers];
+        readonly bool[] _nudgeUsed = new bool[Wire.MaxPlayers];
+        // Per TARGET (the eight slots, then the tutorial dummy at index MaxPlayers): the last accepted nudge
+        // on it and which fragment made it, for the two-fragment co-sign.
+        readonly uint[] _nudgedAtTick = new uint[Wire.MaxPlayers + 1];
+        readonly byte[] _nudgedBy = new byte[Wire.MaxPlayers + 1];
 
         readonly Rng _secret;
         bool _roundOpen;
@@ -68,21 +74,32 @@ namespace Pesky.Session.Rules
             if (tick < _nextScanTick) return;
             _nextScanTick = tick + ScanEveryTicks;
             Scan(sim, events);
+            // RUN MODE (docs/RUN.md): this rule only keeps the secret Mage table and answers the nudge. The
+            // grid, the respawns and the two labyrinth endings are set aside; RunRule ends the round.
+            if (IsRunMode(sim)) return;
             Respawns(sim, tick, events);
             CheckEndings(sim, def, events);
         }
 
         void OpenRound(WorldSim sim, LabyrinthDef def, EventSink events)
         {
-            // A fresh labyrinth for every round. Clients do not derive it: LAB_LAYOUT carries the table,
-            // so the host may reseed freely and the broadcast is what every peer, this one included, keeps.
-            sim.Labyrinth.Rebuild(def, unchecked(sim.WorldSeed + sim.PhaseStartTick * 2654435761u + 1u));
-            LabyrinthGrid grid = sim.Labyrinth.Grid;
-            if (grid == null) return;
-
-            _roundOpen = true;
-            ClearTables();
-            events.Emit(grid.ToLayout().Encode());
+            if (!IsRunMode(sim))
+            {
+                // A fresh labyrinth for every round. Clients do not derive it: LAB_LAYOUT carries the table,
+                // so the host may reseed freely and the broadcast is what every peer, this one included, keeps.
+                sim.Labyrinth.Rebuild(def, unchecked(sim.WorldSeed + sim.PhaseStartTick * 2654435761u + 1u));
+                LabyrinthGrid grid = sim.Labyrinth.Grid;
+                if (grid == null) return;
+                _roundOpen = true;
+                ClearTables();
+                events.Emit(grid.ToLayout().Encode());
+            }
+            else
+            {
+                // The run has no grid to send; the room sequence is RunRule's (it waits for the host's scene).
+                _roundOpen = true;
+                ClearTables();
+            }
             AssignRoles(sim, def, events);
             _nextScanTick = sim.Tick + ScanEveryTicks;
         }
@@ -107,6 +124,13 @@ namespace Pesky.Session.Rules
                 _swapUsed[i] = false;
                 _lastBendTick[i] = 0;
                 _bendUsed[i] = false;
+                _lastNudgeTick[i] = 0;
+                _nudgeUsed[i] = false;
+            }
+            for (int i = 0; i <= Wire.MaxPlayers; i++)
+            {
+                _nudgedAtTick[i] = 0;
+                _nudgedBy[i] = Wire.NoSlot;
             }
         }
 
@@ -160,7 +184,9 @@ namespace Pesky.Session.Rules
                 _bent[i] = false;
                 _swapUsed[i] = false;
                 _bendUsed[i] = false;
+                _nudgeUsed[i] = false;
             }
+            if (IsRunMode(sim)) return;
             IHostWorld world = events.World;
             if (world != null) world.CollectPlayerCells(_cell, _atExit);
         }
@@ -319,7 +345,15 @@ namespace Pesky.Session.Rules
                 return;
             }
             LabyrinthDef def = sim.Data != null ? sim.Data.labyrinth : null;
-            if (MessageInfo.IdOf(payload) == MsgId.SwapReq) OnSwap(fromSlot, payload, sim, def, tick, events);
+            byte id = MessageInfo.IdOf(payload);
+            if (id == MsgId.NudgeReq) { OnNudge(fromSlot, payload, sim, def, tick, events); return; }
+            if (IsRunMode(sim))
+            {
+                // The map powers are set aside with the labyrinth: there is no grid to swap and no compass to bend.
+                NetDebug.Log("host: intent 0x" + id.ToString("X2") + " from slot " + fromSlot + " refused: not a run-mode power");
+                return;
+            }
+            if (id == MsgId.SwapReq) OnSwap(fromSlot, payload, sim, def, tick, events);
             else OnBend(fromSlot, payload, sim, def, tick, events);
         }
 
@@ -427,6 +461,149 @@ namespace Pesky.Session.Rules
             }
         }
 
+        // ---------------------------------------------------------------- the Mage's third power: nudge / pull
+
+        /// <summary>
+        /// NUDGE_REQ. The asker is already known to be a Mage in an open round (Handle). Checked here: his
+        /// cooldown, a real target (another player holding a weapon, or the tutorial dummy), that it is in
+        /// the air, in range of his own streamed body, and in his line of sight on this host's scene. Then
+        /// NUDGE_EVENT goes to everybody WITHOUT the asker's slot, and the target's owner applies it. A
+        /// refusal goes back to the asker alone, with the reason, so his screen can say it.
+        /// Two fragments: a nudge lands at twoFragmentScale unless the OTHER fragment nudged the same target
+        /// within coSignWindow, which makes the second one land at full strength.
+        /// </summary>
+        void OnNudge(byte fromSlot, byte[] payload, WorldSim sim, LabyrinthDef def, uint tick, EventSink events)
+        {
+            NudgeReqMsg req;
+            if (!NudgeReqMsg.TryDecode(payload, out req)) return;
+            PlayerState from = sim.Players[fromSlot];
+            if (from == null || !from.present) return;
+            bool practice = req.targetSlot == NudgeReqMsg.PracticeTarget;
+            string what = "nudge " + req.mode + " on " + (practice ? "the practice dummy" : "slot " + req.targetSlot) + " from slot " + fromSlot;
+
+            uint cooldown = Ticks(def != null ? def.nudgeCooldown : 8f);
+            if (_nudgeUsed[fromSlot] && tick < _lastNudgeTick[fromSlot] + cooldown)
+            {
+                RefuseNudge(events, fromSlot, req.targetSlot, NudgeRefusal.Cooldown, _lastNudgeTick[fromSlot] + cooldown - tick, what);
+                return;
+            }
+
+            IHostWorld world = events.World;
+            Vector3 targetPos;
+            bool airborne;
+            int targetIndex;
+            if (practice)
+            {
+                if (world == null || !world.TryGetPracticeTarget(out targetPos, out airborne))
+                {
+                    RefuseNudge(events, fromSlot, req.targetSlot, NudgeRefusal.NoTarget, 0, what);
+                    return;
+                }
+                targetIndex = Wire.MaxPlayers;
+            }
+            else
+            {
+                PlayerState target = req.targetSlot < Wire.MaxPlayers ? sim.Players[req.targetSlot] : null;
+                // Never yourself, never an empty slot, never a soul: only a body a player is driving.
+                if (req.targetSlot == fromSlot || target == null || !target.present || target.weaponId == Wire.NoId
+                    || (target.poseFlags & PoseFlags.Soul) != 0 || target.poseCount == 0)
+                {
+                    RefuseNudge(events, fromSlot, req.targetSlot, NudgeRefusal.NoTarget, 0, what);
+                    return;
+                }
+                targetPos = target.pos;
+                airborne = (target.poseFlags & PoseFlags.Airborne) != 0;
+                targetIndex = req.targetSlot;
+            }
+
+            bool needAir = def == null || def.requireAirborne;
+            if (needAir && !airborne)
+            {
+                RefuseNudge(events, fromSlot, req.targetSlot, NudgeRefusal.NotAirborne, 0, what);
+                return;
+            }
+
+            float range = def != null ? def.nudgeRange : 12f;
+            Vector3 toTarget = targetPos - from.pos;
+            if (from.poseCount == 0 || toTarget.sqrMagnitude > range * range)
+            {
+                RefuseNudge(events, fromSlot, req.targetSlot, NudgeRefusal.OutOfRange, 0, what);
+                return;
+            }
+
+            // Lifted a little at both ends, so a body resting on a floor does not start its line inside it.
+            Vector3 lift = new Vector3(0f, 0.3f, 0f);
+            if (world != null && !world.HasLineOfSight(from.pos + lift, targetPos + lift))
+            {
+                RefuseNudge(events, fromSlot, req.targetSlot, NudgeRefusal.NoLineOfSight, 0, what);
+                return;
+            }
+
+            // NUDGE pushes along the Mage's view (away from where he looks from); PULL draws toward his body.
+            // A view that does not point at the target at all is replaced by the line to it.
+            Vector3 dir;
+            float strength;
+            if (req.mode == NudgeMode.Pull)
+            {
+                dir = -toTarget;
+                strength = def != null ? def.pullImpulse : 4f;
+            }
+            else
+            {
+                dir = req.viewDir;
+                if (dir.sqrMagnitude < 0.01f || Vector3.Dot(dir, toTarget) <= 0f) dir = toTarget;
+                strength = def != null ? def.nudgeImpulse : 4f;
+            }
+            if (dir.sqrMagnitude < 1e-6f) dir = Vector3.up;
+            dir.Normalize();
+
+            // The two-fragment rule, in its simple form: reduced, unless both fragments pick the same target.
+            int mages = 0;
+            for (int i = 0; i < Wire.MaxPlayers; i++)
+            {
+                PlayerState p = sim.Players[i];
+                if (_mage[i] && p != null && p.present) mages++;
+            }
+            float scale = 1f;
+            bool coSigned = false;
+            if (mages >= 2)
+            {
+                uint window = (uint)Mathf.RoundToInt((def != null ? def.coSignWindow : 1f) * Protocol.Tick.PerSecond);
+                byte by = _nudgedBy[targetIndex];
+                coSigned = by != Wire.NoSlot && by != fromSlot && by < Wire.MaxPlayers && _mage[by]
+                    && tick - _nudgedAtTick[targetIndex] <= window;
+                scale = coSigned ? 1f : (def != null ? def.twoFragmentScale : 0.6f);
+            }
+
+            _nudgeUsed[fromSlot] = true;
+            _lastNudgeTick[fromSlot] = tick;
+            // A co-signed pair is spent: a later nudge starts a new pair.
+            _nudgedBy[targetIndex] = coSigned ? Wire.NoSlot : fromSlot;
+            _nudgedAtTick[targetIndex] = tick;
+
+            NudgeEventMsg msg = new NudgeEventMsg();
+            msg.header = events.Header();
+            msg.targetSlot = req.targetSlot;
+            msg.mode = req.mode;
+            // No author on it, anywhere: the one thing it must never say is who did it.
+            msg.velocityChange = dir * (strength * scale);
+            events.Emit(msg.Encode());
+            NetDebug.Log("host: " + what + " accepted: NUDGE_EVENT dv=" + msg.velocityChange.magnitude.ToString("0.0") + " m/s"
+                + (mages >= 2 ? (coSigned ? " (co-signed, full strength)" : " (one fragment, x" + scale.ToString("0.00") + ")") : ""));
+        }
+
+        /// <summary>To the asking Mage alone: why not. NetDebug says it on the host's own console too.</summary>
+        static void RefuseNudge(EventSink events, byte fromSlot, byte targetSlot, NudgeRefusal reason, uint waitTicks, string what)
+        {
+            NudgeRefusedMsg msg = new NudgeRefusedMsg();
+            msg.reason = reason;
+            msg.targetSlot = targetSlot;
+            uint tenths = (waitTicks * 10u + (uint)Protocol.Tick.PerSecond - 1u) / (uint)Protocol.Tick.PerSecond;
+            msg.waitTenths = (ushort)(tenths > 65535u ? 65535u : tenths);
+            events.Reply(fromSlot, msg.Encode());
+            NetDebug.Log("host: " + what + " refused: " + reason + (waitTicks > 0 ? ", " + waitTicks + " ticks left" : ""));
+        }
+
         // ---------------------------------------------------------------- going down
 
         /// <summary>Seconds to ticks, never zero.</summary>
@@ -458,5 +635,33 @@ namespace Pesky.Session.Rules
             msg.legend = legend;
             return msg.Encode();
         }
-    }
+    
+
+        /// <summary>True when the session's data plays the simplified run rather than the labyrinth grid.</summary>
+        public static bool IsRunMode(WorldSim sim)
+        {
+            return sim != null && sim.Data != null && sim.Data.mode == GameMode.Run;
+        }
+
+        /// <summary>A round is open: roles are drawn and the Mage's powers answer. Read by RunRule on the same host.</summary>
+        public bool RoundOpen { get { return _roundOpen; } }
+
+        /// <summary>HOST ONLY: is this slot a Mage fragment. Never leaves this process; RunRule reads it to validate a curse and to name the Mages on ROUND_RESULT.</summary>
+        public bool IsMage(int slot)
+        {
+            return slot >= 0 && slot < Wire.MaxPlayers && _mage[slot];
+        }
+
+        /// <summary>HOST ONLY: one bit per present Mage slot, for the one message that ever names them.</summary>
+        public byte MageMask(WorldSim sim)
+        {
+            byte mask = 0;
+            for (int i = 0; i < Wire.MaxPlayers; i++)
+            {
+                PlayerState p = sim != null ? sim.Players[i] : null;
+                if (_mage[i] && p != null && p.present) mask |= (byte)(1 << i);
+            }
+            return mask;
+        }
+}
 }

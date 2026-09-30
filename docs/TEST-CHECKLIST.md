@@ -233,7 +233,7 @@ a small practice labyrinth.
 * [ ] The moment you arrive, the labyrinth HUD wakes up: compass top left, and
       about 1.5 s later "YOU ARE A FRAGMENT OF THE ARCH MAGE".
 * [ ] Three signs in the Entry Hall explain the Mage, the compass and the map.
-* [ ] Hold Tab: a 3x3 map with nine rooms, the mage bar under it, and one crew
+* [ ] press Tab (toggle): a 3x3 map with nine rooms, the mage bar under it, and one crew
       chip called **DUMMY**.
 * [ ] Drag two neighbouring rooms to swap them, then walk through a doorway and
       check the glyph told the truth about where you came out.
@@ -341,7 +341,7 @@ build cannot join a newer one: rebuild both sides before pairing two instances.
 
 Solo first, then with two instances.
 
-- As a **weapon**, hold Tab. You should see **only the pad** — a blank dark
+- As a **weapon**, press Tab (toggle). You should see **only the pad** — a blank dark
   canvas — with **no map, no grid, no room names, nothing about the labyrinth**.
 - Left mouse draws in **your slot colour**. Right mouse erases. The ERASER and
   PEN buttons do the same thing; THIN / MEDIUM / THICK change the width.
@@ -349,7 +349,7 @@ Solo first, then with two instances.
   go, for a weapon as well as a Mage.
 - Draw one very long unbroken squiggle (more than about 64 points) and check it
   has **no gap** in it where it was split.
-- As the **Mage**, hold Tab: there should be two top tabs, **MAP** and **PAD**.
+- As the **Mage**, press Tab (toggle): there should be two top tabs, **MAP** and **PAD**.
   MAP is the old grid with drag-to-swap and the bend chips; PAD is the same pad.
   Switching tabs must not lose what is drawn.
 - **Two instances**: draw on one, and it must appear on the other within a frame
@@ -441,7 +441,7 @@ Solo first, then with two instances.
 
 ### 5.4 The Mage's compass bend actually lands
 
-- In the **Tutorial**, hold Tab, click the practice chip, then a room: the chip
+- In the **Tutorial**, press Tab (toggle), click the practice chip, then a room: the chip
   must show `DUMMY > ROOM n` and the map must say so — never nothing at all.
 - Try a second bend while the ring is counting: the hint must say **why**
   (recharging), not fall silent. Bend past the limit: it must say
@@ -491,6 +491,196 @@ Solo first, then with two instances.
 
 - In the practice labyrinth a grey figure (**DUMMY**) stands in the Entry Hall
   with a disc and a glowing spike over its head. Its spike must point at the
-  doorway a truthful compass would take. Hold Tab, click **DUMMY**, then **BAD
+  doorway a truthful compass would take. press Tab (toggle), click **DUMMY**, then **BAD
   END**: the spike must swing to the doorway toward the Resurrection Room; pick a
   room instead: it points that way; pick the Entry Hall itself: it spins.
+
+## 7. Feedback round 6: the Mage's nudge / pull (implemented, untested)
+
+Protocol version 5: two copies of the game must both be this build.
+
+### 7.1 Solo, in the tutorial
+
+- [ ] In the practice labyrinth's Entry Hall the **DUMMY** now hops about 2 m
+      every 3 s and lands back on its spot. A new sign on the east side explains
+      the power.
+- [ ] Look at the dummy while it is in the air: a small purple diamond spins
+      over it. On the ground: no diamond.
+- [ ] **Left click** while the diamond shows: the dummy is pushed away from you
+      (along your view), then its next hop brings it back. **Right click**
+      (after the cooldown): it is pulled toward you.
+- [ ] Click while it stands on the floor: a quiet line under the middle of the
+      screen, `only while they are in the air`. Walk more than 12 m away:
+      `too far`. Click again at once after a nudge: `recharging n s`.
+- [ ] Hold **Tab**: the MAP tab's mage row has a third ring, **NUDGE**, counting
+      down 8 s after a nudge. With the overlay open, left / right clicks draw on
+      the pad or drag on the map and **never** nudge. Nothing about the nudge is
+      visible with the overlay closed except the diamond and the refusal line.
+- [ ] Before the Mage room (rooms 1-5) clicking does nothing and shows nothing.
+- [ ] With the pointer unlocked (Esc), the first left click only locks the
+      pointer; it must not nudge.
+
+### 7.2 Two players (Mage + one weapon; then Mage + two weapons)
+
+- [ ] Start a room; the role reveal says who is the Mage (use `?debug=1` on both
+      pages, F3 shows `role=`).
+- [ ] The weapon launches; while it is in the air the Mage aims at it: diamond
+      over it; **left click**: the weapon's flight bends away from the Mage's
+      view, like a bad jump. **Right click** (after 8 s): it is drawn toward the
+      Mage. The weapon's player sees only his own body lurch.
+- [ ] Refusals, each on the Mage's screen only and each with a `[pesky] reply:
+      NUDGE_REFUSED - ...` line (and a `host: nudge ... refused: ...` line on the
+      host): target **on the ground** (`NotAirborne`), **more than 12 m** away
+      (`OutOfRange`), **behind a wall** (`NoLineOfSight`; the local marker should
+      already be gone), **on cooldown** (`Cooldown`, with the time left).
+- [ ] A **soul**: let a third player (or the weapon's player, after Q) fly as a
+      soul in the same room: when the Mage nudges somebody, the soul sees a faint
+      pale streak at the target for about a second. A weapon sees no streak.
+- [ ] **Nothing identifies the Mage**: on the weapon's and the soul's pages, no
+      text, no marker, no sound, no console line (without `?debug=1`) says who
+      did it; the only `NUDGE_EVENT` traffic is the same for everyone.
+- [ ] The weapon's clicks (left and right, overlay shut) do nothing and send
+      nothing: with `?debug=1` the host prints no `nudge` line for them, and the
+      weapon's `out` counter on F3 does not move per click.
+- [ ] Mage as host and Mage as client: both must work.
+- [ ] (6+ players, two fragments) one fragment's nudge is visibly weaker (0.6);
+      both nudging the same body within a second: the second lands at full
+      strength (`(co-signed, full strength)` on the host's debug line).
+
+## 8. Run mode (round 8, 2026-09-29; implemented, untested)
+
+Protocol version **6**: two copies of the game must both be this build. START now loads
+`Run`, not `Labyrinth`; the room page line reads `5 rooms, 5:00   for n weapons`. Sections
+1.7-1.11 (the labyrinth, the map, the swap, the compass, the labyrinth endings) no longer
+apply: that mode is set aside (`docs/RUN.md` section 9 says how to bring it back). The full
+design and every number: `docs/RUN.md`.
+
+### 8.1 Solo, in the tutorial
+
+- [ ] Rooms 1-5 are unchanged. Room 6 is now **one room**, the practice hall: no doorways,
+      four sealed walls, the signs (see section 9.2 for the round-9 layout), the hopping
+      **DUMMY**, and a small lit gold **ring** in the far south-west corner with an `EXIT` sign.
+- [ ] Entering the hall wakes the HUD: after about 1.5 s **YOU ARE A FRAGMENT OF THE ARCH
+      MAGE**. No compass, no Tab overlay (Tab does nothing), **no timer** (the tutorial has no
+      run).
+- [ ] The **ability bar** appears at the bottom centre (section 9.1). Nothing by the
+      crosshair. Before the hall (rooms 1-5) the bar must not be there.
+- [ ] Nudge / pull on the dummy as in section 7.1, but stronger (8 m/s, was 4): the dummy
+      flies noticeably farther. After a nudge the **Nudge / Pull** slot counts down 8 s.
+- [ ] Look at the dummy (in the air or on the floor, both fine) and press **1**: its label
+      changes from `DUMMY` to `MAGNETIC 20` and counts down to 0, then back to `DUMMY`. The
+      five curse slots count down **6 s** (the tutorial's shorter cooldown; 30 s in a real run).
+- [ ] **2**, **3**, **4**, **5** in turn (after each cooldown): `NAUSEA`, `SLIPPERY`,
+      `BLINDNESS`, `HEAVY` on the label. A second key while one is on **replaces** it.
+- [ ] Press a key at once after another: quiet line `recharging n s`. Walk more than 15 m
+      from the dummy: `too far`. Look at nothing and press 1-5: nothing at all happens.
+- [ ] `?debug=1` (browser) or the Editor console: `curse: Magnetic requested on the practice
+      dummy` -> `host: curse Magnetic on the practice dummy from slot 0 accepted: CURSE_EVENT
+      for 20.0 s`.
+- [ ] Launch into the lit ring: the tutorial ends and the menu returns, as before.
+
+### 8.2 Two players: the run
+
+- [ ] Host + join, START: both load **Run** and spawn as souls in the rack room. Roles: one
+      reveal says WEAPON, the other FRAGMENT (F3 `role=`). Timer at the top reads a dim
+      **5:00** once the layout has arrived (about a second; host console: `host: run layout
+      7 3 24 1 12 (pool of 23)` with different numbers per round).
+- [ ] The rack room has **two doorways**: north is shut by a solid panel with a **RESERVED**
+      sign beside it (nothing opens it); south glows. East and west are plain wall.
+- [ ] Possess a weapon and launch through the south door: you come out of the **north**
+      doorway of a pool room whose floor number is the first id of the layout. The timer on
+      **both** screens starts counting down at that moment (host console: `host: run timer
+      started at tick ...`).
+- [ ] The pool room has a north doorway (back to the rack: go through it and you are back at
+      the rack's south door - **two-way**) and a south doorway shut by a **panel**, with a
+      **lever** on a post beside it (at +4, -9 of the room).
+- [ ] Hit the lever at 4 m/s or more with any weapon: the handle swings, turns green, the
+      south panel slides into the wall, the plane glows. On the **other** player's screen the
+      same happens (KIT_STATE Lever, then Door). A client hitting it must work too (KIT_REQ ->
+      host).
+- [ ] Through the open south door: the next room of the layout, its own lever, and so on
+      for **five** rooms. Room k's north doorway always leads back to room k - 1's south
+      doorway.
+- [ ] Room 5's south door leads into the **Gate Hall**: its north doorway is where you arrive,
+      its south doorway is lit gold (arch + floor ring). Walking into that doorway does
+      nothing (it leads nowhere); the win is the room.
+- [ ] **Exit win**: every NON-Mage player's weapon inside the Gate Hall at once. With two
+      players that is the weapon player alone in the hall; the Mage may still be in room 3:
+      the banner **THE WEAPONS ESCAPED** and `the arch mage was: <name>`, then the menu.
+- [ ] **Timer loss**: start a new run, leave the rack, wait. Under 30 s the timer turns
+      **red**. At 0:00: **TIME IS UP - THE ARCH MAGE WINS** and the Mage's name, on both
+      screens, then the menu. Being inside the Gate Hall with one non-Mage still outside at
+      0:00 must lose.
+- [ ] **Late join**: a third player joining mid-run sees the same timer and the same layout
+      (his doors lead to the same rooms), and a lever that was already struck is already
+      green with its door open.
+
+### 8.3 Two players: the curses (Mage + one weapon)
+
+- [ ] The Mage looks at the weapon's body within 15 m and presses **1**: on the **weapon's**
+      screen `CURSED: MAGNETIC   20 s` counting down; nothing on the Mage's screen but the
+      ability bar's five curse slots starting their 30 s. Drop a loose weapon nearby: the victim's launches curve
+      toward it (the trajectory preview already shows the bend).
+- [ ] **2 NAUSEA**: the victim's view rolls and yaws slowly; launches wander off the aim.
+- [ ] **3 SLIPPERY**: the victim's weapon slides on landing and will not settle (P_Slick);
+      after 20 s it grips again. Possessing another weapon mid-curse moves the curse with you.
+- [ ] **4 BLINDNESS**: the victim's screen goes almost black except a small clear circle in
+      the middle; gone after 20 s.
+- [ ] **5 HEAVY**: the victim's launches are half speed (the preview arc is short).
+- [ ] **Nobody but the victim sees anything**: on the Mage's page no marker, no line, no
+      effect; on a third player's page nothing at all. No console line names the caster
+      without `?debug=1`.
+- [ ] Refusals on the Mage's screen only: target farther than 15 m (`too far`), a **free
+      soul** (`nothing to curse there`), a key inside the 30 s (`recharging n s`). Each with a
+      `reply: CURSE_REFUSED - ...` line under `?debug=1` and a `host: curse ... refused` line
+      on the host.
+- [ ] The weapon player presses 1-5: nothing happens, nothing is sent (F3 `out` counter does
+      not move per key; the host prints no `curse` line).
+- [ ] Mage as host and Mage as client: both must work.
+- [ ] **Nudge** in the run: as section 7.2, but 8 m/s. The nudge target marker and the
+      ability bar are the Mage's only extra UI; a weapon has no bar.
+
+## 9. Round 9: ability bar + tutorial ring (2026-09-29; implemented, untested)
+
+### 9.1 The Mage's ability bar
+
+- [ ] **Nothing by the crosshair**: the old `N` / `C` rings right of the screen centre are
+      gone for everybody, Mage or not.
+- [ ] **Mage only**: in the tutorial hall (you are the Mage) and as the Mage in a run, a row
+      of six square slots sits centred at the bottom of the screen: first `LMB / RMB
+      Nudge / Pull`, then (a little apart) `1 Magnetic`, `2 Nausea`, `3 Slippery`,
+      `4 Blindness`, `5 Heavy`. Each slot: a flat grey tile with a glyph (N/P, M N S B H), the
+      key in amber in the top-left corner, the name underneath.
+- [ ] **A weapon sees no bar**: the second player (not the Mage) in a two-player run has
+      nothing at the bottom centre; the weapon HUD (bottom-left panel, bottom-right hint) is
+      unchanged and does not overlap the bar on the Mage's screen.
+- [ ] **Cooldown sweep**: cast any curse: the pressed slot **pulses** (grows a little, gold
+      border, about 0.3 s), then **all five** curse slots darken; the dark sheet shrinks
+      upward as the cooldown runs out (the tile refills from the bottom) and each shows the
+      whole seconds left (6 in the tutorial, 30 in a run) in amber. At 0 they are bright again.
+      The Nudge / Pull slot is not darkened by a curse.
+- [ ] Nudge or pull (left or right click on the airborne dummy): the **Nudge / Pull** slot
+      alone pulses, darkens with the same sweep and counts down 8 s; the curse slots are
+      untouched. A nudge refused locally (not airborne, out of sight) does not darken it.
+- [ ] A refused curse (`too far`, `nothing to curse there`) does not darken the bar; a
+      refusal for `recharging` keeps the countdown honest.
+- [ ] The bar disappears with the result banner at the end of a run.
+- [ ] **Scale**: at 1920 x 1080 and at 1280 x 720 (browser window or Game view) the bar keeps
+      its proportions (the panel scales with the screen width), the key and name text stay
+      legible, and `LMB / RMB` fits inside its slot's corner.
+
+### 9.2 The tutorial's exit ring
+
+- [ ] Entering the practice hall (through the door from room 5, north-east corner) you see,
+      in walking order: `Sign_Mage` then `Sign_Run` then `Sign_Nudge` on the **east wall** on
+      your left, the hopping **dummy** in front of them, `Sign_Curse` on the south wall, then
+      the **EXIT** sign and, in the **far south-west corner**, a **small** lit gold ring
+      (2 m radius, gold bar floating over it) turned toward you. The `ENTRY HALL` sign is now
+      on the north wall beside the door you came in by.
+- [ ] You can reach and read every sign and practise nudge / pull and all five curses on the
+      dummy without the tutorial ending. Standing at the old spot (about 5 m south-west of the
+      hall's centre) and at the hall's respawn point does **not** end it.
+- [ ] Launch into the ring: the tutorial ends and the menu returns. Landing a metre outside
+      its painted edge must not end it (the trigger is a 3.6 m square box, 3.5 m tall, turned
+      with the ring: its sides sit just inside the 4 m circle, its four corners poke about
+      0.5 m past the edge).

@@ -575,13 +575,11 @@ MonoBehaviour:
   style: {fileID: 7433441132597879392, guid: 2f98ed4370004a14a824b8c923835de1, type: 3}
   gameData: {fileID: 11400000, guid: 828c8d8cc7ff7e848918671815b1d028, type: 2}
   tutorialData: {fileID: 11400000, guid: ce518282b701b0f44b87e915199ba4d7, type: 2}
-  labyrinthScene: Labyrinth
+  labyrinthScene: Run
   tutorialScene: Tutorial
   tutorialRoomCode: SOLO
   joinTimeoutSeconds: 12
-  smallLabyrinth: LABYRINTH   small   -   one floor, few rooms
-  mediumLabyrinth: LABYRINTH   medium   -   one floor, more rooms
-  largeLabyrinth: LABYRINTH   large   -   two floors
+  runLine: 5 rooms, 5:00
 --- !u!114 &2006345308
 MonoBehaviour:
   m_ObjectHideFlags: 0

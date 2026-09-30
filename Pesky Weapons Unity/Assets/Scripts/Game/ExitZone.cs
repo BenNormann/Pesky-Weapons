@@ -18,8 +18,11 @@ namespace Pesky.Game
     {
         [SerializeField] int id;
 
-        [Tooltip("The doorway this zone belongs to. The zone is live only while that doorway is the Exit.")]
-        [SerializeField] MagicDoor doorway;
+        [Tooltip("The doorway this zone belongs to. The zone is live only while that doorway is the Exit. Empty with alwaysLive on (the tutorial's practice hall).")]
+        [OptionalRef][SerializeField] MagicDoor doorway;
+
+        [Tooltip("Lit whatever the doorways say: the tutorial's ending ring, which belongs to no grid and no run.")]
+        [SerializeField] bool alwaysLive;
 
         [Tooltip("The bright arch and floor ring. Hidden unless this doorway is the Exit.")]
         [SerializeField] GameObject liveVisual;
@@ -67,7 +70,7 @@ namespace Pesky.Game
             if (Time.unscaledTime >= _next)
             {
                 _next = Time.unscaledTime + Mathf.Max(0.05f, refreshInterval);
-                _live = doorway != null && doorway.IsExitDoorway;
+                _live = alwaysLive || (doorway != null && doorway.IsExitDoorway);
                 if (_box != null && _box.enabled != _live) _box.enabled = _live;
                 if (!_live) _inside.Clear();
                 if (liveVisual != null && liveVisual.activeSelf != _live) liveVisual.SetActive(_live);

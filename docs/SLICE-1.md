@@ -128,9 +128,9 @@ raw delta). The tunables live on **`Assets/Data/LookTuning.asset`**
 | Field | Default | Meaning |
 |---|---|---|
 | `filterSpikes` | on | Master switch. |
-| `spikeMode` | Drop | `Drop` throws the frame's delta away; `Scale` keeps its direction and shrinks it to `scaleToPixels`. |
-| `spikePixels` | 300 | A single frame's delta longer than this many pixels is a spike (18,000 px/s at 60 fps; a hard flick at 20 fps is about 150). Raise it if slow frames make real flicks trip the filter. |
-| `scaleToPixels` | 40 | Scale mode only: the length a spike is shrunk to. |
+| `spikeMode` | Drop | `Drop` throws the frame's delta away; `Scale` keeps its direction and shrinks it to `scaleToDegrees`. |
+| `spikeDegrees` | 300 | A single frame's delta longer than this many pixels is a spike (18,000 px/s at 60 fps; a hard flick at 20 fps is about 150). Raise it if slow frames make real flicks trip the filter. |
+| `scaleToDegrees` | 40 | Scale mode only: the length a spike is shrunk to. |
 | `dropFirstDeltaAfterLock` | on | The first non-zero delta after the pointer lock is acquired, after the window regains focus, and after the Tab overlay closes (`OrbitCamera.InputEnabled` false -> true) is discarded: it carries the cursor's jump to the centre and whatever the Input System accumulated while nobody read it. |
 | `logDrops` | on | Print every dropped / scaled delta (`[pesky] look: ...`) where DebugGate is open. |
 

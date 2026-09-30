@@ -31,6 +31,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8058bf5a152768d4faf9dfbc02bebfbe, type: 2}
   movement: {fileID: 11400000, guid: 1850e2ed809ade4478afb97e9b9cdd73, type: 2}
   labyrinth: {fileID: 11400000, guid: 4a4f40c445290e443ae45c85e60081e9, type: 2}
+  mode: 1
+  run: {fileID: 11400000, guid: 1092ea459fa74e74a877fd6d9aee6b59, type: 2}
   impactSpeedMin: 3
   impactSpeedMax: 12
   hitCooldownSeconds: 0.35

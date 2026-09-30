@@ -27,11 +27,11 @@ namespace Pesky.Data
         [Tooltip("Drop the whole frame's delta, or scale it down to a regular movement in the same direction.")]
         public LookSpikeMode spikeMode = LookSpikeMode.Drop;
 
-        [Tooltip("A single frame's mouse delta longer than this many pixels is a spike. At 60 fps 300 px is 18,000 px/s, faster than any hand; at 20 fps a hard flick reaches about 150. Raise it if slow frames make real flicks trip the filter.")]
-        [Min(1f)] public float spikePixels = 300f;
+        [Tooltip("A single frame's look delta that would turn the camera by more than this many DEGREES is a spike. Measured after sensitivity, so the cap stays put whatever the Look binding's scale processor or the sensitivity is (ATCK drops 300 raw px at 0.12 deg/px = 36 deg). At 20 fps a hard flick reaches about 18 deg; raise it if slow frames make real flicks trip the filter.")]
+        [Min(0.1f)] public float spikeDegrees = 36f;
 
-        [Tooltip("Scale mode only: the length a spike is shrunk to, pixels.")]
-        [Min(0f)] public float scaleToPixels = 40f;
+        [Tooltip("Scale mode only: the turn a spike is shrunk to, degrees.")]
+        [Min(0f)] public float scaleToDegrees = 5f;
 
         [Header("Lock and focus")]
         [Tooltip("Discard the first non-zero delta after the pointer lock is acquired, after the window regains focus, and after the Tab overlay closes: that delta carries the cursor's jump to the centre and the deltas the Input System accumulated while nobody was reading them.")]

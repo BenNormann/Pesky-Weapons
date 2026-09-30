@@ -1,5 +1,12 @@
 ﻿# LABYRINTH
 
+**SET ASIDE on 2026-09-29** (owner decision, `docs/PREMISE.md` last section): the grid, the
+Tab map / scratch pad, the compass and its bending, and the Resurrection Room are out of
+the game and replaced by the simplified run of **`docs/RUN.md`**. Everything below is still
+in the project (`Labyrinth.unity` is out of the build settings; `GameData.mode` is `Run`);
+RUN.md section 9 says how to switch back. The nudge (section 13) is still in play, doubled
+to 8 m/s.
+
 The labyrinth: what it is made of, what travels on the wire, what the host
 decides, every number you can turn, and how to add rooms or change the size.
 
@@ -126,7 +133,7 @@ current table, so a doorway always says truthfully where it leads right now.
 
 Ten ids in `MsgId`, **0x30-0x39**. Feedback round 2 added the scratch pad's three
 on **0x3A-0x3C** (see section 11.2 and NETCODE-STATUS F2), so **0x3D-0x3F** are
-what is left free. `Wire.ProtocolVersion` is now **4**.
+what is left free. `Wire.ProtocolVersion` was **4** then; it is **5** since the nudge / pull (section 13).
 
 | Id | Name | Kind | Bytes | Layout after the type byte |
 |---|---|---|---|---|
@@ -314,6 +321,14 @@ All on `Assets/Data/Labyrinth.asset` (`LabyrinthDef`).
 | `bendCooldownSeconds` | 15 | between one Mage's bends |
 | `bendFractionLimit` | 0.5 | exclusive. 0.5 = strictly fewer than half the non-Mages bent at once |
 | `minBendTargets` | **1** | floor under the minority rule, so a bend is never impossible in a small room or the tutorial. `MaxBentFor(n) = clamp(max(minBendTargets, strictMinority(n)), 0, n)` |
+| `nudgeRange` | **12 m** | Mage nudge / pull: most distance from the Mage's own streamed body to the target (host check) |
+| `nudgeCooldown` | **8 s** | between one Mage's nudges or pulls (one cooldown for both clicks) |
+| `nudgeImpulse` | **4 m/s** | velocity change of a NUDGE (left click), along the Mage's view |
+| `pullImpulse` | **4 m/s** | velocity change of a PULL (right click), toward the Mage's body. The owner clamps whatever arrives to the larger of the two |
+| `twoFragmentScale` | **0.6** | with two fragments in the round, a nudge lands at this fraction ... |
+| `coSignWindow` | **1 s** | ... unless the OTHER fragment nudged the same target within this many seconds before: then it lands at full strength |
+| `requireAirborne` | **on** | only a target whose POSE carries the Airborne bit. Off = anybody holding a weapon |
+| `nudgeAimCone` | **8 deg** | client only: half-angle round the screen centre in which a body is picked as the target |
 | `mageBaseCount` | 1 | |
 | `mageSecondFromPlayers` | 6 | a second Mage from this many players up |
 | `mageMaxCount` | 2 | |
@@ -657,7 +672,7 @@ correctly. To undo: `Sign.prefab` > `Label` > yaw 180.
 
 ### 11.2 The Tab overlay is now the shared scratch pad
 
-**For a weapon, holding Tab opens one page: the pad.** The auto-map is gone for
+**For a weapon, press Tab (toggle) opens one page: the pad.** The auto-map is gone for
 everybody but the Mage — a weapon is shown **no labyrinth information at all**,
 because working the maze out is the game. For a **Mage** the overlay has two top
 tabs: **MAP** (the interactive grid of section 8.6, drag-to-swap and the bend
@@ -838,3 +853,88 @@ Until then a long room simply occupies one cell and is taller inside than the gr
 A bigger shape does not need more room on the lattice — 200 m apart with the widest of these
 62 m across still leaves 138 m of nothing between neighbours — but widen the stride in
 section 8.2 before any room grows past 100 m.
+
+---
+
+## 13. The Mage's nudge / pull (feedback round 6, 2026-09-22)
+
+**Implemented, untested.** The third Mage power, and the first one used in the
+world rather than on the map. The wire is in `docs/NETCODE-STATUS.md`,
+"Feedback round 6"; `Wire.ProtocolVersion` is now **5**.
+
+**What the Mage does.** He looks at another player's body that is in the air and
+clicks: **left = NUDGE** (a velocity change along his view direction: it pushes
+the target away from where he looks from), **right = PULL** (toward his own
+body). No crosshair: the target is the body nearest the centre of the screen
+inside `nudgeAimCone`. While the target is eligible by a local pre-check (in the
+air, within `nudgeRange`, in sight by a World raycast) a small purple diamond
+spins over it, drawn on his machine alone. Refusals come back from the host to
+him alone and show as a quiet line under the middle of his screen for 1.6 s
+(`only while they are in the air`, `too far`, `you cannot see them`,
+`recharging n s`, `nothing to nudge there`). His cooldown ring (`NUDGE`, pale
+blue) is the third ring on the MAP tab's mage row, next to SWAP and BEND, and is
+**never** on the always-visible HUD.
+
+**Who decides.** `LabyrinthRule` (it already owns the secret Mage table), as the
+validator for NUDGE_REQ. In order: a round is open and the asker is a Mage
+(otherwise **silent**, as for every other Mage intent: a weapon that sends one
+learns nothing); his `nudgeCooldown` is over; the target is another present
+player holding a weapon, not a soul, with at least one POSE (or the tutorial
+dummy, below); the target's POSE has the **Airborne** bit (if
+`requireAirborne`); it is within `nudgeRange` of the asker's own streamed pose;
+`IHostWorld.HasLineOfSight` (a `Physics.Linecast` against the World layer on the
+host's own scene, both ends lifted 0.3 m) is clear. Each failure after the
+Mage check is a `NUDGE_REFUSED` reply to the asker alone; a success is a
+`NUDGE_EVENT` to everybody with the target, the mode and the velocity change,
+and **no author**.
+
+**The two-fragment rule, simple form.** With two Mages present in the round,
+every nudge lands at `twoFragmentScale` (0.6) of its strength, **unless** the
+other fragment's nudge on the **same target** was accepted within
+`coSignWindow` (1 s) before it: then this one lands at full strength (and the
+pair is spent). The first of a co-signed pair still lands at 0.6, so a
+co-signed pair gives 0.6 + 1.0. With one Mage every nudge is full strength.
+Mode does not matter for the pairing (a nudge and a pull on the same body
+co-sign).
+
+**Who moves.** The target's owner: `WorldAuthority.OnNudgeEvent` calls
+`WeaponBody.Knockback(dv)` on the local weapon when the target is this peer's
+slot, clamping `dv` to `max(nudgeImpulse, pullImpulse)` of its own build.
+Everyone else only raises `WorldAuthority.Nudged`, and `MageNudge` shows the
+**wisp** (a faint pale streak along the push, about 1 s, `NudgeWisp.prefab`)
+only if this peer's player is a **free soul** at that moment. Weapons see
+nothing (except the target flying off, which is physics everyone sees anyway).
+
+**Not a tell.** The Nudge / Pull actions exist for everyone. For a weapon
+`MageNudge` does nothing and `WorldAuthority.RequestNudge` refuses to send
+unless `LocalRole` is Mage, so a weapon's click is not even a packet. A click
+counts only while the pointer is locked, the camera takes input and the Tab
+overlay is shut, **and was so at the end of the previous frame** — so the click
+that locks the pointer (everybody's, in `OrbitCamera`), and every click on the
+map drag or the scratch pad, can never become a nudge. E / Q / Space / Tab are
+unchanged; nothing else was bound to the mouse buttons.
+
+**The tutorial.** `Room6_MageTutorial/PracticeDummy` now has a `Rigidbody`
+(mass 1, rotation frozen) and a `CapsuleCollider`, and hops: hop *k* happens at
+`hopPhase + k * hopPeriod` seconds of `LevelClock` (3 s; 9 m/s up, so a 2 m
+apex and 0.9 s in the air at g = 20), steering itself back toward where it was
+placed and starting from home again if knocked more than 8 m away. The host
+reaches it as the reserved target **`NudgeReqMsg.PracticeTarget` (0xFE)**
+through `IHostWorld.TryGetPracticeTarget` (its centre and its own contact-based
+airborne state), so it goes through the same cooldown / airborne / range / sight
+checks as a player; the `NUDGE_EVENT` for it is applied by the host
+(`PracticeDummy.Nudge`). That reserved id and those two `IHostWorld` members
+are the whole tutorial-only shim. A new sign, `Sign_Nudge`, on the Entry Hall's
+east side explains it. `Labyrinth_Tutorial.asset` has no nudge values of its own yet, so
+the tutorial runs on the defaults (8 s cooldown, about one try every third hop); set a
+shorter `nudgeCooldown` there if the lesson feels like a wait.
+
+| File | What |
+|---|---|
+| `Scripts/Protocol/Messages/NudgeMessages.cs` | new: `NudgeMode`, `NudgeRefusal`, the three messages |
+| `Scripts/Game/MageNudge.cs` | new, on `_Managers/MageNudge` in Tutorial and Labyrinth: aim, marker, clicks, refusal line, wisp |
+| `Scripts/Game/NudgeWisp.cs` | new: the soul-only streak |
+| `Prefabs/Player/NudgeMarker.prefab`, `NudgeWisp.prefab` | new: the Mage's target diamond (`M_Magic`), the wisp (`M_Preview`), no colliders |
+| `Scripts/Game/PracticeDummy.cs` | clock-driven hop, `IsAirborne`, `Centre`, `Nudge` |
+| `Scripts/Game/UI/LabyrinthHud.cs`, `LabyrinthMapView.cs` | `OverlayOpen`, `IsAwake`, the refusal line, the NUDGE ring (built in code from the `ring` classes, so the UXML is unchanged) |
+| `Input/PeskyControls.inputactions` | `Gameplay/Nudge` = `<Mouse>/leftButton`, `Gameplay/Pull` = `<Mouse>/rightButton` (added through the `InputActionSetupExtensions` API) |

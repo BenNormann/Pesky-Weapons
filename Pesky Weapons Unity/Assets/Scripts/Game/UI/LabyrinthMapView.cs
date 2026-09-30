@@ -54,6 +54,9 @@ namespace Pesky.Game
         readonly VisualElement _bendRing;
         readonly Label _swapRingText;
         readonly Label _bendRingText;
+        readonly VisualElement _nudgeRing;
+        readonly Label _nudgeRingText;
+        float _nudgeFill;
         readonly StringBuilder _sb = new StringBuilder(96);
 
         VisualElement[] _tiles = new VisualElement[0];
@@ -115,6 +118,25 @@ namespace Pesky.Game
             {
                 _bendRing.generateVisualContent += OnDrawBendRing;
                 _bendRing.pickingMode = PickingMode.Ignore;
+            }
+
+            // The nudge / pull cooldown: a third ring beside the other two, built here from the same USS
+            // classes. It lives only inside the MAP tab, so nobody else ever sees a Mage recharging.
+            VisualElement row = overlay.Q<VisualElement>("mage-row");
+            if (row != null)
+            {
+                _nudgeRing = row.Q<VisualElement>("nudge-ring");
+                if (_nudgeRing == null)
+                {
+                    _nudgeRing = new VisualElement { name = "nudge-ring", pickingMode = PickingMode.Ignore };
+                    _nudgeRing.AddToClassList("ring");
+                    Label text = new Label("NUDGE") { name = "nudge-ring-text", pickingMode = PickingMode.Ignore };
+                    text.AddToClassList("ring-text");
+                    _nudgeRing.Add(text);
+                    row.Add(_nudgeRing);
+                }
+                _nudgeRingText = _nudgeRing.Q<Label>("nudge-ring-text");
+                _nudgeRing.generateVisualContent += OnDrawNudgeRing;
             }
         }
 
@@ -572,6 +594,20 @@ void Refuse(string why)
                 _swapRingText.text = _swapFill <= 0f ? "SWAP" : Mathf.CeilToInt(_swapFill * swapSeconds).ToString();
             if (_bendRingText != null)
                 _bendRingText.text = _bendFill <= 0f ? "BEND" : Mathf.CeilToInt(_bendFill * bendSeconds).ToString();
+        }
+
+        /// <summary>The Mage's nudge / pull guide: 0 = ready, 1 = the whole wait still to go.</summary>
+        public void SetNudgeCooldown(float remaining01, float seconds)
+        {
+            _nudgeFill = Mathf.Clamp01(remaining01);
+            if (_nudgeRing != null) _nudgeRing.MarkDirtyRepaint();
+            if (_nudgeRingText != null)
+                _nudgeRingText.text = _nudgeFill <= 0f ? "NUDGE" : Mathf.CeilToInt(_nudgeFill * seconds).ToString();
+        }
+
+        void OnDrawNudgeRing(MeshGenerationContext ctx)
+        {
+            DrawRing(ctx, _nudgeFill, new Color(0.45f, 0.85f, 0.95f));
         }
 
         void OnDrawSwapRing(MeshGenerationContext ctx)

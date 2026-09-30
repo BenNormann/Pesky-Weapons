@@ -3,6 +3,12 @@ using UnityEngine;
 namespace Pesky.Data
 {
     /// <summary>
+    /// Which round the host runs and every peer's HUD expects. Labyrinth is the 5x5 grid of docs/LABYRINTH.md
+    /// (set aside); Run is the five-rooms-and-a-timer dungeon of docs/RUN.md. Stable: append only.
+    /// </summary>
+    public enum GameMode : byte { Labyrinth = 0, Run = 1 }
+
+    /// <summary>
     /// The one read-only data asset the sim is built from. NetSession takes it
     /// in Start and hands it to WorldSim, so every peer's sim reads the same
     /// numbers from the same build. Tables are indexed by the byte ids that
@@ -24,6 +30,12 @@ namespace Pesky.Data
         public MovementTuning movement;
         [Tooltip("The labyrinth: grid size, room list, the Mage's limits and the round's thresholds.")]
         public LabyrinthDef labyrinth;
+
+        [Tooltip("Which round this data plays: the set-aside labyrinth grid, or the simplified run. The host's rules and every HUD read it.")]
+        public GameMode mode = GameMode.Run;
+
+        [Tooltip("The run: rooms per run, the timer and the five curses. Used when mode is Run.")]
+        public RunDef run;
 
 
         [Header("Impact damage (host side hit validation)")]

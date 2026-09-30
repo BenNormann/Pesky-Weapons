@@ -27,7 +27,7 @@ namespace Pesky.Protocol
 
         // Pesky Weapons' gameplay domains, 0x20 to 0x7E, are assigned by the
         // stage that adds them: players 0x20-0x2F, the labyrinth 0x30-0x3F,
-        // enemies 0x40-0x4F, world (kit pieces) 0x50-0x5F. 0x60-0x7E are free.
+        // enemies 0x40-0x4F, world (kit pieces) 0x50-0x5F, the run 0x60-0x6F. 0x70-0x7E are free.
 
         // Players and their weapons, 0x20-0x2F.
         public const byte PossessReq = 0x20;
@@ -39,7 +39,15 @@ namespace Pesky.Protocol
         public const byte WeaponDamaged = 0x26;
         public const byte BatClaim = 0x27;
         public const byte BatEvent = 0x28;
-        // 0x29-0x2F unused.
+        // The Mage's mid-air nudge / pull, 0x29-0x2B: friend ballistics' twin. The event carries no author.
+        public const byte NudgeReq = 0x29;
+        public const byte NudgeEvent = 0x2A;
+        public const byte NudgeRefused = 0x2B;
+        // The Mage's curses, 0x2C-0x2E: the same shape as the nudge (intent, event without an author, reply).
+        public const byte CurseReq = 0x2C;
+        public const byte CurseEvent = 0x2D;
+        public const byte CurseRefused = 0x2E;
+        // 0x2F unused.
 
         // The labyrinth, 0x30-0x3F. Two of them are Replies, which is how a
         // secret reaches one player and nobody else.
@@ -70,6 +78,11 @@ namespace Pesky.Protocol
         public const byte KitReq = 0x51;
         public const byte WorldReset = 0x52;
         // 0x53-0x5F unused.
+
+        // The simplified RUN (docs/RUN.md), 0x60-0x6F: the room sequence and the timer.
+        public const byte RunLayout = 0x60;
+        public const byte RunStart = 0x61;
+        // 0x62-0x6F unused.
 
         
 /// <summary>The container: count:u8 then [len:u16 body] per message. See <see cref="Frame"/>.</summary>

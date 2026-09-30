@@ -52,6 +52,15 @@ MonoBehaviour:
   swapAcrossWrap: 0
   bendCooldownSeconds: 5
   bendFractionLimit: 0.5
+  minBendTargets: 1
+  nudgeRange: 12
+  nudgeCooldown: 8
+  nudgeImpulse: 8
+  pullImpulse: 8
+  twoFragmentScale: 0.6
+  coSignWindow: 1
+  requireAirborne: 1
+  nudgeAimCone: 8
   mageBaseCount: 1
   mageSecondFromPlayers: 6
   mageMaxCount: 2

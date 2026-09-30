@@ -21,7 +21,7 @@ namespace Pesky.Session
         {
             SnapshotPartKind.World, SnapshotPartKind.Players, SnapshotPartKind.Weapons,
             SnapshotPartKind.Enemies, SnapshotPartKind.Kit, SnapshotPartKind.Labyrinth,
-            SnapshotPartKind.Pad,
+            SnapshotPartKind.Pad, SnapshotPartKind.Run,
         };
 
 

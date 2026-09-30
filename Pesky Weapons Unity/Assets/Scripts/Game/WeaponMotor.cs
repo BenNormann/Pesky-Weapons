@@ -3,6 +3,18 @@ using UnityEngine;
 
 namespace Pesky.Game
 {
+    /// <summary>
+    /// What a curse on the possessing player does to a launch (docs/RUN.md): a speed scale (HEAVY) and a bend
+    /// of the direction (MAGNETIC toward the nearest weapon, NAUSEA a wandering heading). Set on the motor by
+    /// the local player's CurseEffects while a curse is on; null means no curse. Evaluate applies it, so the
+    /// trajectory preview shows the cursed launch too.
+    /// </summary>
+    public interface ILaunchCurse
+    {
+        float SpeedScale { get; }
+        Vector3 BendDirection(Vector3 direction, Vector3 from);
+    }
+
     public enum LaunchResult
     {
         Launched,
@@ -36,6 +48,9 @@ namespace Pesky.Game
         public float PitchDeg { get { return _pitchDeg; } }
         public int WallJumpsUsed { get { return _wallJumpsUsed; } }
         public Vector2 RollInput { get { return _roll; } }
+
+        /// <summary>The curse on whoever possesses this weapon, or null. Owned by the local player's CurseEffects.</summary>
+        public ILaunchCurse Curse { get; set; }
 
         void Reset()
         {
@@ -100,7 +115,15 @@ namespace Pesky.Game
                 return LaunchResult.RefusedAirborne;
             }
 
-            velocity = dir * weapon.Def.launchSpeed;
+            float speed = weapon.Def.launchSpeed;
+            ILaunchCurse curse = Curse;
+            if (curse != null)
+            {
+                Vector3 bent = curse.BendDirection(dir, weapon.Body != null ? weapon.Body.position : transform.position);
+                if (bent.sqrMagnitude > 1e-6f) dir = bent.normalized;
+                speed *= Mathf.Clamp(curse.SpeedScale, 0.05f, 1f);
+            }
+            velocity = dir * speed;
             if (t.compensateIntegrator) velocity.y += 0.5f * t.gravity * Time.fixedDeltaTime;
             if (Time.time - _lastLaunchTime < t.launchCooldown) return LaunchResult.RefusedCooldown;
             return result;

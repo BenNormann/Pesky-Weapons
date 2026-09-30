@@ -7,9 +7,12 @@ namespace Pesky.Protocol
     /// snap instead of interpolating (a MagicDoor trip, a respawn, a recover).
     /// Animate is the "moved under its own power recently" bit the host's
     /// goblins perceive. Soul means the body is the free soul, not a weapon.
+    /// Airborne (protocol 5) means a possessed weapon is off the ground right now (WeaponBody.IsGrounded is
+    /// false and it is not racked or carried); the host reads it to allow a Mage's nudge / pull. Never set
+    /// on a soul.
     /// </summary>
     [Flags]
-    public enum PoseFlags : byte { None = 0, Teleport = 1, Animate = 2, Soul = 4 }
+    public enum PoseFlags : byte { None = 0, Teleport = 1, Animate = 2, Soul = 4, Airborne = 8 }
 
     /// <summary>Which family of kit piece a KIT_STATE or KIT_REQ is about. Stable: append only.</summary>
     public enum KitKind : byte

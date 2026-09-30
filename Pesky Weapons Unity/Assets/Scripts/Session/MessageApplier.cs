@@ -30,6 +30,7 @@ namespace Pesky.Session
                 case MsgId.WeaponRespawned: { if (!WeaponRespawnedMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.WeaponDamaged: { if (!WeaponDamagedMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.BatEvent: { if (!BatEventMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
+                case MsgId.NudgeEvent: { if (!NudgeEventMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.EnemyState: { if (!EnemyStateMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.EnemyHealth: { if (!EnemyHealthMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.KitState: { if (!KitStateMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
@@ -40,6 +41,9 @@ namespace Pesky.Session
                 case MsgId.PlayerRespawn: { if (!PlayerRespawnMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.Legend: { if (!LegendMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }                case MsgId.PadStroke: { if (!PadStrokeMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.PadClear: { if (!PadClearMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
+                case MsgId.RunLayout: { if (!RunLayoutMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
+                case MsgId.RunStart: { if (!RunStartMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
+                case MsgId.CurseEvent: { if (!CurseEventMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
 
                 
 // One case per Pesky Weapons message the sim keeps goes here as

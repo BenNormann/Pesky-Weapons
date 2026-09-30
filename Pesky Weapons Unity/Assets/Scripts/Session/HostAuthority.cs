@@ -83,7 +83,15 @@ public static HostAuthority CreateDefault()
             var labyrinth = new LabyrinthRule();
             authority.AddRule(labyrinth);
             authority.SetValidator(MsgId.SwapReq, labyrinth);
-            authority.SetValidator(MsgId.CompassBendReq, labyrinth);            // The shared scratch pad, last of all: it wipes itself when a round opens and rate-limits the
+            authority.SetValidator(MsgId.CompassBendReq, labyrinth);
+            authority.SetValidator(MsgId.NudgeReq, labyrinth);
+            // The simplified run (docs/RUN.md), right after the labyrinth: it reads that rule's secret Mage
+            // table on this host to validate a curse and to name the Mages when the round ends. Idle unless
+            // GameData.mode is Run; the labyrinth rule's grid half is idle when it is.
+            var run = new RunRule(labyrinth);
+            authority.AddRule(run);
+            authority.SetValidator(MsgId.CurseReq, run);
+            // The shared scratch pad, last of all: it wipes itself when a round opens and rate-limits the
             // strokes. It decides nothing about the labyrinth and knows none of its secrets.
             var pad = new PadRule();
             authority.AddRule(pad);

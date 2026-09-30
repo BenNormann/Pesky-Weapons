@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7603184fdf316ea4eaac676cf9954180, type: 3}
+  m_Name: Run_Tutorial
+  m_EditorClassIdentifier: Pesky.Data::Pesky.Data.RunDef
+  roomsPerRun: 5
+  timerSeconds: 300
+  warningSeconds: 30
+  curseRange: 15
+  curseCooldown: 6
+  curseDuration: 20
+  curseAimCone: 8
+  magneticRange: 20
+  magneticBend: 0.5
+  nauseaRoll: 6
+  nauseaYaw: 4
+  nauseaPeriod: 3
+  nauseaHeadingDrift: 12
+  slipperyMaterial: {fileID: 13400000, guid: 049d8fd4355d34947acd7acc7bbbf62a, type: 2}
+  blindnessClearRadius: 0.12
+  blindnessOpacity: 0.96
+  heavySpeedScale: 0.5

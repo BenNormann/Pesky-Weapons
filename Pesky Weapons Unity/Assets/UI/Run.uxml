@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="run-root" class="run-root" picking-mode="Ignore">
+        <ui:Style src="project://database/Assets/UI/Run.uss" />
+
+        <ui:VisualElement name="blind-overlay" class="blind-overlay" picking-mode="Ignore" />
+
+        <ui:Label name="timer" class="timer" text="5:00" picking-mode="Ignore" />
+
+        <ui:Label name="note" class="note" text="" picking-mode="Ignore" />
+
+        <ui:VisualElement name="curse-status" class="curse-status" picking-mode="Ignore">
+            <ui:Label name="curse-name" class="curse-name" text="" picking-mode="Ignore" />
+            <ui:Label name="curse-time" class="curse-time" text="" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="ability-bar" class="ability-bar" picking-mode="Ignore" />
+
+        <ui:VisualElement name="role-reveal" class="role-reveal" picking-mode="Ignore">
+            <ui:Label name="role-title" class="role-title" text="" picking-mode="Ignore" />
+            <ui:Label name="role-sub" class="role-sub" text="" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="result-banner" class="result-banner" picking-mode="Ignore">
+            <ui:Label name="result-title" class="result-title" text="" picking-mode="Ignore" />
+            <ui:Label name="result-sub" class="result-sub" text="" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

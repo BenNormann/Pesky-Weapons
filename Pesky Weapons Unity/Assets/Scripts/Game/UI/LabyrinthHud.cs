@@ -93,6 +93,34 @@ namespace Pesky.Game
         float _swapSentAt = -1f;
         int _swapSentA = -1, _swapSentB = -1;
 
+        // the Mage's nudge / pull: MageNudge owns the guide, this page only draws it (MAP tab) and the quiet refusal line
+        float _nudgeReadyAt;
+        float _nudgeSeconds = 8f;
+        Label _nudgeNote;
+        float _nudgeNoteUntil = -1f;
+
+        /// <summary>The Tab overlay is showing: every click belongs to it, never to the world.</summary>
+        public bool OverlayOpen { get { return _overlayOpen; } }
+
+        /// <summary>False while the tutorial keeps this page asleep (before the Mage room).</summary>
+        public bool IsAwake { get { return _awake; } }
+
+        /// <summary>MageNudge's local cooldown guide, drawn as a ring inside the MAP tab and nowhere else.</summary>
+        public void SetNudgeCooldown(float readyAt, float seconds)
+        {
+            _nudgeReadyAt = readyAt;
+            _nudgeSeconds = seconds;
+        }
+
+        /// <summary>A short, quiet line under the middle of the screen for a moment: why a nudge did not happen. Only the Mage's own clicks ever cause one.</summary>
+        public void ShowNudgeNote(string text)
+        {
+            if (_nudgeNote == null || !_awake) return;
+            _nudgeNote.text = text;
+            Show(_nudgeNote, true);
+            _nudgeNoteUntil = Time.time + 1.6f;
+        }
+
         void Awake()
         {
             if (document == null) document = GetComponent<UIDocument>();
@@ -123,6 +151,22 @@ namespace Pesky.Game
             _resultSub = root.Q<Label>("result-sub");
 
             if (_compassDial != null) _compassView = new CompassView(_compassDial);
+
+            // The nudge refusal line. Built here rather than in the UXML: one small label, styled inline.
+            _nudgeNote = root.Q<Label>("nudge-note");
+            if (_nudgeNote == null)
+            {
+                _nudgeNote = new Label(string.Empty) { name = "nudge-note", pickingMode = PickingMode.Ignore };
+                root.Add(_nudgeNote);
+            }
+            _nudgeNote.style.position = Position.Absolute;
+            _nudgeNote.style.left = 0f;
+            _nudgeNote.style.right = 0f;
+            _nudgeNote.style.top = Length.Percent(58f);
+            _nudgeNote.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _nudgeNote.style.fontSize = 14f;
+            _nudgeNote.style.color = new Color(0.85f, 0.80f, 0.95f, 0.6f);
+            Show(_nudgeNote, false);
 
             if (_overlay != null)
             {
@@ -183,12 +227,17 @@ namespace Pesky.Game
             if (_session == null && sessionRunner != null) _session = sessionRunner.Session;
             if (!_awake) return;
 
-            bool want = !_roundOver && _mapAction != null && _mapAction.IsPressed();
-            if (want != _overlayOpen) SetOverlayOpen(want);
+            // Tab toggles the overlay (the owner: a toggle, not hold). The round ending closes it.
+            if (!_roundOver && _mapAction != null && _mapAction.WasPressedThisFrame()) SetOverlayOpen(!_overlayOpen);
 
             RefreshCompass();
             RefreshRole();
             if (_overlayOpen) RefreshOverlay();
+            if (_nudgeNoteUntil > 0f && Time.time >= _nudgeNoteUntil)
+            {
+                _nudgeNoteUntil = -1f;
+                Show(_nudgeNote, false);
+            }
         }
 
         static void Show(VisualElement element, bool on)
@@ -330,6 +379,8 @@ namespace Pesky.Game
             float swapLeft = swapSeconds > 0.01f ? (_swapReadyAt - now) / swapSeconds : 0f;
             float bendLeft = bendSeconds > 0.01f ? (_bendReadyAt - now) / bendSeconds : 0f;
             _map.SetCooldowns(swapLeft, swapSeconds, bendLeft, bendSeconds);
+            float nudgeLeft = _nudgeSeconds > 0.01f ? (_nudgeReadyAt - now) / _nudgeSeconds : 0f;
+            _map.SetNudgeCooldown(nudgeLeft, _nudgeSeconds);
         }
 
 void OnSwapRequested(int cellA, int cellB)

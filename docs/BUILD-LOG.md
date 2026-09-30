@@ -1830,7 +1830,7 @@ and `docs/NETCODE-STATUS.md` section F2.
    Both are fixed. **The Sign fix reaches every sign in the project**; no Sign
    anywhere overrides that rotation, so no sign changes which side it shows,
    only whether it reads correctly. Revert: `Sign.prefab` > `Label` > yaw 180.
-2. **A shared scratch pad, and it is the Tab menu.** A weapon holding Tab now
+2. **A shared scratch pad, and it is the Tab menu.** A weapon press Tab (toggle) now
    gets **only** a blank dark canvas — no auto-map, no cells, no room names. A
    Mage gets two top tabs, MAP and PAD. Strokes are vector polylines in
    normalised u16 canvas coordinates: PAD_STROKE_REQ (0x3A) -> host validates
@@ -2147,7 +2147,7 @@ the Editor idle.
    walking the grid table for bodies in other rooms every physics step.
 3. **Mouse-look spike filter**: `LookFilter.cs` (ported from ATCK) inside
    `OrbitCamera.Update`, tunables on `Assets/Data/LookTuning.asset` (Drop / Scale,
-   300 px, first delta after lock / focus / overlay dropped, default ON). See
+   36 deg, first delta after lock / focus / overlay dropped, default ON). See
    `docs/SLICE-1.md` section 8. Verified in the browser: `[pesky] look: dropped a
    spike (300, 144 px ...)` and `dropped the first delta after a lock, focus or
    overlay change`; the overlay counts them (`lookDrops`). Look deltas were never
@@ -2202,3 +2202,154 @@ that second build (2026-09-22 14:44), unpublished.
   join fail on the first try between real machines, retry once before digging.
 - The pane blocks the microphone, so every tab offered hidden (`.local`) host
   candidates; the two tabs still connected through mDNS on this machine.
+
+## Feedback round 6: nudge / pull (2026-09-22)
+
+The Mage's third power, owner's call: "mid-air nudge / pull depending right / left click".
+**Implemented, untested**: no play mode, no tests, no screenshots, no browser, no build.
+Clean compile after every script change; `SceneValidator` 0 problems on `Tutorial` and
+`Labyrinth` after wiring, both saved. Full write-up: `docs/LABYRINTH.md` section 13 (design,
+tunables, tutorial) and `docs/NETCODE-STATUS.md` "Feedback round 6" (wire, secrecy, risks).
+
+- **Wire (protocol 4 -> 5).** 0x29 NUDGE_REQ (intent, 9 B), 0x2A NUDGE_EVENT (event, 13 B, no
+  author), 0x2B NUDGE_REFUSED (reply to the asker, 5 B). POSE flags gained `Airborne = 8`,
+  set by `PoseStreamer` from `WeaponBody.IsGrounded` (not racked, not carried, not a soul).
+- **Host.** `LabyrinthRule.OnNudge`: Mage + round (silent otherwise), cooldown, target holds a
+  weapon and is not the asker, airborne, `nudgeRange`, `IHostWorld.HasLineOfSight` (new,
+  `Physics.Linecast` on World in `WorldAuthority`). Two fragments: x`twoFragmentScale` unless
+  the other fragment hit the same target within `coSignWindow`, then full strength.
+- **Client.** `Game/MageNudge.cs` on `_Managers/MageNudge` (Tutorial, Labyrinth): aim cone,
+  the Mage-only diamond (`Prefabs/Player/NudgeMarker.prefab`), Nudge / Pull input actions
+  (`<Mouse>/leftButton`, `<Mouse>/rightButton`, new in `Gameplay`), the quiet refusal line and
+  the MAP-tab NUDGE ring (`LabyrinthHud`, `LabyrinthMapView`), the soul-only wisp
+  (`Game/NudgeWisp.cs`, `Prefabs/Player/NudgeWisp.prefab`). Non-Mages: nothing happens, nothing
+  is sent. Clicks count only with the pointer locked and the overlay shut on this frame and
+  the last, so the pointer-lock click and every map / pad click are never a nudge.
+- **Tutorial.** `PracticeDummy` got a Rigidbody + CapsuleCollider and a `LevelClock`-driven hop
+  (every 3 s, 9 m/s up, steering back home); the host reaches it as target `0xFE` through
+  `IHostWorld.TryGetPracticeTarget` (the tutorial-only shim) and applies its event. New sign
+  `Sign_Nudge` (id 2076) on the Entry Hall's east side. `WorldAuthority.practiceDummy` wired.
+- **Tunables** on `LabyrinthDef`: `nudgeRange` 12, `nudgeCooldown` 8, `nudgeImpulse` 4,
+  `pullImpulse` 4, `twoFragmentScale` 0.6, `coSignWindow` 1, `requireAirborne` on,
+  `nudgeAimCone` 8 deg. Neither asset was edited: both run on these defaults.
+- Docs: BACKLOG (moved to a new Done list), PREMISE (Mage section, as built), LABYRINTH (tunables
+  + section 13), NETCODE-STATUS (round 6), TEST-CHECKLIST (section 7).
+
+**Left open.** The final validator pass over `Boot`, `MainMenu` and `Dev/FeelBox` did not
+complete: the Editor put up a modal "Scene(s) Have Been Modified" dialog (Labyrinth was marked
+dirty again after it had been saved) while the pass was switching scenes, and that dialog
+blocks every MCP command. The work on disk is saved; the dialog needs a human click (see the
+round-6 report).
+
+## Feedback round 7: mouse-spike filter threshold (2026-09-22)
+
+The owner still saw input spikes on the published round-5 build. Cause: Pesky's Look binding
+carries a `scaleVector2(0.06)` processor, so the filter compared *scaled* units against a
+"300 pixel" threshold, i.e. 5,000 real pixels (a 600 deg turn) per frame; ATCK filters the raw
+delta (300 px at 0.12 deg/px = 36 deg). Fix: `LookFilter.Filter(delta, degreesPerUnit, tuning)`
+now measures the turn in DEGREES after sensitivity; `LookTuning.spikeDegrees` (36) replaces
+`spikePixels`, `scaleToDegrees` (5) replaces `scaleToPixels`; OrbitCamera passes
+`lookSensitivity` and no longer multiplies afterwards. Degrees per real pixel are unchanged
+(0.06 x 2 = 0.12, the same as ATCK). Implemented by the orchestrator through the MCP script
+tools; untested.
+
+## Round 8: simplified run mode (2026-09-29)
+
+The owner's simplification (`docs/PREMISE.md`, last section): the labyrinth grid, the Tab
+map / pad, the compass and the Resurrection Room are **set aside** (kept in the project, out
+of the game); the round is now five rooms in a row, a 5:00 timer, one exit, one hidden Mage
+with five curses. **Implemented, untested**: no play mode, no tests, no screenshots, no
+browser, no build. Clean compile after every script change; every new message encoded and
+decoded once in the Editor and the Run snapshot part round-tripped; `SceneValidator` **0
+problems** on `Boot`, `MainMenu`, `Tutorial`, `Run` and `Dev/FeelBox`, each loaded alone;
+all scenes saved. Full write-up: **`docs/RUN.md`**; the wire in `docs/NETCODE-STATUS.md`
+round 8; the owner's checks in `docs/TEST-CHECKLIST.md` section 8.
+
+- **Housekeeping first.** The Editor was not running when the round began (it had been shut
+  down cleanly on the 22nd); it was launched on the project and the MCP bridge reconnected.
+  `Assets/_Recovery/0.unity` (Unity's crash-recovery copy dated 2026-09-22, referenced by
+  nothing) was trashed through `AssetDatabase.MoveAssetToTrash`. `Labyrinth.unity` was only
+  read: its uncommitted diff is the round-6 nudge wiring (`_Managers/MageNudge` and its
+  references) from before this round.
+- **Wire (protocol 5 -> 6).** 0x60 RUN_LAYOUT (state, 2 + 2n B), 0x61 RUN_START (event,
+  13 B), 0x2C CURSE_REQ (intent, 3 B), 0x2D CURSE_EVENT (event, 9 B, no author), 0x2E
+  CURSE_REFUSED (reply, 5 B). `SnapshotPartKind.Run = 7`, `End = 8`. `RoundOutcome.TimedOut`.
+  New: `Protocol/RunEnums.cs`, `Protocol/Messages/RunMessages.cs`.
+- **Data.** `Data/RunDef.cs` + `Assets/Data/Run.asset` (5 rooms, 300 s, warning 30 s, curses
+  15 m / 30 s / 20 s, magnetic 20 m x 0.5, nausea 6 / 4 deg over 3 s + 12 deg drift, P_Slick,
+  blindness 0.12 / 0.96, heavy x 0.5) and `Run_Tutorial.asset` (curse cooldown 6 s).
+  `GameData.mode` (`GameMode.Run` on both data assets) and `GameData.run`. `nudgeImpulse` /
+  `pullImpulse` 4 -> **8** on both labyrinth assets and as defaults.
+- **Sim / Session.** `Sim/RunState.cs` (`sim.Run`: the sequence, the timer, `Rev`).
+  `Session/Rules/RunRule.cs`: waits for the host's scene to answer the pool
+  (`IHostWorld.CollectRunPool`), draws the rooms from the seed, sends RUN_LAYOUT; starts the
+  timer when the first player is found in a run room (`CollectRunPlaces`); ends the round on
+  the deadline (Mage) or every non-Mage in the Exit volume (weapons) through the existing
+  ROUND_RESULT + SESSION_END; validates CURSE_REQ (Mage, cooldown, target holding a weapon,
+  range). `LabyrinthRule` in run mode keeps only the secret roles (same ROLE_ASSIGN path) and
+  the nudge; its grid half idles. `HostAuthority` registers `RunRule` after it.
+- **Game.** `RunDirector` (start / exit / pool; doors resolve from the sequence at traversal
+  time; two-way) plugged into `LabyrinthDirector.run` so the grid doorways, `ExitZone` and the
+  culling work unchanged. `MageCurse` (keys 1-5, `MageAim`, refusal line, C ring),
+  `CurseEffects` (`ILaunchCurse` on `WeaponMotor.Curse`: magnetic bend, nausea drift, heavy
+  scale; `OrbitCamera.SetSway`; P_Slick swap; blindness), `RunHud` + `Assets/UI/Run.uxml` /
+  `Run.uss` (timer, role reveal, result, curse line, blindness sheet, N / C rings by the
+  centre for a Mage alone). `PracticeDummy.Curse` (label countdown). `ExitZone.alwaysLive`.
+  `MenuFlow`: START loads `Run`, room line `"5 rooms, 5:00"` from `GameData.run`.
+  `PeskyControls`: `Gameplay/Curse1..5` = `<Keyboard>/1..5`.
+- **Scenes.** `Prefabs/Rooms/Labyrinth/LabyrinthRoom_TwoDoor.prefab` (variant: E / W
+  doorways removed and sealed, `Gate_South` = Door_Lever on the south doorway, `Gameplay/Seal`
+  = ImpactLever). `Assets/Scenes/Run.unity` from a copy of the labyrinth scene: 23 pool rooms
+  (the blanks + the old Resurrection Room), the start room with a sealed RESERVED north gate,
+  the Exit room with only its south zone, `RunDirector` / `MageCurse` / `CurseEffects` /
+  `RunHud`, registries rebuilt (50 magic doors, 25 volumes, 24 doors, 23 levers), scene ids
+  reassigned by kind. Build settings: Boot, MainMenu, Tutorial, Run. `Tutorial.unity`'s Room6
+  is now `PracticeHall` alone (grid, director, compass, LabyrinthHud gone; the ending ring
+  moved in; signs for the run and the curses; NavMesh rebaked). All done by
+  `Scripts/Editor/RunSceneBuilder.cs` (`Pesky > Run > 1 / 2 / 3`, `Assign Scene Ids`,
+  `Rebake NavMesh`). `SceneValidator` accepts an empty doorway slot whose side is declared
+  sealed.
+- Docs: RUN (new), NETCODE-STATUS (round 8), TEST-CHECKLIST (section 8), BACKLOG, this.
+
+**Left open.** Everything is untested; see RUN.md section 10 for the risks (RUN_LAYOUT waits
+for the host's scene, so the first second of a run has doors that lead nowhere; the Exit is
+the room volume, not the doorway; the blindness hole is a Painter2D odd-even fill).
+
+## Round 9: ability bar + tutorial ring (2026-09-29)
+
+Two play-test fixes. **Implemented, untested**: no play mode, no tests, no screenshots, no
+browser, no build. Clean compile after every script change; `SceneValidator` **0 problems** on
+`Boot`, `MainMenu`, `Tutorial`, `Run` and `Dev/FeelBox`, each loaded alone; all scenes saved;
+the serialized ability lists read back from both scenes. Details: `docs/RUN.md` 6.4, 6.5 and
+7; the owner's checks: `docs/TEST-CHECKLIST.md` section 9.
+
+- **The "N C" by the crosshair** was round 8's `mage-rings` in `Run.uxml`: two 24 px Painter2D
+  rings just right of the screen centre, `N` (nudge cooldown) and `C` (curse cooldown), drawn
+  by `RunHud` for a Mage. Removed (UXML element, USS, `RunHud` ring code).
+- **Ability bar.** New `Scripts/Game/UI/AbilityBar.cs`: `AbilitySlotDef` (id, key label,
+  name, placeholder glyph + tint, cooldown source, curse, gap), `AbilityCooldownSource`
+  (None / Curse / Nudge) and the plain-C# `AbilityBar` view. `RunHud` gained a serialized
+  `abilities` list (default: `LMB / RMB Nudge / Pull` first, then `1 Magnetic`, `2 Nausea`,
+  `3 Slippery`, `4 Blindness`, `5 Heavy`, the curses set a little apart),
+  `abilityPulseSeconds` 0.18, `SetCooldown(source, readyAt, seconds)` (the old
+  `SetNudgeCooldown` / `SetCurseCooldown` now wrap it) and `PulseAbility(source, curse)`.
+  `MageCurse.Fire` / `MageNudge.Fire` call `PulseAbility` on an accepted ask. `Run.uxml` has
+  an empty `ability-bar` row at the bottom centre; `Run.uss` `.ability*`: 72 px frames, grey
+  tile + glyph, amber key top-left, name under, a dark sheet from the top as tall as the
+  cooldown left plus the seconds, `is-pulse` scale 1.14 + gold border. Shown to a Mage alone,
+  hidden with the result. The nudge got its slot (owner's call, mid-round). Adding a slot is an
+  Inspector entry on `_UI/RunHud` in `Run.unity` and `Tutorial.unity`.
+- **Tutorial exit ring.** `Tutorial.unity` `PracticeHall/ExitRing` moved from local (-5, 0, -5)
+  (a 6 m-radius disc and an 11 x 3.5 x 6 box reaching the middle of the hall, over the respawn
+  point) to the far south-west corner (-8.5, 0, -8.5), yaw 45: disc 2 m radius, box 3.6 x 3.5 x
+  3.6 turned with it, arch at 3.2 m. Signs re-laid as a walk from the north-east door:
+  `Sign_Mage` and `Sign_Run` onto the east wall beside `Sign_Nudge`, `Sign_Curse` unchanged,
+  `Sign_Exit` (`EXIT. STAND IN THE LIT RING TO END THE TUTORIAL.`) beside the ring on the south
+  wall, `RoomSign` onto the north wall by the door. `Sign_Nudge`'s last line now points at the
+  ability bar. No World collider moved, so no NavMesh rebake. The only other tutorial trigger in
+  the hall (`TutorialGate_MageLesson`) does not end the tutorial.
+
+**Left open.** Untested. The pulse relies on USS `scale` + `transition` (Unity 6 supports
+both); the shade's percentage height is measured against the frame's padding box, so it may
+leave a sliver at the edges. `RunSceneBuilder` (`Pesky > Run > 3`) still carries the round-8
+ring and sign numbers; it is a one-shot migration that cannot run on today's scene.

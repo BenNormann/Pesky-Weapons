@@ -68,6 +68,17 @@ empty body) - simultaneous seal anchors - body courier - shared scarcity (rack, 
 - Goal: weapon breaks fill the meter. Full meter + fragments together at the ward circle =
   resurrection: one player becomes the Arch Mage (hunter), other fragments become lieutenants.
   A fragment banished at that moment removes its domain from the endgame.
+- AS BUILT (2026-09-22, implemented, untested): NUDGE / PULL. A fragment looks at another
+  player's body that is in the air and clicks: LEFT nudges it along his view, RIGHT pulls it toward
+  him. A small velocity change (4 m/s by default), so it reads as a jump that went wrong. Host-checked:
+  the asker is a Mage, the target holds a weapon (never a soul, never himself) and is airborne (POSE
+  Airborne bit), within 12 m of his own body, in his line of sight past World geometry, and his 8 s
+  cooldown is over. Two fragments: a nudge lands at 0.6 strength unless the other fragment nudged the
+  same target within 1 s, which makes the second land at full strength. The event names no author;
+  only a player who is a free soul at that moment sees a faint wisp at the target; a refusal reaches
+  the asker alone as a quiet line on his screen. The Mage's cooldown ring lives in his MAP tab only.
+  For a weapon the clicks do nothing and send nothing. The tutorial's practice dummy hops on a
+  clock schedule so it can be practised on. Numbers: LabyrinthDef; wire: NETCODE-STATUS round 6.
 
 ## Curses (run-long modifiers on the existing rune system)
 Good for you, bad for your friends; pick one of three at each ward circle, some assignable to
@@ -127,7 +138,7 @@ Claude's proposals awaiting the owner: evidence per power is always partial (wis
 souls, truthful glyph changes + rumble inside moved rooms, goblin tells, decoy that ignores
 bumps); invisibility leaves a decoy body (alibi); start, Exit and Resurrection rooms cannot be
 swapped and the host refuses swaps that cut a room off from the Exit; the Mage HUD is never
-visible by default: everyone has the same hold-to-open map, the Mage's copy is clickable, and
+visible by default: everyone has the same Tab-toggled map, the Mage's copy is clickable, and
 the mouse buttons do something harmless for non-Mages so clicking is no tell; grey-box power
 order: Nudge/Pull, Room swap, Compass bend, Lights out, then goblin commands, Hex, Invisibility.
 Research notes: docs/research/traitor-games.md (Haunted Heist is asymmetric PvP with known
@@ -141,3 +152,26 @@ is the alibi; keep legend from rewarding pointless friend-breaking).
   floating lich), and how long should the hunt last?
 - How much combat versus traversal versus challenge rooms per floor?
 - Does the tall-tower / bridge / keep fiction stay as the skin of the labyrinth?
+
+## Owner decisions, 2026-09-29: SIMPLIFICATION (these override everything above that conflicts)
+The labyrinth grid, the Tab map / scratch pad, the compass and compass bending, and the
+Resurrection Room are SET ASIDE (kept in the project, out of the game) to keep the player
+experience simple. The game is now a friend-slop co-op puzzle dungeon escape with a hidden traitor:
+- START in the labyrinth's start room (rack; roles assigned secretly), which has 2 doors: the run's
+  first door and a sealed placeholder door (someone will design what is behind it later).
+- LEAVING the start room starts a 5:00 TIMER everyone sees.
+- FIVE ROOMS in a row, picked at random per run from the pool (the existing labyrinth rooms, each
+  with exactly 2 doors: entry and exit; the other doorways sealed). Every room's exit door is
+  LOCKED until that room's completion condition; blank pool rooms get a placeholder seal (an
+  impact lever by the exit door) until real content exists. Doors stay two-way (back to the rack
+  for another weapon costs time).
+- EXIT after room 5: the weapons win when ALL NON-MAGE players are inside it (the Mage may be
+  absent; that is revealed at the end). The Mage wins the instant the timer expires.
+- Mage powers this round: CURSES on keys 1-5, cast on the player under the crosshair (about 15 m),
+  20 s each, one shared 30 s cooldown, the victim sees the effect and never the caster; 1 Magnetic
+  (launches curve toward the nearest other weapon), 2 Nausea (view sway + heading drift),
+  3 Slippery (no friction), 4 Blindness (screen darkens to a small circle), 5 Heavy (launch speed
+  halved). Keys 1-5 do nothing for non-Mages. Nudge / pull stays and its effect is DOUBLED.
+  Invisibility, goblin commands and lights-out: later rounds.
+- Tutorial updated to match: no map / compass / bend lessons; teach the timer, nudge / pull and
+  the five curses on the practice dummy.

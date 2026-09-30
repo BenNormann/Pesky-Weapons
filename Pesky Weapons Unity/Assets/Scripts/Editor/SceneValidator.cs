@@ -146,6 +146,10 @@ namespace Pesky.Editor
                         }
                         if (p.objectReferenceValue != null) continue;
                         if (IsOptional(type, p.propertyPath)) continue;
+                        // A labyrinth room's doorway slot may be empty on purpose: a side declared sealed
+                        // (LabyrinthRoom.sealedSides) is a wall, not a reference somebody forgot. CheckLabyrinth
+                        // still reports an empty slot that is NOT declared sealed.
+                        if (IsSealedDoorwaySlot(mb, p.propertyPath)) continue;
                         problems.Add("Empty serialized reference '" + p.propertyPath + "' on " + Path(mb));
                     }
                     so.Dispose();
@@ -159,6 +163,18 @@ namespace Pesky.Editor
                 if (dc != null && dc.IsMisconfigured())
                     problems.Add("DoorCondition mode " + dc.ConditionMode + " has no target on " + Path(dc));
             }
+        }
+
+        /// <summary>'doorways.Array.data[i]' on a LabyrinthRoom whose side i is sealed by design (the two-door run rooms).</summary>
+        static bool IsSealedDoorwaySlot(MonoBehaviour mb, string propertyPath)
+        {
+            LabyrinthRoom room = mb as LabyrinthRoom;
+            if (room == null || !propertyPath.StartsWith("doorways.Array.data[")) return false;
+            int open = propertyPath.IndexOf('[');
+            int close = propertyPath.IndexOf(']');
+            int index;
+            if (open < 0 || close < open || !int.TryParse(propertyPath.Substring(open + 1, close - open - 1), out index)) return false;
+            return room.IsSealed(index);
         }
 
         static bool IsOptional(System.Type type, string propertyPath)

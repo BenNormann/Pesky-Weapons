@@ -40,6 +40,12 @@ namespace Pesky.Game
         [SerializeField] SessionRunner sessionRunner;
         [Tooltip("This scene's labyrinth, when it has one. Empty in Zone1 and the FeelBox, which leaves every labyrinth rule idle.")]
         [OptionalRef][SerializeField] LabyrinthDirector labyrinth;
+        [Tooltip("This scene's run (docs/RUN.md), when it plays the simplified run. Empty in the tutorial and the labyrinth, which leaves the run rule waiting for a pool that never comes.")]
+        [OptionalRef][SerializeField] RunDirector run;
+        [Tooltip("The tutorial's practice dummy: a nudge target the host can validate without a player slot. Empty in every real level.")]
+        [OptionalRef][SerializeField] PracticeDummy practiceDummy;
+        [Tooltip("What blocks a Mage's line of sight to a nudge target on the host: authored World geometry only.")]
+        [SerializeField] LayerMask sightMask = 256;
 
 
         readonly RemotePossessor[] _remote = new RemotePossessor[Wire.MaxPlayers];
@@ -74,6 +80,16 @@ namespace Pesky.Game
         /// <summary>The shared scratch pad was wiped (a new round, or the host's CLEAR button).</summary>
         public event Action PadCleared;
 
+
+        /// <summary>(targetSlot, mode, velocityChange) a validated Mage nudge, on every peer. It never says who did it.</summary>
+        public event Action<byte, NudgeMode, Vector3> Nudged;
+
+        /// <summary>(reason, targetSlot, secondsLeft) the host refused THIS peer's own nudge. Raised on that Mage's machine alone.</summary>
+        public event Action<NudgeRefusal, byte, float> NudgeRefused;
+        /// <summary>(curse, seconds) THIS peer's own player was cursed. Raised on the victim's machine only; nothing says by whom.</summary>
+        public event Action<CurseKind, float> Cursed;
+        /// <summary>(reason, targetSlot, secondsLeft) the host refused this peer's own CURSE_REQ. Only a Mage ever hears it.</summary>
+        public event Action<CurseRefusal, byte, float> CurseRefused;
 
         /// <summary>This peer learned its own role. Raised on a Mage's client alone.</summary>
         public event Action RoleLearned;
@@ -255,6 +271,8 @@ namespace Pesky.Game
                 case MsgId.WeaponDamaged: { WeaponDamagedMsg m; if (WeaponDamagedMsg.TryDecode(payload, out m)) OnWeaponDamagedNet(m); break; }
                 case MsgId.EnemyHealth: { EnemyHealthMsg m; if (EnemyHealthMsg.TryDecode(payload, out m)) OnEnemyHealth(m); break; }
                 case MsgId.BatEvent: { BatEventMsg m; if (BatEventMsg.TryDecode(payload, out m)) OnBatEvent(m); break; }
+                case MsgId.NudgeEvent: { NudgeEventMsg m; if (NudgeEventMsg.TryDecode(payload, out m)) OnNudgeEvent(m); break; }
+                case MsgId.CurseEvent: { CurseEventMsg m; if (CurseEventMsg.TryDecode(payload, out m)) OnCurseEvent(m); break; }
                 case MsgId.KitState:
                 {
                     KitStateMsg m;
@@ -516,6 +534,83 @@ namespace Pesky.Game
             if (Batted != null) Batted(msg.fromSlot, msg.targetSlot, msg.velocityChange, msg.point);
         }
 
+        // ------------------------------------------------------------------ the Mage's nudge / pull
+
+        /// <summary>The tutorial's practice dummy, or null in a real level.</summary>
+        public PracticeDummy PracticeDummy { get { return practiceDummy; } }
+
+        /// <summary>
+        /// A Mage fragment's click on a body in the air: NUDGE along his view, PULL toward him. Sends NOTHING
+        /// unless this peer is a Mage, so a weapon's click is not even a packet. The host checks everything
+        /// again and answers a refusal to this peer alone (NudgeRefused).
+        /// </summary>
+        public bool RequestNudge(byte targetSlot, NudgeMode mode, Vector3 viewDirection)
+        {
+            if (_session == null || LocalRole != LabyrinthRole.Mage) return false;
+            NudgeReqMsg req = new NudgeReqMsg();
+            req.targetSlot = targetSlot;
+            req.mode = mode;
+            req.viewDir = viewDirection.sqrMagnitude > 1e-6f ? viewDirection.normalized : Vector3.zero;
+            _session.Send(req.Encode());
+            return true;
+        }
+
+        /// <summary>
+        /// Everybody hears it; only the target's OWNER moves anything: the player whose body it is, or the host
+        /// for the tutorial's dummy. Clamped here against this build's numbers whatever the wire says.
+        /// </summary>
+        void OnNudgeEvent(NudgeEventMsg msg)
+        {
+            LabyrinthDef def = _session != null && _session.Data != null ? _session.Data.labyrinth : null;
+            float max = def != null ? Mathf.Max(def.nudgeImpulse, def.pullImpulse) : 4f;
+            Vector3 dv = Vector3.ClampMagnitude(msg.velocityChange, max);
+            if (msg.targetSlot == LocalSlot)
+            {
+                PlayerSoul local = LocalSoul;
+                if (local != null && local.IsPossessing) local.Weapon.Knockback(dv);
+            }
+            else if (msg.targetSlot == NudgeReqMsg.PracticeTarget && practiceDummy != null && IsHostPeer)
+            {
+                practiceDummy.Nudge(dv);
+            }
+            if (Nudged != null) Nudged(msg.targetSlot, msg.mode, dv);
+        }
+
+        // ------------------------------------------------------------------ the Mage's curses (docs/RUN.md)
+
+        /// <summary>
+        /// A Mage fragment's number key on the player under his crosshair. Sends NOTHING unless this peer is
+        /// a Mage, so a weapon's key press is not even a packet. The host checks everything again (RunRule)
+        /// and answers a refusal to this peer alone (CurseRefused).
+        /// </summary>
+        public bool RequestCurse(byte targetSlot, CurseKind curse)
+        {
+            if (_session == null || LocalRole != LabyrinthRole.Mage) return false;
+            CurseReqMsg req = new CurseReqMsg();
+            req.targetSlot = targetSlot;
+            req.curse = curse;
+            _session.Send(req.Encode());
+            return true;
+        }
+
+        /// <summary>
+        /// Everybody hears it; only the VICTIM does anything: the player whose slot it names applies the
+        /// effect to its own body and screen, or the host shows it on the tutorial's dummy. Nobody else
+        /// reacts, and nothing here records who asked, because the wire never said.
+        /// </summary>
+        void OnCurseEvent(CurseEventMsg msg)
+        {
+            float seconds = msg.durationTenths / 10f;
+            if (msg.targetSlot == LocalSlot)
+            {
+                if (Cursed != null) Cursed(msg.curse, seconds);
+            }
+            else if (msg.targetSlot == NudgeReqMsg.PracticeTarget && practiceDummy != null && IsHostPeer)
+            {
+                practiceDummy.Curse(msg.curse, seconds);
+            }
+        }
+
         // ------------------------------------------------------------------ kit: one generic path
 
         /// <summary>
@@ -716,6 +811,20 @@ void OnNetReply(byte id, byte[] payload)
                         + (m.target == CompassTargetKind.Cell ? " cell " + m.cell : ""));
                 if (CompassRetargeted != null) CompassRetargeted();
             }
+            else if (id == MsgId.CurseRefused)
+            {
+                CurseRefusedMsg m;
+                if (!CurseRefusedMsg.TryDecode(payload, out m)) return;
+                DebugGate.Log("reply: CURSE_REFUSED - " + m.reason + (m.waitTenths > 0 ? ", " + (m.waitTenths / 10f).ToString("0.0") + " s left" : ""));
+                if (CurseRefused != null) CurseRefused(m.reason, m.targetSlot, m.waitTenths / 10f);
+            }
+            else if (id == MsgId.NudgeRefused)
+            {
+                NudgeRefusedMsg m;
+                if (!NudgeRefusedMsg.TryDecode(payload, out m)) return;
+                DebugGate.Log("reply: NUDGE_REFUSED - " + m.reason + (m.waitTenths > 0 ? ", " + (m.waitTenths / 10f).ToString("0.0") + " s left" : ""));
+                if (NudgeRefused != null) NudgeRefused(m.reason, m.targetSlot, m.waitTenths / 10f);
+            }
         }
 
         // ---- IHostWorld ----
@@ -724,6 +833,38 @@ void OnNetReply(byte id, byte[] payload)
         public bool CollectPlayerCells(int[] cellBySlot, bool[] atExitBySlot)
         {
             return labyrinth != null && labyrinth.CollectPlayerCells(cellBySlot, atExitBySlot);
+        }
+
+        /// <summary>Host only: nothing of the authored World lies between the two points (a Mage's nudge must see its target).</summary>
+        public bool HasLineOfSight(Vector3 from, Vector3 to)
+        {
+            return !Physics.Linecast(from, to, sightMask, QueryTriggerInteraction.Ignore);
+        }
+
+        /// <summary>Host only, tutorial only: the practice dummy as a nudge target. False in every real level.</summary>
+        public bool TryGetPracticeTarget(out Vector3 position, out bool airborne)
+        {
+            position = Vector3.zero;
+            airborne = false;
+            if (practiceDummy == null || !practiceDummy.isActiveAndEnabled) return false;
+            position = practiceDummy.Centre;
+            airborne = practiceDummy.IsAirborne;
+            return true;
+        }
+
+        /// <summary>This scene's run director, or null in a scene that plays no run.</summary>
+        public RunDirector Run { get { return run; } }
+
+        /// <summary>Host only, run mode: the room ids this scene's run may pick from. False without a RunDirector, which leaves the run rule waiting.</summary>
+        public bool CollectRunPool(List<ushort> into)
+        {
+            return run != null && run.CollectRunPool(into);
+        }
+
+        /// <summary>Host only, run mode: where every player stands in the run, answered by this scene's RunDirector.</summary>
+        public bool CollectRunPlaces(RunPlace[] placeBySlot)
+        {
+            return run != null && run.CollectRunPlaces(placeBySlot);
         }
 
         /// <summary>Host only: a client's KIT_REQ, checked against this scene with the claimant's weapon as the host sees it.</summary>
