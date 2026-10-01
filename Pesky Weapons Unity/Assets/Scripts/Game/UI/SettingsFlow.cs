@@ -99,7 +99,6 @@ namespace Pesky.Game
             _view.ConfirmCancelClicked += _view.ShowGeneral;
             _view.KeybindsClicked += _view.ShowKeys;
             _view.BackClicked += _view.ShowGeneral;
-            _view.SpikeFilterClicked += OnSpikeFilter;
             _view.SensitivityChanged += v => GameSettings.MouseSensitivity = v;
             _view.MasterChanged += v => { GameSettings.MasterVolume = v; AudioSettings.Apply(); };
             _view.MusicChanged += v => { GameSettings.MusicVolume = v; AudioSettings.Apply(); };
@@ -181,7 +180,7 @@ namespace Pesky.Game
                 UnityEngine.Cursor.lockState = CursorLockMode.None;
                 UnityEngine.Cursor.visible = true;
             }
-            _view.SetValues(GameSettings.MouseSensitivity, GameSettings.MouseSpikeFilter, GameSettings.MasterVolume,
+            _view.SetValues(GameSettings.MouseSensitivity, GameSettings.MasterVolume,
                 GameSettings.MusicVolume, GameSettings.SfxVolume, GameSettings.VoiceVolume);
             _view.ShowGeneral();
             _view.SetVisible(true);
@@ -206,12 +205,6 @@ namespace Pesky.Game
                 orbitCamera.InputEnabled = true;
                 orbitCamera.LockPointer();
             }
-        }
-
-        void OnSpikeFilter()
-        {
-            GameSettings.MouseSpikeFilter = !GameSettings.MouseSpikeFilter;
-            _view.SetSpikeFilter(GameSettings.MouseSpikeFilter);
         }
 
         /// <summary>EXIT TO MAIN MENU. A host with other players in the room is asked first, because it ends the session for all of them.</summary>

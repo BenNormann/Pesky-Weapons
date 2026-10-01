@@ -3,6 +3,11 @@
 The in-level settings screen (round 10, 2026-09-30): what it shows, what is saved where, how
 it takes and gives back the pointer, and how to add a setting or a rebindable action.
 
+**Round 11 (2026-09-30), settings polish:** the SPIKE FILTER switch is gone (the filter is always
+on), KEYBINDS has a section gap above it, and every ScrollView on the screen gets a thin dark
+scrollbar (section 2.4). **Implemented, untested**: clean compile, `Settings.uxml` re-instantiated
+in edit mode, validator 0 problems on `Tutorial`, `Run`, `MainMenu`.
+
 **Implemented, untested.** Checks made: a clean compile after every script change,
 `Settings.uxml` instantiated in edit mode (every element `SettingsView` queries exists with the
 right type, both stylesheets attached), the keybind list collected from `PeskyControls` in edit
@@ -16,7 +21,7 @@ mode (16 rows), every serialized reference read back, and the edit-mode scene va
 | File | What |
 |---|---|
 | `Assets/Prefabs/UI/Settings.prefab` | one GameObject: `UIDocument` (`Settings.uxml`, `UiPanelSettings`, sortingOrder **50**: above `HUD` 0 and `RunHud` 1, below `DebugOverlay` 100) + `SettingsFlow`. Instanced as `_UI/Settings` in **`Tutorial.unity`** and **`Run.unity`**; each instance overrides only the two scene references `orbitCamera` (`_Cameras/Main Camera`) and `sessionRunner` (`_Managers/SessionRunner`) |
-| `Assets/UI/Settings.uxml` | the sheet (`settings-root`) and the panel with three pages: `general-page`, `keys-page`, `confirm-page`. Loads `Menu.uss` (cards, buttons, captions, the amber accent) and `Settings.uss` (rows, sliders, the ON / OFF switch, the key buttons) |
+| `Assets/UI/Settings.uxml` | the sheet (`settings-root`) and the panel with three pages: `general-page`, `keys-page`, `confirm-page`. Loads `Menu.uss` (cards, buttons, captions, the amber accent) and `Settings.uss` (rows, sliders, the key buttons, the thin dark scrollbars) |
 | `Scripts/Game/UI/SettingsFlow.cs` | the controller (`[DefaultExecutionOrder(100)]`): Escape, pointer-lock loss, open / close, the settings, EXIT |
 | `Scripts/Game/UI/SettingsView.cs` | the elements, like `MenuView`: queries by name, shows one page, writes values without events, raises plain events |
 | `Scripts/Game/UI/KeybindsPage.cs` | the KEYBINDS rows and the interactive rebind (ported from ATCK) |
@@ -25,12 +30,12 @@ mode (16 rows), every serialized reference read back, and the edit-mode scene va
 | `Scripts/Game/AudioSettings.cs` | **the audio stub**: one `Apply()` hook |
 
 `MainMenu` and `Boot` have no settings screen; Escape there does nothing new. `Dev/FeelBox`
-has none either (its camera still reads the saved sensitivity and spike filter).
+has none either (its camera still reads the saved sensitivity).
 
 ## 2. The screen
 
 **GENERAL** (opens first): `RESUME` (amber), a **MOUSE** card (SENSITIVITY slider 0.20x -
-3.00x with its value, SPIKE FILTER ON / OFF switch, a `KEYBINDS` button), an **AUDIO** card
+3.00x with its value, then a `KEYBINDS` button a section gap below it), an **AUDIO** card
 (MASTER, MUSIC, SFX, VOICE sliders 0 - 100 and a caption saying only MASTER does anything
 yet), `EXIT TO MAIN MENU`. **KEYBINDS**: one row per binding, a status line, `RESET ALL` and
 `BACK`. **CONFIRM** (a host with others in the room only): "YOU ARE THE HOST. LEAVING ENDS THE
@@ -54,6 +59,21 @@ SESSION FOR EVERYBODY IN THIS ROOM ...", `END THE SESSION AND EXIT`, `CANCEL`.
   camera's own click-to-lock takes it.
 - Escape that cancels a rebind on the KEYBINDS page does not close the screen
   (`KeybindsPage.SwallowsEscape`).
+
+### 2.4 Spacing and scrollbars (round 11)
+
+- A button that closes a card (`card-button`, today KEYBINDS) has a **14 px** top margin, the
+  same as the gap between two cards. The rule is `Button.button.card-button`: Menu.uss's
+  `Button.button` sets every margin, so a bare `.card-button` lost to it (that was the flush look).
+- **Scrollbars**: `Settings.uss` restyles every `ScrollView` under a document that loads it
+  (`.unity-scroll-view .unity-scroller...`): 8 px wide, transparent scroller, dark rounded
+  track, grey rounded thumb (lighter on hover / drag), the arrow buttons (`__low-button` /
+  `__high-button`) hidden, a 10 px gap from the content. Each selector has one class more than
+  the default theme's rule for the same part, so it wins. The scroller sits beside the viewport
+  (UI Toolkit lays it out in a row), so it never covers the key buttons; the mouse wheel is the
+  ScrollView's own and is unchanged. `keys-scroll` also sets `horizontal-scroller-visibility=
+  Hidden`. Today the only ScrollView in the settings or menu UI is `keys-scroll` (`Menu.uxml`
+  has none); a ScrollView added to the menu would need these rules in `Menu.uss`.
 
 ### 2.2 What stops while it is open
 
@@ -84,7 +104,6 @@ browser: its IndexedDB for the page's origin, so a different host or port has it
 | Key | Type | Default | Owner | Used by |
 |---|---|---|---|---|
 | `Pesky.MouseSensitivity` | float | **1.0** (0.2 - 3.0, rounded to 0.01) | `GameSettings.MouseSensitivity` | `OrbitCamera`: `lookSensitivity x` this, read every frame (live) |
-| `Pesky.MouseSpikeFilter` | int 0 / 1 | **1** (on) | `GameSettings.MouseSpikeFilter` | `OrbitCamera`: written into `filterSpikes` of a runtime copy of `LookTuning` every frame |
 | `Pesky.Volume.Master` | int 0 - 100 | 100 | `GameSettings.MasterVolume` | `AudioSettings.Apply`: `AudioListener.volume = v / 100` |
 | `Pesky.Volume.Music` | int 0 - 100 | 100 | `GameSettings.MusicVolume` | stored and shown only |
 | `Pesky.Volume.Sfx` | int 0 - 100 | 100 | `GameSettings.SfxVolume` | stored and shown only |
@@ -106,11 +125,11 @@ before any `Update` reads an action (`OrbitCamera`, `PlayerSoul`, `MageNudge`, `
 their actions in `OnEnable` and read them in `Update`; applying overrides to enabled actions is
 supported). `Dev/FeelBox` has no settings prefab, so it runs on the default keys.
 
-**Why a runtime copy of LookTuning.** Writing the player's switch into
-`Assets/Data/LookTuning.asset` would, in the Editor, outlive play mode. `OrbitCamera` makes a
-hidden `LookTuning` instance in `Awake` and copies the asset's numbers into it every frame
-(spike mode, threshold, scale-to, drop-first-delta, logging), so tuning the asset live in the
-Inspector still works; only `filterSpikes` comes from the player.
+**The spike filter is not a setting** (round 11). It is always on for players: `OrbitCamera`
+hands `Assets/Data/LookTuning.asset` straight to `LookFilter` every frame (so tuning it live in
+the Inspector works), and `filterSpikes` there is a designer switch only. The round-10 key
+`Pesky.MouseSpikeFilter` is deleted from PlayerPrefs by `GameSettings.Load()`, so an old saved
+OFF cannot come back; nothing reads it.
 
 ## 4. Rebinding
 
@@ -145,7 +164,8 @@ ability bar's key labels are text and do not follow a rebind.
    with its default, a property whose setter clamps, writes PlayerPrefs and calls `Touch()`,
    and a line in `Load()`.
 2. **`Settings.uxml`**: a `setting-row` (a `setting-name` label, the control - `Slider`,
-   `SliderInt` with class `setting-slider`, or a `Button` with class `switch` - and a
+   `SliderInt` with class `setting-slider`, or a `Button` (round 11 removed the only ON / OFF
+   switch and its `switch` styles) - and a
    `setting-value` label) inside the right card.
 3. **`SettingsView`**: query it, hook its value-changed callback to a new event, and set it in
    `SetValues` with `SetValueWithoutNotify`.
@@ -184,4 +204,5 @@ inside `Pesky.Game`, `AudioSettings` is this class; Unity's own must be written
 6. **Slider styling** colours Unity's internal `.unity-base-slider__tracker` / `__dragger`; if
    Unity 6.3 names them differently the sliders keep the default look.
 7. **The sensitivity multiplies a threshold-in-degrees filter**: at 3.0x a fast flick is more
-   likely to look like a spike; that is what the switch is for.
+   likely to look like a spike and be dropped or scaled. Players cannot turn the filter off
+   (round 11); if high sensitivities feel sticky, raise `spikeDegrees` in `LookTuning.asset`.

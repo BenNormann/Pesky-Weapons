@@ -735,9 +735,6 @@ Details in `docs/SETTINGS.md`; the bug's cause in `docs/BUILD-LOG.md` round 10.
 - [ ] **Sensitivity**: drag to 0.20x - the view turns very slowly; to 3.00x - fast. The value
       label follows the slider. It applies while you drag (look after resuming). Quit and start
       again (or reload the page): the value is kept.
-- [ ] **Spike filter**: the switch flips ON (amber) / OFF (grey); with OFF and a very fast
-      flick, the console prints no `look: dropped a spike` lines; with ON it may. Kept after a
-      restart. `Assets/Data/LookTuning.asset` in the Inspector is **not** changed by the switch.
 - [ ] **Audio**: MASTER 0 silences the game (if anything makes sound), 100 restores; MUSIC, SFX,
       VOICE move and show their numbers but change nothing (the caption says so). All four are
       kept after a restart.
@@ -766,3 +763,16 @@ Details in `docs/SETTINGS.md`; the bug's cause in `docs/BUILD-LOG.md` round 10.
       SESSION AND EXIT: the host lands on the title page with "you ended the session for
       everyone"; the client lands on the title page with "the host left the room".
 - [ ] After any EXIT, HOST / JOIN / TUTORIAL from the title page work normally.
+
+## 11. Round 11: settings polish (2026-09-30; implemented, untested)
+
+- [ ] The MOUSE card has only SENSITIVITY and the KEYBINDS button: **no SPIKE FILTER row**.
+      KEYBINDS has a clear gap above it (about the gap between two cards), not flush under the
+      slider row.
+- [ ] The spike filter is still on: a very hard flick under pointer lock still adds to
+      `lookDrops` on the debug overlay, as in section 6.2.
+- [ ] KEYBINDS page: the scrollbar on the right is **thin and dark** (dark track, grey rounded
+      thumb, lighter on hover), with **no arrow buttons**, and sits a little apart from the key
+      buttons without covering them. No horizontal bar.
+- [ ] The mouse wheel scrolls the list; dragging the thumb scrolls it; scrolled to the end, the
+      last row (MAGE: CURSE 5) is fully visible with its bottom line.

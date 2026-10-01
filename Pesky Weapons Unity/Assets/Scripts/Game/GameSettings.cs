@@ -5,7 +5,7 @@ namespace Pesky.Game
 {
     /// <summary>
     /// The player's own preferences, kept in PlayerPrefs (docs/SETTINGS.md): the mouse sensitivity (a
-    /// multiplier on OrbitCamera.lookSensitivity, 0.2 - 3.0, default 1), the mouse spike filter (default on),
+    /// multiplier on OrbitCamera.lookSensitivity, 0.2 - 3.0, default 1)
     /// and four volumes 0 - 100 (Master, Music, SFX, Voice; only Master does anything yet, see AudioSettings).
     /// Read lazily from PlayerPrefs on first use, so whatever asks first (the camera, the settings screen)
     /// gets the saved value; every set writes PlayerPrefs at once and raises Changed. Flush() is the disk
@@ -21,7 +21,7 @@ namespace Pesky.Game
         public const int DefaultVolume = 100;
 
         public const string SensitivityKey = "Pesky.MouseSensitivity";
-        public const string SpikeFilterKey = "Pesky.MouseSpikeFilter";
+        const string LegacySpikeFilterKey = "Pesky.MouseSpikeFilter"; // round 11: removed; Load() deletes a saved value
         public const string MasterVolumeKey = "Pesky.Volume.Master";
         public const string MusicVolumeKey = "Pesky.Volume.Music";
         public const string SfxVolumeKey = "Pesky.Volume.Sfx";
@@ -30,7 +30,6 @@ namespace Pesky.Game
         static bool _loaded;
         static bool _dirty;
         static float _sensitivity = DefaultSensitivity;
-        static bool _spikeFilter = true;
         static int _master = DefaultVolume;
         static int _music = DefaultVolume;
         static int _sfx = DefaultVolume;
@@ -50,20 +49,6 @@ namespace Pesky.Game
                 if (Mathf.Approximately(v, _sensitivity)) return;
                 _sensitivity = v;
                 PlayerPrefs.SetFloat(SensitivityKey, _sensitivity);
-                Touch();
-            }
-        }
-
-        /// <summary>The mouse-look spike filter (LookTuning.filterSpikes at runtime). On by default: Chrome under pointer lock now and then reports a huge single-frame delta.</summary>
-        public static bool MouseSpikeFilter
-        {
-            get { Load(); return _spikeFilter; }
-            set
-            {
-                Load();
-                if (value == _spikeFilter) return;
-                _spikeFilter = value;
-                PlayerPrefs.SetInt(SpikeFilterKey, value ? 1 : 0);
                 Touch();
             }
         }
@@ -136,7 +121,7 @@ namespace Pesky.Game
             if (_loaded) return;
             _loaded = true;
             _sensitivity = ClampSensitivity(PlayerPrefs.GetFloat(SensitivityKey, DefaultSensitivity));
-            _spikeFilter = PlayerPrefs.GetInt(SpikeFilterKey, 1) != 0;
+            PlayerPrefs.DeleteKey(LegacySpikeFilterKey); // the old MOUSE SPIKE FILTER switch: gone, the filter is always on
             _master = ClampVolume(PlayerPrefs.GetInt(MasterVolumeKey, DefaultVolume));
             _music = ClampVolume(PlayerPrefs.GetInt(MusicVolumeKey, DefaultVolume));
             _sfx = ClampVolume(PlayerPrefs.GetInt(SfxVolumeKey, DefaultVolume));

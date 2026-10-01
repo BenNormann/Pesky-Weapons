@@ -2443,3 +2443,32 @@ Mage in the previous session but not in this one."
 Gameplay scenes still have no EventSystem (the labyrinth's interactive Tab overlay had none
 either). No keybind conflict check; tutorial signs and the ability bar's key labels do not
 follow a rebind. Audio is a stub.
+
+## Round 11: settings polish (2026-09-30)
+
+The owner's three notes on the settings screen. **Implemented, untested**: no play mode, no
+tests, no screenshots. Clean compile; `Settings.uxml` re-instantiated in edit mode (every element
+`SettingsView` queries present, `spike-button` gone, `Settings.uss` imported without errors);
+`SceneValidator` **0 problems** on `Tutorial`, `Run`, `MainMenu`. The prefab and scenes needed no
+change (the prefab only points at `Settings.uxml`). Details: `docs/SETTINGS.md` section 2.4;
+checks: `docs/TEST-CHECKLIST.md` section 11.
+
+- **Spacing above KEYBINDS**: `.card-button` lost to Menu.uss's `Button.button` margins
+  (`margin: 0 0 10px 0`), so the button sat flush. Now `Button.button.card-button { margin: 14px
+  0 0 0 }`: the gap between two cards.
+- **The scrollbar**: `Settings.uss` restyles every ScrollView's scrollers (`.unity-scroll-view
+  .unity-scroller...`, one class above the default theme's selectors, read from the theme): 8 px,
+  transparent scroller, dark rounded track, grey rounded thumb with hover / drag shades, arrow
+  buttons hidden, 10 px from the rows. `keys-scroll` hides its horizontal scroller. No other
+  ScrollView exists in the settings or menu UI.
+- **No spike-filter toggle**: the SPIKE FILTER row is gone from `Settings.uxml` (and its now
+  unused `switch` / `setting-hint` styles from `Settings.uss`); `GameSettings.MouseSpikeFilter`,
+  `SettingsView.SpikeFilterClicked` / `SetSpikeFilter` and `SettingsFlow.OnSpikeFilter` removed
+  (`SetValues` lost its bool). `OrbitCamera` no longer keeps a runtime `LookTuning` copy: it hands
+  the asset to `LookFilter` directly, so the filter follows `LookTuning.asset` (`filterSpikes: 1`,
+  a designer switch). `GameSettings.Load()` deletes the old `Pesky.MouseSpikeFilter` PlayerPrefs
+  key so a saved OFF cannot linger.
+
+**Risks.** The scrollbar look is reasoned from the default theme's rules, not seen: if Unity
+positions the vertical dragger inline (it sets only its height today) the thumb could sit off the
+track. The KEYBINDS gap value (14 px) is a judgement call.

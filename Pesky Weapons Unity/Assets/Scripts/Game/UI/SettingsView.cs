@@ -12,15 +12,12 @@ namespace Pesky.Game
     /// </summary>
     public sealed class SettingsView
     {
-        const string SwitchOnClass = "switch--on";
-
         public event Action ResumeClicked;
         public event Action ExitClicked;
         public event Action ConfirmExitClicked;
         public event Action ConfirmCancelClicked;
         public event Action KeybindsClicked;
         public event Action BackClicked;
-        public event Action SpikeFilterClicked;
         /// <summary>A click on the dimmed sheet around the panel (not on the panel): the resume click, as in ATCK.</summary>
         public event Action ScrimClicked;
         public event Action<float> SensitivityChanged;
@@ -38,7 +35,6 @@ namespace Pesky.Game
         readonly Label _confirmText;
         readonly Slider _sensitivity;
         readonly Label _sensitivityValue;
-        readonly Button _spike;
         readonly SliderInt _master;
         readonly SliderInt _music;
         readonly SliderInt _sfx;
@@ -71,7 +67,6 @@ namespace Pesky.Game
 
             _sensitivity = _root.Q<Slider>("sensitivity-slider");
             _sensitivityValue = _root.Q<Label>("sensitivity-value");
-            _spike = _root.Q<Button>("spike-button");
             _master = _root.Q<SliderInt>("master-slider");
             _music = _root.Q<SliderInt>("music-slider");
             _sfx = _root.Q<SliderInt>("sfx-slider");
@@ -102,7 +97,6 @@ namespace Pesky.Game
             Hook("confirm-cancel", () => ConfirmCancelClicked);
             Hook("keybinds-button", () => KeybindsClicked);
             Hook("keys-back", () => BackClicked);
-            Hook("spike-button", () => SpikeFilterClicked);
 
             // ClickEvent arrives on the release, so the press that started it already went by with the game's
             // input off: closing on it cannot also fire a nudge on the left button.
@@ -199,22 +193,14 @@ namespace Pesky.Game
 
         // ---------------------------------------------------------------- values (no events raised)
 
-        public void SetValues(float sensitivity, bool spikeFilter, int master, int music, int sfx, int voice)
+        public void SetValues(float sensitivity, int master, int music, int sfx, int voice)
         {
             if (_sensitivity != null) _sensitivity.SetValueWithoutNotify(sensitivity);
             SetSensitivityText(sensitivity);
-            SetSpikeFilter(spikeFilter);
             SetVolume(_master, _masterValue, master);
             SetVolume(_music, _musicValue, music);
             SetVolume(_sfx, _sfxValue, sfx);
             SetVolume(_voice, _voiceValue, voice);
-        }
-
-        public void SetSpikeFilter(bool on)
-        {
-            if (_spike == null) return;
-            _spike.text = on ? "ON" : "OFF";
-            _spike.EnableInClassList(SwitchOnClass, on);
         }
 
         void SetSensitivityText(float value)

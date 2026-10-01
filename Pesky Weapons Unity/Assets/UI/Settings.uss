@@ -67,15 +67,6 @@
     margin: 0;
 }
 
-.setting-hint {
-    flex-grow: 1;
-    flex-shrink: 1;
-    font-size: 12px;
-    color: rgb(110, 116, 128);
-    white-space: normal;
-    margin: 0 12px 0 0;
-}
-
 .setting-slider {
     flex-grow: 1;
     margin: 0 12px 0 0;
@@ -95,38 +86,6 @@
     border-color: rgb(226, 186, 74);
 }
 
-/* ---- the ON / OFF switch ---- */
-
-Button.switch {
-    min-width: 76px;
-    min-height: 34px;
-    font-size: 13px;
-    -unity-font-style: bold;
-    letter-spacing: 2px;
-    color: rgb(150, 156, 168);
-    background-color: rgb(36, 40, 50);
-    border-width: 1px;
-    border-color: rgb(58, 64, 78);
-    border-radius: 4px;
-    margin: 0;
-}
-
-Button.switch:hover {
-    background-color: rgb(48, 54, 66);
-    border-color: rgb(80, 88, 104);
-}
-
-Button.switch.switch--on {
-    color: rgb(18, 18, 20);
-    background-color: rgb(226, 186, 74);
-    border-color: rgb(226, 186, 74);
-}
-
-Button.switch.switch--on:hover {
-    background-color: rgb(240, 204, 108);
-    border-color: rgb(240, 204, 108);
-}
-
 Button.button--danger {
     color: rgb(18, 18, 20);
     background-color: rgb(226, 104, 84);
@@ -138,8 +97,10 @@ Button.button--danger:hover {
     border-color: rgb(240, 128, 108);
 }
 
-.card-button {
-    margin: 10px 0 0 0;
+/* A button that closes a card (KEYBINDS): a section gap above it, not a row gap. Button.button (Menu.uss)
+   sets every margin, so this needs the same element + class weight to win. */
+Button.button.card-button {
+    margin: 14px 0 0 0;
 }
 
 /* ---- the keybinds page ---- */
@@ -148,6 +109,78 @@ Button.button--danger:hover {
     max-height: 460px;
     flex-shrink: 1;
     margin: 0 0 4px 0;
+}
+
+/* ---- scrollbars: thin, dark, rounded, no arrow buttons ----
+   Every ScrollView under a document that loads this sheet (today only keys-scroll; the menu has none).
+   Each selector carries one more class than the default theme's, so it wins. The scroller sits beside the
+   viewport (not over it), 10px from the rows; the mouse wheel is the ScrollView's own and still works. */
+
+.unity-scroll-view .unity-scroller--vertical {
+    width: 8px;
+    min-width: 8px;
+    margin: 0 0 0 10px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.unity-scroll-view .unity-scroller--horizontal {
+    height: 8px;
+    min-height: 8px;
+    margin: 10px 0 0 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.unity-scroll-view .unity-scroller > .unity-scroller__low-button,
+.unity-scroll-view .unity-scroller > .unity-scroller__high-button {
+    display: none;
+}
+
+.unity-scroll-view .unity-scroller--vertical > .unity-scroller__slider {
+    width: 8px;
+    min-width: 8px;
+    margin: 0;
+    padding: 0;
+}
+
+.unity-scroll-view .unity-scroller--horizontal > .unity-scroller__slider {
+    height: 8px;
+    min-height: 8px;
+    margin: 0;
+    padding: 0;
+}
+
+.unity-scroll-view .unity-scroller .unity-base-slider__tracker {
+    background-color: rgb(22, 25, 31);
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.unity-scroll-view .unity-scroller--vertical .unity-base-slider__dragger {
+    left: 0;
+    width: 8px;
+    margin: 0;
+    background-color: rgb(62, 68, 82);
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.unity-scroll-view .unity-scroller--horizontal .unity-base-slider__dragger {
+    top: 0;
+    height: 8px;
+    margin: 0;
+    background-color: rgb(62, 68, 82);
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.unity-scroll-view .unity-scroller .unity-base-slider__dragger:hover:enabled {
+    background-color: rgb(88, 96, 114);
+}
+
+.unity-scroll-view .unity-scroller .unity-base-slider__dragger:active:enabled {
+    background-color: rgb(110, 118, 136);
 }
 
 .keys-row {

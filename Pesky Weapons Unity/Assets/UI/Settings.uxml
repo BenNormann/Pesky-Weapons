@@ -17,11 +17,6 @@
                         <ui:Slider name="sensitivity-slider" low-value="0.2" high-value="3" value="1" class="setting-slider" />
                         <ui:Label name="sensitivity-value" text="1.00x" class="setting-value" />
                     </ui:VisualElement>
-                    <ui:VisualElement class="setting-row">
-                        <ui:Label text="SPIKE FILTER" class="setting-name" />
-                        <ui:Label text="ignores the odd huge jump a browser reports under pointer lock" class="setting-hint" />
-                        <ui:Button name="spike-button" text="ON" class="switch switch--on" />
-                    </ui:VisualElement>
                     <ui:Button name="keybinds-button" text="KEYBINDS" class="button card-button" />
                 </ui:VisualElement>
 
@@ -55,7 +50,7 @@
 
             <ui:VisualElement name="keys-page" class="settings-page">
                 <ui:Label text="click a key, then press the new key or mouse button. ESC keeps the old one." class="caption" />
-                <ui:ScrollView name="keys-scroll" class="keys-scroll">
+                <ui:ScrollView name="keys-scroll" horizontal-scroller-visibility="Hidden" class="keys-scroll">
                     <ui:VisualElement name="keys-rows" class="keys-rows" />
                 </ui:ScrollView>
                 <ui:Label name="keys-status" text="" class="status" />

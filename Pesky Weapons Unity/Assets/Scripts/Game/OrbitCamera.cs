@@ -21,7 +21,7 @@ namespace Pesky.Game
         [SerializeField] string pauseAction = "Pause";
         [Tooltip("Degrees per unit of the Look action at the player's MOUSE SENSITIVITY 1.0; the settings screen's slider (GameSettings.MouseSensitivity, 0.2 - 3.0) multiplies it, live.")]
         [SerializeField] float lookSensitivity = 2f;
-        [Tooltip("The mouse-look spike filter's tunables (Assets/Data/LookTuning.asset). At runtime the filter reads a private copy whose filterSpikes is the player's MOUSE SPIKE FILTER setting (GameSettings); every other number is copied from this asset each frame, so tuning it live still works.")]
+        [Tooltip("The mouse-look spike filter's tunables (Assets/Data/LookTuning.asset), read live, so tuning it in the Inspector works in play mode. Players cannot turn the filter off; filterSpikes is a designer switch only.")]
         [SerializeField] LookTuning lookTuning;
 
         [Header("Orbit")]
@@ -60,7 +60,6 @@ namespace Pesky.Game
         float _pitch;
         bool _inputEnabled = true;
         readonly LookFilter _filter = new LookFilter();
-        LookTuning _runtimeTuning;
         float _distance;
         float _distanceVelocity;
         float _lift = 1f;
@@ -113,27 +112,6 @@ namespace Pesky.Game
             if (_camera != null) _baseNear = _camera.nearClipPlane;
 
             if (target != null) _pivot = target.position + pivotOffset;
-
-            // The player's spike-filter switch must not be written into the shared asset (in the Editor that
-            // would outlive play mode), so the filter reads a runtime copy.
-            if (lookTuning != null)
-            {
-                _runtimeTuning = ScriptableObject.CreateInstance<LookTuning>();
-                _runtimeTuning.hideFlags = HideFlags.HideAndDontSave;
-                SyncTuning();
-            }
-        }
-
-        /// <summary>The runtime copy of LookTuning: the asset's numbers, and filterSpikes from the player's setting.</summary>
-        void SyncTuning()
-        {
-            if (_runtimeTuning == null || lookTuning == null) return;
-            _runtimeTuning.spikeMode = lookTuning.spikeMode;
-            _runtimeTuning.spikeDegrees = lookTuning.spikeDegrees;
-            _runtimeTuning.scaleToDegrees = lookTuning.scaleToDegrees;
-            _runtimeTuning.dropFirstDeltaAfterLock = lookTuning.dropFirstDeltaAfterLock;
-            _runtimeTuning.logDrops = lookTuning.logDrops;
-            _runtimeTuning.filterSpikes = GameSettings.MouseSpikeFilter;
         }
 
         void OnEnable()
@@ -154,7 +132,6 @@ namespace Pesky.Game
         void OnDestroy()
         {
             if (_probe != null) Destroy(_probe.gameObject);
-            if (_runtimeTuning != null) Destroy(_runtimeTuning);
         }
 
         public void SetTarget(Transform newTarget, bool snap)
@@ -221,10 +198,10 @@ void Update()
             {
                 // The Look action is a per-frame pixel delta: it is never scaled by deltaTime (a hitch would
                 // become a huge turn), and it goes through the spike filter first.
-                // Sensitivity and the spike filter are the player's settings (GameSettings), read every frame.
-                SyncTuning();
+                // Sensitivity is the player's setting (GameSettings), read every frame. The spike filter is always
+                // on for players (round 11); LookTuning.filterSpikes stays a designer switch in the asset.
                 Vector2 look = _filter.Filter(_look.ReadValue<Vector2>(), lookSensitivity * GameSettings.MouseSensitivity,
-                    _runtimeTuning != null ? _runtimeTuning : lookTuning); // degrees
+                    lookTuning); // degrees
                 if (look.sqrMagnitude > 0f) SetLook(_yaw + look.x, _pitch - look.y);
             }
         }
