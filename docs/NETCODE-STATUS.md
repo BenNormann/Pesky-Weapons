@@ -1559,3 +1559,23 @@ key is not even a packet. RUN_START / RUN_LAYOUT are read by `RunHud` (the timer
 6. **The Input System `Curse1..5` actions** were added through `InputActionSetupExtensions`
    and the asset's JSON rewritten (as the nudge bindings were); the asset reloaded with the
    five bindings, but no key has been pressed.
+
+## Round 10 — roles every round, and leaving a level (2026-09-30)
+
+**Implemented, untested.** No wire layout changed; `Wire.ProtocolVersion` stays **6**.
+
+- **ROLE_ASSIGN (0x35) now goes to every present player at round open**, Mage or Weapon (2
+  bytes either way), and as Weapon to a late joiner on the next scan (`LabyrinthRule.TellRole`,
+  `_told[]`). This replaces S5.3 point 2 ("nobody else is sent anything"): an untold weapon kept
+  last round's Mage role, because the run sends no LAB_LAYOUT and nothing else reset it.
+  Secrecy is unchanged or better: the reply still goes to one peer, the table still lives only in
+  `LabyrinthRule`, and everybody now gets the same packet.
+- **Round-start reset**: `WorldSim.SetPhase` resets `LabyrinthState` (role, `LocalRoleKnown`,
+  outcome, legend, compass) and `RunState` on every edge into `Playing`. Because a Reply or a
+  State applies on arrival while an Event waits in `PendingEvents` for its tick, a ROLE_ASSIGN or
+  RUN_LAYOUT that lands before this sim is Playing is kept by that reset
+  (`_roleAheadOfRound` / `_runAheadOfRound`). A snapshot sets the phase without the edge.
+- **Leaving from a level**: `SessionRunner.LeaveToMenu()` (the settings screen's EXIT) calls
+  `NetSession.Leave()` outside the inbox drain - a client's leave, or a host's
+  `SESSION_END(HostLeft)` - then loads `menuScene`. S4.8's "no pause menu and no in-level leave"
+  is done (docs/SETTINGS.md).

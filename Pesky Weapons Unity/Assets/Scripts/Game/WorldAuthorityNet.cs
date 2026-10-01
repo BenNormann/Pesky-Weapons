@@ -686,6 +686,12 @@ namespace Pesky.Game
             get { return _session != null && _session.Sim != null ? _session.Sim.Labyrinth.LocalRole : LabyrinthRole.Weapon; }
         }
 
+        /// <summary>True once this round's ROLE_ASSIGN has arrived (every player gets one, Weapon or Mage). False from the round start until then.</summary>
+        public bool LocalRoleKnown
+        {
+            get { return _session != null && _session.Sim != null && _session.Sim.Labyrinth.LocalRoleKnown; }
+        }
+
         /// <summary>The Mage's map drag: exchange the rooms in two orthogonally adjacent cells. The host drops it in silence when this peer is not a Mage, so a weapon learns nothing by trying.</summary>
         public void RequestRoomSwap(int cellA, int cellB)
         {

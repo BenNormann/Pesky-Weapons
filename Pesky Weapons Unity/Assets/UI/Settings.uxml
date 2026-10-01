@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="project://database/Assets/UI/Menu.uss" />
+    <ui:Style src="project://database/Assets/UI/Settings.uss" />
+    <ui:VisualElement name="settings-root" class="settings-root">
+        <ui:VisualElement name="settings-panel" class="settings-panel">
+            <ui:Label name="settings-title" text="PAUSED" class="settings-title" />
+            <ui:Label name="settings-sub" text="the run keeps going for everybody else" class="settings-sub" />
+
+            <ui:VisualElement name="general-page" class="settings-page">
+                <ui:Button name="resume-button" text="RESUME" class="button button--primary" />
+
+                <ui:VisualElement name="mouse-card" class="card">
+                    <ui:Label text="MOUSE" class="field-label" />
+                    <ui:VisualElement class="setting-row">
+                        <ui:Label text="SENSITIVITY" class="setting-name" />
+                        <ui:Slider name="sensitivity-slider" low-value="0.2" high-value="3" value="1" class="setting-slider" />
+                        <ui:Label name="sensitivity-value" text="1.00x" class="setting-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="setting-row">
+                        <ui:Label text="SPIKE FILTER" class="setting-name" />
+                        <ui:Label text="ignores the odd huge jump a browser reports under pointer lock" class="setting-hint" />
+                        <ui:Button name="spike-button" text="ON" class="switch switch--on" />
+                    </ui:VisualElement>
+                    <ui:Button name="keybinds-button" text="KEYBINDS" class="button card-button" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="audio-card" class="card">
+                    <ui:Label text="AUDIO" class="field-label" />
+                    <ui:VisualElement class="setting-row">
+                        <ui:Label text="MASTER" class="setting-name" />
+                        <ui:SliderInt name="master-slider" low-value="0" high-value="100" value="100" class="setting-slider" />
+                        <ui:Label name="master-value" text="100" class="setting-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="setting-row">
+                        <ui:Label text="MUSIC" class="setting-name" />
+                        <ui:SliderInt name="music-slider" low-value="0" high-value="100" value="100" class="setting-slider" />
+                        <ui:Label name="music-value" text="100" class="setting-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="setting-row">
+                        <ui:Label text="SFX" class="setting-name" />
+                        <ui:SliderInt name="sfx-slider" low-value="0" high-value="100" value="100" class="setting-slider" />
+                        <ui:Label name="sfx-value" text="100" class="setting-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="setting-row">
+                        <ui:Label text="VOICE" class="setting-name" />
+                        <ui:SliderInt name="voice-slider" low-value="0" high-value="100" value="100" class="setting-slider" />
+                        <ui:Label name="voice-value" text="100" class="setting-value" />
+                    </ui:VisualElement>
+                    <ui:Label name="audio-caption" text="not wired yet: only MASTER changes anything (the overall volume). music, sfx and voice are saved for when the game has a mixer." class="hint" />
+                </ui:VisualElement>
+
+                <ui:Button name="exit-button" text="EXIT TO MAIN MENU" class="button" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="keys-page" class="settings-page">
+                <ui:Label text="click a key, then press the new key or mouse button. ESC keeps the old one." class="caption" />
+                <ui:ScrollView name="keys-scroll" class="keys-scroll">
+                    <ui:VisualElement name="keys-rows" class="keys-rows" />
+                </ui:ScrollView>
+                <ui:Label name="keys-status" text="" class="status" />
+                <ui:VisualElement class="row">
+                    <ui:Button name="keys-reset" text="RESET ALL" class="button grow" />
+                    <ui:Button name="keys-back" text="BACK" class="button button--side grow" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="confirm-page" class="settings-page">
+                <ui:Label name="confirm-text" text="YOU ARE THE HOST. LEAVING ENDS THE SESSION FOR EVERYBODY IN THIS ROOM." class="confirm-text" />
+                <ui:Button name="confirm-exit" text="END THE SESSION AND EXIT" class="button button--danger" />
+                <ui:Button name="confirm-cancel" text="CANCEL" class="button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

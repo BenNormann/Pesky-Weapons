@@ -2353,3 +2353,93 @@ the serialized ability lists read back from both scenes. Details: `docs/RUN.md` 
 both); the shade's percentage height is measured against the frame's padding box, so it may
 leave a sliver at the edges. `RunSceneBuilder` (`Pesky > Run > 3`) still carries the round-8
 ring and sign numbers; it is a one-shot migration that cannot run on today's scene.
+
+## Round 10: settings + role reset (2026-09-30)
+
+An in-level settings screen and the fix for the Mage HUD surviving into the next round.
+**Implemented, untested**: no play mode, no tests, no screenshots, no browser, no build. Clean
+compile after every script change; `Settings.uxml` instantiated in edit mode (every queried
+element present with the right type), the keybind list collected from `PeskyControls` (16
+rows), the message kinds read back (`SESSION_PHASE` Event, `RUN_LAYOUT` State, `ROLE_ASSIGN`
+Reply), serialized references read back; `SceneValidator` **0 problems** on `Boot`,
+`MainMenu`, `Tutorial`, `Run` and `Dev/FeelBox`, each loaded alone; all scenes and the new
+prefab saved. The Editor was not running when the round began; it was launched on the project.
+Details: **`docs/SETTINGS.md`**; the owner's checks: `docs/TEST-CHECKLIST.md` section 10.
+
+### The Mage HUD bug: the cause
+
+Owner: "after finishing a lobby and starting the next game you get the Mage HUD if you were
+Mage in the previous session but not in this one."
+
+- A peer's secret role is `WorldSim.Labyrinth.LocalRole` (`Sim/LabyrinthState.cs`), set by a
+  ROLE_ASSIGN reply. The `WorldSim` belongs to the room's one `NetSession`, which lives on in
+  `GameLocator` across every round (Playing -> Ended -> the room page -> `ReturnToLobby` ->
+  START -> Playing), so the sim is **not** new per round.
+- The host told **only the Mages** (`LabyrinthRule.AssignRoles`: "a player who is told nothing is
+  a weapon"), so a weapon this round received nothing at all.
+- The only thing that ever set `LocalRole` back to Weapon was `LabyrinthState.ResetRound()`,
+  reached from `Apply(LabLayoutMsg)` (LAB_LAYOUT at labyrinth round open) and from a
+  SESSION_INFO reseed (join only). **In run mode `LabyrinthRule.OpenRound` skips the grid and
+  sends no LAB_LAYOUT** (round 8), and nothing on the `Lobby -> Playing` edge reset it.
+- So last round's Mage kept `LocalRole == Mage` on its own machine (host or client alike) and
+  everything that reads it live - `RunHud` (ability bar, reveal "YOU ARE A FRAGMENT"),
+  `MageCurse` (keys 1-5), `MageNudge` (clicks, marker), `WorldAuthority.RequestCurse` / `RequestNudge` -
+  behaved as a Mage. The host's own table (`LabyrinthRule._mage`) was cleared correctly on
+  `CloseRound`, so the false Mage's curses and nudges were silently refused: a HUD that does
+  nothing. The reverse case (weapon before, Mage now) worked, because ROLE_ASSIGN(Mage) sets it;
+  a late joiner has a fresh sim and was a weapon by default. The labyrinth mode was not affected
+  (LAB_LAYOUT reset it every round).
+
+### The fix
+
+- **Every round start clears the local round state on every peer**: `WorldSim.SetPhase`, on the
+  edge into `Playing` (from SESSION_PHASE or SESSION_INFO), calls `Labyrinth.ResetRound(...)`
+  (role back to Weapon, `LocalRoleKnown` false, outcome, legend, compass) and `Run.ResetRound()`
+  (sequence, timer: no stale doors or "0:00" for the second it takes RUN_LAYOUT to land). A
+  snapshot sets the phase directly (`ReadPart`), so a mid-round resync keeps the role.
+- **The overtaking case.** On a client an Event with a future tick waits in `PendingEvents`,
+  while a Reply (ROLE_ASSIGN) and a State (RUN_LAYOUT) apply on arrival - so after a hitch they
+  can land before the round's SESSION_PHASE(Playing). `WorldSim` remembers a ROLE_ASSIGN or
+  RUN_LAYOUT that arrived while it was not yet `Playing` (`_roleAheadOfRound`,
+  `_runAheadOfRound`; the host only sends either while Playing, so it is the new round's) and
+  the edge keeps it (`LabyrinthState.ResetRound(keepLocalRole)`). A snapshot that says Playing
+  clears both flags.
+- **The host tells every player, every round**: `LabyrinthRule.AssignRoles` sends
+  ROLE_ASSIGN(Mage) to the fragments and ROLE_ASSIGN(**Weapon**) to every other present player
+  (`TellRole`); `Scan` sends Weapon to any present slot not told this round (a late joiner); a
+  `_told[]` table is cleared with the round and when a slot empties. The message is unchanged (2
+  bytes, `Wire.ProtocolVersion` stays 6); everybody now gets the same two bytes, so a sniffer
+  can no longer tell the Mage by who got a packet.
+- **Derived from it**: `LabyrinthState.LocalRoleKnown` (+ `WorldAuthority.LocalRoleKnown`).
+  `RunHud`'s reveal now waits for this round's role (not before `roleRevealDelay`, then as soon
+  as it is known, as a weapon after `roleWaitSeconds` 3 s more if none comes) and re-shows only
+  if the role changed after it showed. The ability bar, `MageCurse`, `MageNudge` (and its marker)
+  already read `LocalRole` live every frame, so they follow the per-round value.
+- Doc comments on `RoleAssignMsg` and `LabyrinthRole` updated.
+
+### The settings screen
+
+- New: `Scripts/Game/GameSettings.cs` (PlayerPrefs: sensitivity 0.2 - 3.0 default 1, spike
+  filter default on, Master / Music / SFX / Voice 0 - 100), `AudioSettings.cs` (the stub hook:
+  Master -> `AudioListener.volume`, the rest logged), `Keybinds.cs` (rebindable list, names,
+  `PerformInteractiveRebinding`, override JSON under `Pesky.Bindings`),
+  `UI/KeybindsPage.cs`, `UI/SettingsView.cs`, `UI/SettingsFlow.cs`; `Assets/UI/Settings.uxml`
+  + `Settings.uss` (on top of `Menu.uss`); **`Assets/Prefabs/UI/Settings.prefab`** (UIDocument
+  sortingOrder 50 + SettingsFlow), instanced as `_UI/Settings` in `Tutorial.unity` and
+  `Run.unity` with the scene's `OrbitCamera` and `SessionRunner` as instance overrides.
+- `OrbitCamera`: look = `lookSensitivity x GameSettings.MouseSensitivity`; the filter reads a
+  hidden runtime `LookTuning` copy whose numbers follow the asset every frame and whose
+  `filterSpikes` is the player's switch.
+- `PlayerSoul`: no input at all while `OrbitCamera.InputEnabled` is off (the same overlay flag
+  the Tab overlay used; flight inputs and the Orb roll cleared); `PossessHeld` gated too.
+- `SessionRunner.LeaveToMenu()` + `LeavingEndsSessionForOthers`: the proper exit (client
+  leaves; host ends it for everyone after the CONFIRM page; offline just stops), then the menu by
+  the serialized `menuScene` with a `GameLocator` line.
+- `GameBootstrap.Start` applies the saved audio once at boot.
+- Escape / pointer-lock loss / RESUME / grace / arming as in ATCK's `Settings`
+  (docs/SETTINGS.md section 2.1).
+
+**Left open.** Untested. The pointer lock after RESUME in a browser may need a second click.
+Gameplay scenes still have no EventSystem (the labyrinth's interactive Tab overlay had none
+either). No keybind conflict check; tutorial signs and the ability bar's key labels do not
+follow a rebind. Audio is a stub.

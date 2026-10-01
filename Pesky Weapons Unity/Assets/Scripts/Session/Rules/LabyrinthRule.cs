@@ -37,6 +37,8 @@ namespace Pesky.Session.Rules
         readonly uint[] _lastBendTick = new uint[Wire.MaxPlayers];
         readonly bool[] _bendUsed = new bool[Wire.MaxPlayers];
         readonly int[] _shuffle = new int[Wire.MaxPlayers];
+        // This round's ROLE_ASSIGN went to this slot (Mage or Weapon). Cleared with the round and when the slot empties.
+        readonly bool[] _told = new bool[Wire.MaxPlayers];
         readonly uint[] _lastNudgeTick = new uint[Wire.MaxPlayers];
         readonly bool[] _nudgeUsed = new bool[Wire.MaxPlayers];
         // Per TARGET (the eight slots, then the tutorial dummy at index MaxPlayers): the last accepted nudge
@@ -117,6 +119,7 @@ namespace Pesky.Session.Rules
                 _cell[i] = LabyrinthGrid.NoCell;
                 _atExit[i] = false;
                 _mage[i] = false;
+                _told[i] = false;
                 _bent[i] = false;
                 _bendKind[i] = CompassTargetKind.GoodEnd;
                 _bendCell[i] = LabyrinthGrid.NoCell;
@@ -139,6 +142,13 @@ namespace Pesky.Session.Rules
         /// told to nobody else. A player who is told nothing is a weapon, which is why no ROLE_ASSIGN goes
         /// to the rest: an empty message is still a message.
         /// </summary>
+        /// <summary>
+        /// One or two Mage fragments among the present players, drawn from the host-private generator. EVERY
+        /// present player is told its role for THIS round: ROLE_ASSIGN(Mage) to the fragments and
+        /// ROLE_ASSIGN(Weapon) to everybody else, the same two bytes each, so nobody can tell the roles apart
+        /// by who got a packet. Each peer resets its own role when the round starts (WorldSim.SetPhase), and
+        /// before this every weapon was told nothing - so a Mage of the last round stayed one (round 10).
+        /// </summary>
         void AssignRoles(WorldSim sim, LabyrinthDef def, EventSink events)
         {
             int count = 0;
@@ -160,15 +170,22 @@ namespace Pesky.Session.Rules
                 _shuffle[j] = t;
             }
 
-            RoleAssignMsg msg = new RoleAssignMsg();
-            msg.role = LabyrinthRole.Mage;
-            byte[] payload = msg.Encode();
-            for (int i = 0; i < mages; i++)
+            for (int i = 0; i < count; i++)
             {
                 byte slot = (byte)_shuffle[i];
-                _mage[slot] = true;
-                events.Reply(slot, payload);
+                bool mage = i < mages;
+                _mage[slot] = mage;
+                TellRole(events, slot, mage);
             }
+        }
+
+        /// <summary>ROLE_ASSIGN to one slot alone (EventSink.Reply; the host's own slot gets it through LocalReply).</summary>
+        void TellRole(EventSink events, byte slot, bool mage)
+        {
+            RoleAssignMsg msg = new RoleAssignMsg();
+            msg.role = mage ? LabyrinthRole.Mage : LabyrinthRole.Weapon;
+            events.Reply(slot, msg.Encode());
+            _told[slot] = true;
         }
 
         /// <summary>Where everybody is, straight from the Game-side half of the host. A slot that emptied loses every secret attached to it.</summary>
@@ -179,7 +196,13 @@ namespace Pesky.Session.Rules
                 _cell[i] = LabyrinthGrid.NoCell;
                 _atExit[i] = false;
                 PlayerState p = sim.Players[i];
-                if (p != null && p.present) continue;
+                if (p != null && p.present)
+                {
+                    // A late joiner (or anybody the draw at round open missed) is a weapon, and is told so.
+                    if (!_told[i]) TellRole(events, (byte)i, false);
+                    continue;
+                }
+                _told[i] = false;
                 _mage[i] = false;
                 _bent[i] = false;
                 _swapUsed[i] = false;

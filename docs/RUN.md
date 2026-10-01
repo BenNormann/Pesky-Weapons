@@ -118,7 +118,9 @@ the `IIntentValidator` for CURSE_REQ, registered right after `LabyrinthRule` in
 `HostAuthority.CreateDefault()`. It runs only when `GameData.mode` is `Run`.
 
 **Roles are LabyrinthRule's, unchanged.** In run mode `LabyrinthRule` keeps only its secret
-Mage table (`AssignRoles` -> ROLE_ASSIGN to each Mage alone, the same path as the labyrinth)
+Mage table (`AssignRoles` -> ROLE_ASSIGN to each player alone, the same path as the labyrinth;
+since round 10 every player is told, Weapon or Mage, every round, and every peer resets its role
+on the edge into Playing - docs/BUILD-LOG.md round 10)
 and the nudge validator; the grid rebuild, LAB_LAYOUT, the respawns, the swap, the bend and
 the two labyrinth endings are skipped (`LabyrinthRule.IsRunMode`). `RunRule` reads that table
 on the same host through `IsMage(slot)` / `MageMask(sim)` and never copies it anywhere.

@@ -684,3 +684,85 @@ design and every number: `docs/RUN.md`.
       its painted edge must not end it (the trigger is a 3.6 m square box, 3.5 m tall, turned
       with the ring: its sides sit just inside the 4 m circle, its four corners poke about
       0.5 m past the edge).
+
+## 10. Round 10: settings screen + role reset (2026-09-30; implemented, untested)
+
+Details in `docs/SETTINGS.md`; the bug's cause in `docs/BUILD-LOG.md` round 10.
+
+### 10.1 The Mage HUD no longer survives a round (two players, then three)
+
+- [ ] Host + one client. Play a run to its end (or let the timer run out: set `Run.asset`
+      `timerSeconds` low for the test). Note who was the Mage (the result banner names them).
+- [ ] Back on the room page the host presses START again, **several times over several runs**.
+      Each run: exactly the players the host drew see "YOU ARE A FRAGMENT ..." and the ability bar;
+      **everybody else sees "YOU ARE A WEAPON" and no bar**, whatever they were last run. Check
+      the case the owner hit: Mage last run, weapon this run -> no bar, keys 1-5 and clicks do
+      nothing, no nudge marker floats over an airborne player. And the reverse: weapon last run, Mage this run -> the bar.
+- [ ] Same with the **host** as last run's Mage (the host's own role resets too).
+- [ ] The reveal appears about 1.5 s into the run, not later than ~4.5 s, and says the right
+      thing the first time (it no longer guesses before the role has arrived).
+- [ ] With the debug overlay on (`?debug=1` or the Editor), the console of every player prints
+      one `reply: ROLE_ASSIGN - this peer is a Weapon` or `... Mage` per run (weapons used to
+      print nothing).
+- [ ] **Late joiner**: start a run with two players, then join a third mid-run. The third sees
+      "YOU ARE A WEAPON", no bar, and its console prints the ROLE_ASSIGN Weapon line.
+- [ ] Second run's timer: on the room page -> START, the timer is hidden until the new rooms are
+      known, then shows 5:00 dim; it never flashes last run's red 0:00. The start room's south
+      door leads into this run's first room, not last run's.
+- [ ] Tutorial after a run (same machine): you are still the Mage in the practice hall.
+
+### 10.2 Opening and closing the settings screen (solo tutorial is enough, then a run)
+
+- [ ] In the tutorial, click to lock the pointer, then **Escape**: the dimmed sheet with the
+      PAUSED panel appears, the cursor is free, the camera stops following the mouse.
+- [ ] While it is open: Space does not launch, E does not possess, Q does not leave the weapon,
+      WASD does not fly the soul or roll the Orb, left / right click and 1-5 do nothing (as the
+      Mage in the practice hall, aim at the dummy first). The world keeps running behind it.
+- [ ] **RESUME** closes it and the pointer locks again (in a browser it may take one more
+      click). The view does **not** jump on the first mouse movement after resuming.
+- [ ] Escape again (open -> Escape) closes it the same way.
+- [ ] A click on the dark sheet **outside** the panel closes it too, and that click does not
+      nudge anything (as the Mage, aim at the airborne dummy, open, click outside the panel).
+- [ ] **Alt-tab** away while playing (pointer locked for more than half a second): coming back,
+      the settings screen is open. Clicking out of the browser page does the same. In the
+      browser, pressing Escape once while locked opens the screen and does **not** immediately
+      close it again.
+- [ ] Right after the level loads (before you ever clicked to lock), nothing opens by itself.
+- [ ] MainMenu: Escape does nothing new; the room page and title page work as before.
+
+### 10.3 The settings themselves
+
+- [ ] **Sensitivity**: drag to 0.20x - the view turns very slowly; to 3.00x - fast. The value
+      label follows the slider. It applies while you drag (look after resuming). Quit and start
+      again (or reload the page): the value is kept.
+- [ ] **Spike filter**: the switch flips ON (amber) / OFF (grey); with OFF and a very fast
+      flick, the console prints no `look: dropped a spike` lines; with ON it may. Kept after a
+      restart. `Assets/Data/LookTuning.asset` in the Inspector is **not** changed by the switch.
+- [ ] **Audio**: MASTER 0 silences the game (if anything makes sound), 100 restores; MUSIC, SFX,
+      VOICE move and show their numbers but change nothing (the caption says so). All four are
+      kept after a restart.
+
+### 10.4 Keybinds
+
+- [ ] KEYBINDS shows 16 rows: LAUNCH / SOUL UP (SPACE), POSSESS (E), LEAVE WEAPON (Q), MOVE
+      FORWARD / BACK / LEFT / RIGHT (W S A D), SOUL DOWN (SHIFT), MAP (TAB), MAGE: NUDGE (LMB),
+      MAGE: PULL (RMB), MAGE: CURSE 1-5 (1-5). No LOOK, no PAUSE / ESC row.
+- [ ] Click POSSESS's key: it turns amber and reads PRESS A KEY; press F: it reads F with an
+      amber border, the status line says "saved". Resume: F possesses, E does nothing.
+- [ ] Rebind MAGE: NUDGE to a key or to the middle mouse button; it works in the practice hall.
+- [ ] While a key reads PRESS A KEY, **Escape** keeps the old key ("kept the old key") and does
+      **not** close the settings screen.
+- [ ] Restart the game (or reload the page): the rebinds are still there, in the tutorial and in
+      a run. **RESET ALL** puts every key back and the amber borders go.
+- [ ] BACK returns to the PAUSED page.
+
+### 10.5 EXIT TO MAIN MENU
+
+- [ ] Tutorial (offline): EXIT goes straight to the title page, no question.
+- [ ] **Client** in a two-player run: EXIT -> the client lands on the title page with "you left
+      the room"; the host's run goes on and the client's weapon / soul disappears for the host.
+- [ ] **Host** with a client in the room: EXIT shows the confirm page ("YOU ARE THE HOST.
+      LEAVING ENDS THE SESSION FOR EVERYBODY ..."). CANCEL returns to the PAUSED page. END THE
+      SESSION AND EXIT: the host lands on the title page with "you ended the session for
+      everyone"; the client lands on the title page with "the host left the room".
+- [ ] After any EXIT, HOST / JOIN / TUTORIAL from the title page work normally.

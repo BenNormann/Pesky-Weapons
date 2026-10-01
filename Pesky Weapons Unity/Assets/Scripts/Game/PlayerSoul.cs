@@ -78,7 +78,7 @@ namespace Pesky.Game
         public bool IsAscending { get { return _ascend; } }
         public bool IsDescending { get { return _descendHeld; } }
         /// <summary>Possess (E) held down - the Anvil charges off this.</summary>
-        public bool PossessHeld { get { return _inputEnabled && _possess != null && _possess.IsPressed(); } }
+        public bool PossessHeld { get { return _inputEnabled && (_camera == null || _camera.InputEnabled) && _possess != null && _possess.IsPressed(); } }
         public WorldAuthority Authority { get { return _authority; } }
         public Rigidbody Body { get { return body; } }
         public bool VisualVisible { get { return visual != null && visual.activeSelf; } }
@@ -360,7 +360,15 @@ public void SetAuthority(WorldAuthority worldAuthority)
 
         void Update()
         {
-            if (_inputEnabled && _jump != null) ReadInput();
+            // The camera's InputEnabled is the one "an overlay owns the input" flag (the settings screen, the
+            // labyrinth's Tab overlay): no launch, possess, release, roll or flight while it is off.
+            bool overlayOpen = _camera != null && !_camera.InputEnabled;
+            if (_inputEnabled && !overlayOpen && _jump != null) ReadInput();
+            else if (overlayOpen)
+            {
+                ClearFlight();
+                if (_weapon != null) SetRoll(Vector2.zero);
+            }
 
             if (_weapon != null)
             {

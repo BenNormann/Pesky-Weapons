@@ -34,8 +34,10 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] RunDef fallbackDef;
 
         [Header("Timing")]
-        [Tooltip("How long after the round opens the role reveal appears, so a ROLE_ASSIGN can land first.")]
+        [Tooltip("How long after the round opens the role reveal appears at the earliest. It waits for this round's ROLE_ASSIGN (every player gets one, Weapon or Mage).")]
         [SerializeField] float roleRevealDelay = 1.5f;
+        [Tooltip("If this round's ROLE_ASSIGN has still not arrived this long after roleRevealDelay, reveal anyway (as a weapon, which is what an untold player is).")]
+        [SerializeField] float roleWaitSeconds = 3f;
         [SerializeField] float roleRevealSeconds = 6f;
         [SerializeField] float noteSeconds = 1.6f;
 
@@ -66,6 +68,7 @@ namespace Pesky.Game
         NetSession _session;
         bool _awake = true;
         bool _roleShown;
+        bool _shownMage;
         float _roundSeenAt = -1f;
         float _roleUntil = -1f;
         bool _roundOver;
@@ -248,7 +251,10 @@ namespace Pesky.Game
             }
         }
 
+        /// <summary>This round's role, from this peer's own sim. It is Weapon-and-unknown from the round start until this round's ROLE_ASSIGN lands, so nothing of a previous round can show here (round 10).</summary>
         bool IsMage { get { return authority != null && authority.LocalRole == LabyrinthRole.Mage; } }
+
+        bool RoleKnown { get { return authority != null && authority.LocalRoleKnown; } }
 
         // ---------------------------------------------------------------- the timer
 
@@ -360,7 +366,13 @@ namespace Pesky.Game
             WorldSim sim = _session != null ? _session.Sim : null;
             if (_roundSeenAt < 0f && sim != null && sim.Phase == SessionPhase.Playing) _roundSeenAt = Time.time;
 
-            if (!_roleShown && _roundSeenAt >= 0f && Time.time >= _roundSeenAt + roleRevealDelay) ShowRole();
+            if (!_roleShown && _roundSeenAt >= 0f)
+            {
+                // Never before roleRevealDelay, and then as soon as this round's role is known; a role that
+                // never comes is shown as a weapon after roleWaitSeconds more.
+                float since = Time.time - _roundSeenAt;
+                if (since >= roleRevealDelay && (RoleKnown || since >= roleRevealDelay + roleWaitSeconds)) ShowRole();
+            }
 
             if (_roleUntil > 0f && Time.time >= _roleUntil)
             {
@@ -374,6 +386,7 @@ namespace Pesky.Game
             if (!_awake) return;
             _roleShown = true;
             bool mage = IsMage;
+            _shownMage = mage;
             if (_roleTitle != null) _roleTitle.text = mage ? mageTitle : weaponTitle;
             if (_roleSub != null) _roleSub.text = mage ? mageSub : weaponSub;
             if (_rolePanel != null) _rolePanel.EnableInClassList("is-mage", mage);
@@ -391,9 +404,10 @@ namespace Pesky.Game
         }
 
         /// <summary>ROLE_ASSIGN arrived: this peer is a Mage. Show it again, in case the reveal already said otherwise.</summary>
+        /// <summary>This round's ROLE_ASSIGN arrived. If the reveal already said something else, say it again; otherwise RefreshRole shows it when it is due.</summary>
         void OnRoleLearned()
         {
-            ShowRole();
+            if (_roleShown && _shownMage != IsMage) ShowRole();
         }
 
         void OnRoundEnded(RoundOutcome outcome, byte escapedMask, byte mageMask)

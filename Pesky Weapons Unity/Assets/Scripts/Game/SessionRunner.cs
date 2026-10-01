@@ -197,5 +197,41 @@ namespace Pesky.Game
             SceneManager.LoadScene(menuScene, LoadSceneMode.Single);
         }
 
+        /// <summary>
+        /// The settings screen's EXIT TO MAIN MENU, the proper way out of a level: a client leaves the room
+        /// (the host sees it go); a host ends the session for everyone (NetSession.Leave sends
+        /// SESSION_END(HostLeft), the others land on the title page with "the host left the room"); an offline
+        /// session just stops. Then the menu loads - the same serialized menuScene and GameLocator message as a
+        /// finished run - and, the session being gone, MenuFlow shows the title page. Works in a level opened
+        /// straight from the Editor too. Call it from outside NetSession.Update (a button), never mid-drain.
+        /// </summary>
+        public void LeaveToMenu()
+        {
+            if (_returning) return;
+            bool host = Session != null && Session.IsHost;
+            bool others = Session != null && Session.IsStarted && Session.PeerCount > 0;
+            // First, so the host's own SESSION_END (PhaseChanged(Ended) inside Leave) cannot queue a second load.
+            _returning = true;
+            _returnQueued = false;
+            if (Session != null && Session.IsStarted) Session.Leave();
+            GameLocator.Session = null;
+            GameLocator.FromMenu = false;
+            string message = !others ? "" : host ? "you ended the session for everyone" : "you left the room";
+            GameLocator.SetMessage(message, false);
+            if (!MenuFlow.IsInBuild(menuScene))
+            {
+                Debug.LogWarning("[net] left the session, but the menu scene \"" + menuScene + "\" is not in the build settings.", this);
+                return;
+            }
+            SceneManager.LoadScene(menuScene, LoadSceneMode.Single);
+        }
+
+        /// <summary>True when leaving would end the session for other players (this peer hosts a room with somebody in it). The settings screen asks first.</summary>
+        public bool LeavingEndsSessionForOthers
+        {
+            get { return Session != null && Session.IsStarted && Session.IsHost && Session.PeerCount > 0; }
+        }
+
+
     }
 }

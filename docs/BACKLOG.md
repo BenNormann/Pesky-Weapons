@@ -25,11 +25,15 @@ Agreed work not yet built, in rough order. Update when something lands.
 
 ## Multiplayer polish
 - JOIN_REFUSED so "room full" reaches the joiner
-- Pause menu and in-level LEAVE
 - Signalling relays: the public Nostr relays trystero uses were unusable during the 2026-09-22
   test (the agent had to run a local relay), and peer discovery deadlocked twice when two
   announces crossed (a second JOIN worked). Add more relays to net.js and a JOIN retry.
 - TURN relay provider for restrictive networks (hook: window.PESKY_ICE_SERVERS)
+
+## Settings (docs/SETTINGS.md)
+- An AudioMixer behind the Music / SFX / Voice sliders (they are stored only; AudioSettings.Apply is
+  the hook)
+- Keybind conflict warning; tutorial signs and the ability bar's key labels that follow a rebind
 
 ## Other
 - Remove Unity's AI packages (com.unity.ai.assistant, com.unity.ai.inference / Sentis): they
@@ -39,6 +43,14 @@ Agreed work not yet built, in rough order. Update when something lands.
 - Tutorial: teach the two-player verbs once a second local player is possible
 
 ## Done
+- **Settings screen / pause menu and in-level LEAVE**, 2026-09-30: Escape (or losing the pointer
+  lock) in the tutorial or a run opens it; RESUME, mouse sensitivity, spike filter, four volume
+  sliders (Master works, the rest are a stub), rebindable keys saved in PlayerPrefs, EXIT TO MAIN
+  MENU (a client leaves, a host ends the session for everyone after a confirm). Implemented,
+  untested. See docs/SETTINGS.md.
+- **Mage HUD surviving into the next run** fixed, 2026-09-30: every round start resets each
+  peer's role and the host tells every player its role (Weapon or Mage) every round. Implemented,
+  untested. See BUILD-LOG round 10.
 - **The simplified run** (docs/RUN.md), 2026-09-29: five pool rooms in a row picked per run,
   two-door rooms with a placeholder lever seal on the exit door, a 5:00 timer from the first
   player leaving the rack, the crew wins in the Exit room, the Mage wins on the deadline; the
