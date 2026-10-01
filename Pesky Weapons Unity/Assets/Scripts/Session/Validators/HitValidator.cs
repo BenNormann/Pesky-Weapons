@@ -26,6 +26,7 @@ namespace Pesky.Session.Validators
         public void Handle(byte fromSlot, byte[] payload, WorldSim sim, uint tick, EventSink events)
         {
             if (!HitClaimMsg.TryDecode(payload, out var claim)) return;
+            if (sim.Pause.Paused) return; // nothing lands while the game is frozen (docs/VOTING.md)
             var data = sim.Data;
             if (data == null) return;
             var e = sim.Enemies.Get(claim.enemyId);

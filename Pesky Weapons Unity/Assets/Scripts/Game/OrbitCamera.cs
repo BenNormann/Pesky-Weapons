@@ -19,9 +19,9 @@ namespace Pesky.Game
         [SerializeField] string actionMap = "Gameplay";
         [SerializeField] string lookAction = "Look";
         [SerializeField] string pauseAction = "Pause";
-        [Tooltip("Degrees per unit of the Look action.")]
+        [Tooltip("Degrees per unit of the Look action at the player's MOUSE SENSITIVITY 1.0; the settings screen's slider (GameSettings.MouseSensitivity, 0.2 - 3.0) multiplies it, live.")]
         [SerializeField] float lookSensitivity = 2f;
-        [Tooltip("The mouse-look spike filter's tunables (Assets/Data/LookTuning.asset).")]
+        [Tooltip("The mouse-look spike filter's tunables (Assets/Data/LookTuning.asset), read live, so tuning it in the Inspector works in play mode. Players cannot turn the filter off; filterSpikes is a designer switch only.")]
         [SerializeField] LookTuning lookTuning;
 
         [Header("Orbit")]
@@ -198,7 +198,10 @@ void Update()
             {
                 // The Look action is a per-frame pixel delta: it is never scaled by deltaTime (a hitch would
                 // become a huge turn), and it goes through the spike filter first.
-                Vector2 look = _filter.Filter(_look.ReadValue<Vector2>(), lookSensitivity, lookTuning); // degrees
+                // Sensitivity is the player's setting (GameSettings), read every frame. The spike filter is always
+                // on for players (round 11); LookTuning.filterSpikes stays a designer switch in the asset.
+                Vector2 look = _filter.Filter(_look.ReadValue<Vector2>(), lookSensitivity * GameSettings.MouseSensitivity,
+                    lookTuning); // degrees
                 if (look.sqrMagnitude > 0f) SetLook(_yaw + look.x, _pitch - look.y);
             }
         }

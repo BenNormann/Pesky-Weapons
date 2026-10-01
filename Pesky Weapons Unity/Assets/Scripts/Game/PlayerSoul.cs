@@ -12,6 +12,11 @@ namespace Pesky.Game
     /// while in combat breaks the weapon. If the weapon breaks the soul pops out where it died.
     /// Every input has a public method (SetThrust, TryPossess, Release, TryLaunch, SetRoll) so the same
     /// calls can come from a network layer or a test.
+    ///
+    /// Round 12 (docs/VOTING.md): FROZEN while the host has the game paused (PauseGate calls SetFrozen: the
+    /// body this soul drives goes kinematic with its velocities kept, and comes back as it was), and a GHOST
+    /// once banished (follows WorldAuthority.LocalIsGhost: a free soul that passes teleport doors and can
+    /// possess nothing).
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
@@ -48,6 +53,10 @@ namespace Pesky.Game
         [Tooltip("How far above the weapon the soul appears when it leaves.")]
         [SerializeField] float popOutLift = 0.5f;
 
+        [Header("Ghost")]
+        [Tooltip("The layer of the SoulBlock colliders that fill every magic doorway. A ghost's collider ignores it, so a ghost can pass.")]
+        [SerializeField] string soulBarrierLayer = "SoulBarrier";
+
         readonly Collider[] _hits = new Collider[32];
         InputAction _jump, _possess, _release, _move, _descend;
         OrbitCamera _camera;
@@ -62,6 +71,16 @@ namespace Pesky.Game
         float _lastCombatTime = -999f;
         int _targeters;
 
+        // the pause
+        bool _frozen;
+        Rigidbody _frozenBody;
+        Vector3 _frozenVel;
+        Vector3 _frozenAngVel;
+        bool _frozenWasKinematic;
+
+        // banished
+        bool _ghost;
+
         /// <summary>(weapon) the soul entered a weapon.</summary>
         public event Action<WeaponBody> Possessed;
         /// <summary>(weapon, broke) the soul left a weapon, by choice or because it broke.</summary>
@@ -70,7 +89,7 @@ namespace Pesky.Game
         public WeaponBody Weapon { get { return _weapon; } }
         public WeaponMotor Motor { get { return _motor; } }
         public bool IsPossessing { get { return _weapon != null; } }
-        /// <summary>The weapon E would take right now (for the HUD prompt). Null while possessing.</summary>
+        /// <summary>The weapon E would take right now (for the HUD prompt). Null while possessing, and for a ghost.</summary>
         public WeaponBody Candidate { get { return _candidate; } }
         /// <summary>Any flight input is held (WASD, Space or Left Shift).</summary>
         public bool IsThrusting { get { return FlightDirection().sqrMagnitude > 1e-6f; } }
@@ -78,12 +97,16 @@ namespace Pesky.Game
         public bool IsAscending { get { return _ascend; } }
         public bool IsDescending { get { return _descendHeld; } }
         /// <summary>Possess (E) held down - the Anvil charges off this.</summary>
-        public bool PossessHeld { get { return _inputEnabled && _possess != null && _possess.IsPressed(); } }
+        public bool PossessHeld { get { return _inputEnabled && (_camera == null || _camera.InputEnabled) && _possess != null && _possess.IsPressed(); } }
         public WorldAuthority Authority { get { return _authority; } }
         public Rigidbody Body { get { return body; } }
         public bool VisualVisible { get { return visual != null && visual.activeSelf; } }
         /// <summary>False = ignore the device input (pause menus, automated probes). The public methods still work.</summary>
         public bool InputEnabled { get { return _inputEnabled; } set { _inputEnabled = value; if (!value) ClearFlight(); } }
+        /// <summary>The host has the game paused: the body this soul drives stands still (SetFrozen).</summary>
+        public bool IsFrozen { get { return _frozen; } }
+        /// <summary>This player was banished: a spectating soul that passes doors and possesses nothing.</summary>
+        public bool IsGhost { get { return _ghost; } }
 
         public bool InCombat
         {
@@ -139,7 +162,7 @@ namespace Pesky.Game
             if (preview != null) preview.SetCamera(_camera != null ? _camera.GetComponent<Camera>() : null);
         }
 
-public void SetAuthority(WorldAuthority worldAuthority)
+        public void SetAuthority(WorldAuthority worldAuthority)
         {
             Bind(worldAuthority);
         }
@@ -181,7 +204,64 @@ public void SetAuthority(WorldAuthority worldAuthority)
             if (_weapon != null) return;
             body.position = position;
             transform.position = position;
-            body.linearVelocity = velocity;
+            if (!body.isKinematic) body.linearVelocity = velocity;
+        }
+
+        // ---------------------------------------------------------------- the pause and the ghost
+
+        /// <summary>
+        /// The pause (docs/VOTING.md): the body this soul drives right now - its weapon, or itself when free -
+        /// stops where it is. Its velocities are kept and it goes kinematic; thawing gives them back. Only the
+        /// body frozen here is thawed, and only while it is still kinematic: a weapon that broke meanwhile
+        /// (banishment) is thawed quietly so its respawn finds a dynamic body, and the soul that popped out of
+        /// it was never frozen, so it is left alone.
+        /// </summary>
+        public void SetFrozen(bool on)
+        {
+            if (_frozen == on) return;
+            _frozen = on;
+            if (on)
+            {
+                ClearFlight();
+                if (_motor != null) _motor.SetRoll(Vector2.zero);
+                Rigidbody rb = CurrentBody;
+                _frozenBody = rb;
+                _frozenWasKinematic = rb == null || rb.isKinematic;
+                if (rb != null && !rb.isKinematic)
+                {
+                    _frozenVel = rb.linearVelocity;
+                    _frozenAngVel = rb.angularVelocity;
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                    rb.isKinematic = true;
+                }
+                return;
+            }
+            Rigidbody back = _frozenBody;
+            _frozenBody = null;
+            if (back == null || _frozenWasKinematic || !back.isKinematic) return;
+            bool same = back == CurrentBody;
+            back.isKinematic = false;
+            back.linearVelocity = same ? _frozenVel : Vector3.zero;
+            back.angularVelocity = same ? _frozenAngVel : Vector3.zero;
+            back.WakeUp();
+        }
+
+        Rigidbody CurrentBody { get { return _weapon != null ? _weapon.Body : body; } }
+
+        /// <summary>
+        /// A banished player's soul (docs/VOTING.md): it flies as before, passes teleport doors (the MagicDoor
+        /// sensor watches it, and its collider ignores the SoulBarrier layer that fills every doorway) and can
+        /// possess nothing. Follows WorldAuthority.LocalIsGhost, so a late joiner or a resync lands right too.
+        /// </summary>
+        void SetGhost(bool on)
+        {
+            _ghost = on;
+            _candidate = null;
+            int barrier = LayerMask.NameToLayer(soulBarrierLayer);
+            if (soulCollider == null || barrier < 0) return;
+            int mask = soulCollider.excludeLayers.value;
+            soulCollider.excludeLayers = on ? (mask | (1 << barrier)) : (mask & ~(1 << barrier));
         }
 
         // ---------------------------------------------------------------- IWeaponPossessor
@@ -255,20 +335,19 @@ public void SetAuthority(WorldAuthority worldAuthority)
             if (_motor != null) _motor.SetRoll(input);
         }
 
-        /// <summary>E: possess the best free weapon in range.</summary>
-        /// <summary>E: possess the best free weapon in range. Routed through the WorldAuthority.</summary>
+        /// <summary>E: possess the best free weapon in range. Routed through the WorldAuthority. Never for a ghost.</summary>
         public bool TryPossess()
         {
-            if (_weapon != null) return false;
+            if (_weapon != null || _ghost) return false;
             WeaponBody best = FindBestWeapon();
             if (best == null) return false;
             return _authority != null ? _authority.RequestPossess(this, best) : ApplyPossess(best);
         }
 
-        /// <summary>Request to possess a specific weapon; the authority validates it.</summary>
+        /// <summary>Request to possess a specific weapon; the authority validates it. Never for a ghost.</summary>
         public bool Possess(WeaponBody target)
         {
-            if (target == null) return false;
+            if (target == null || _ghost) return false;
             return _authority != null ? _authority.RequestPossess(this, target) : ApplyPossess(target);
         }
 
@@ -283,7 +362,7 @@ public void SetAuthority(WorldAuthority worldAuthority)
             ClearFlight();
             target.Broken += OnWeaponBroken;
 
-            body.linearVelocity = Vector3.zero;
+            if (!body.isKinematic) body.linearVelocity = Vector3.zero;
             body.isKinematic = true;
             if (soulCollider != null) soulCollider.enabled = false;
             if (visual != null) visual.SetActive(false);
@@ -297,7 +376,6 @@ public void SetAuthority(WorldAuthority worldAuthority)
             return true;
         }
 
-        /// <summary>Q: leave the weapon. In combat the weapon breaks; otherwise it just drops there.</summary>
         /// <summary>Q: leave the weapon. In combat the weapon breaks; otherwise it just drops there.</summary>
         public bool Release()
         {
@@ -351,7 +429,7 @@ public void SetAuthority(WorldAuthority worldAuthority)
         public void Teleport(Vector3 position)
         {
             if (_weapon != null) return;
-            body.linearVelocity = Vector3.zero;
+            if (!body.isKinematic) body.linearVelocity = Vector3.zero;
             body.position = position;
             transform.position = position;
         }
@@ -360,7 +438,19 @@ public void SetAuthority(WorldAuthority worldAuthority)
 
         void Update()
         {
-            if (_inputEnabled && _jump != null) ReadInput();
+            // Banishment is public knowledge in the sim; the soul follows it (a late joiner's snapshot included).
+            bool ghost = _authority != null && _authority.LocalIsGhost;
+            if (ghost != _ghost) SetGhost(ghost);
+
+            // The camera's InputEnabled is the one "an overlay owns the input" flag (the settings screen, the
+            // pause, the labyrinth's Tab overlay): no launch, possess, release, roll or flight while it is off.
+            bool overlayOpen = _camera != null && !_camera.InputEnabled;
+            if (_inputEnabled && !overlayOpen && !_frozen && _jump != null) ReadInput();
+            else if (overlayOpen || _frozen)
+            {
+                ClearFlight();
+                if (_weapon != null) SetRoll(Vector2.zero);
+            }
 
             if (_weapon != null)
             {
@@ -368,7 +458,7 @@ public void SetAuthority(WorldAuthority worldAuthority)
             }
             else
             {
-                _candidate = FindBestWeapon();
+                _candidate = _ghost ? null : FindBestWeapon();
             }
         }
 
@@ -391,7 +481,8 @@ public void SetAuthority(WorldAuthority worldAuthority)
 
         void FixedUpdate()
         {
-            if (_weapon != null) return;
+            // A frozen soul body is kinematic: nothing to drive until the pause ends.
+            if (_weapon != null || _frozen || body.isKinematic) return;
 
             Vector3 dir = FlightDirection();
             if (dir.sqrMagnitude > 1e-6f)

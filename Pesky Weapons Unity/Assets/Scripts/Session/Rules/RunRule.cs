@@ -149,21 +149,22 @@ namespace Pesky.Session.Rules
             for (int i = 0; i < Wire.MaxPlayers; i++)
             {
                 PlayerState p = sim.Players[i];
-                if (p == null || !p.present) continue;
+                if (p == null || !p.present || sim.Vote.IsBanished(i)) continue;
                 if (_place[i] == RunPlace.Rooms || _place[i] == RunPlace.Exit) return true;
             }
             return false;
         }
 
         /// <summary>The first player left the start room: everybody's clock starts from the same tick.</summary>
+        /// <summary>The first player left the start room: everybody's clock starts from the same tick. GAME ticks (docs/VOTING.md): the deadline stands still through a pause.</summary>
         void StartTimer(WorldSim sim, RunDef def, uint tick, EventSink events)
         {
             RunStartMsg msg = new RunStartMsg();
             msg.header = events.Header();
-            msg.startTick = msg.header.tick;
-            msg.deadlineTick = msg.header.tick + LabyrinthRule.Ticks(def != null ? def.timerSeconds : 300f);
+            msg.startTick = sim.Pause.GameTick(msg.header.tick);
+            msg.deadlineTick = msg.startTick + LabyrinthRule.Ticks(def != null ? def.timerSeconds : 300f);
             events.Emit(msg.Encode());
-            NetDebug.Log("host: run timer started at tick " + msg.startTick + ", deadline " + msg.deadlineTick);
+            NetDebug.Log("host: run timer started at game tick " + msg.startTick + ", deadline " + msg.deadlineTick);
         }
 
         /// <summary>
@@ -171,16 +172,24 @@ namespace Pesky.Session.Rules
         /// Then the crew: every present NON-Mage player inside the Exit room's volume at once (the Mage may
         /// be anywhere). A non-Mage with no pose yet counts as not there.
         /// </summary>
+        /// <summary>
+        /// Nothing ends while the game is paused. Then the deadline first (game ticks): the Mage wins the instant
+        /// it passes, and it beats a simultaneous gathering. Then the crew: every present NON-Mage, NON-banished
+        /// player inside the Exit room's volume at once (the Mage may be anywhere). A non-Mage with no pose yet
+        /// counts as not there. If a banishment left no non-Mage standing, the Mage wins at once (WeaponsGone).
+        /// </summary>
         void CheckEndings(WorldSim sim, uint tick, EventSink events)
         {
+            if (sim.Pause.Paused) return;
             byte mageMask = _roles != null ? _roles.MageMask(sim) : (byte)0;
-            if (tick >= sim.Run.DeadlineTick)
+            if (sim.Pause.GameTick(tick) >= sim.Run.DeadlineTick)
             {
                 Finish(sim, events, RoundOutcome.TimedOut, 0, mageMask, SessionEndReason.CrewLost);
                 return;
             }
 
             int nonMage = 0;
+            int banishedNonMage = 0;
             int inExit = 0;
             byte escapedMask = 0;
             for (int i = 0; i < Wire.MaxPlayers; i++)
@@ -188,12 +197,19 @@ namespace Pesky.Session.Rules
                 PlayerState p = sim.Players[i];
                 if (p == null || !p.present) continue;
                 if ((mageMask & (1 << i)) != 0) continue;
+                if (sim.Vote.IsBanished(i)) { banishedNonMage++; continue; }
                 nonMage++;
                 if (_place[i] != RunPlace.Exit) continue;
                 inExit++;
                 escapedMask |= (byte)(1 << i);
             }
-            if (nonMage <= 0 || inExit < nonMage) return;
+            if (nonMage <= 0)
+            {
+                // Only when a vote emptied the crew: a round with no weapon at all (a solo Mage) just runs on.
+                if (banishedNonMage > 0) Finish(sim, events, RoundOutcome.WeaponsGone, 0, mageMask, SessionEndReason.CrewLost);
+                return;
+            }
+            if (inExit < nonMage) return;
             Finish(sim, events, RoundOutcome.Escaped, escapedMask, mageMask, SessionEndReason.Escaped);
         }
 
@@ -226,6 +242,13 @@ namespace Pesky.Session.Rules
         /// Accepted: CURSE_EVENT to everybody with the target, the curse and the duration, and NO author.
         /// Refused: CURSE_REFUSED to him alone.
         /// </summary>
+        /// <summary>
+        /// CURSE_REQ. Silent unless the asker is a Mage in an open round (like every Mage intent), not banished
+        /// and not paused. Then, in order: a real curse id, his shared cooldown (game ticks), a target that is
+        /// another player holding a weapon (not a soul, not himself; or the tutorial dummy), within curseRange
+        /// of his own streamed body. Accepted: CURSE_EVENT to everybody with the target, the curse and the
+        /// duration, and NO author. Refused: CURSE_REFUSED to him alone.
+        /// </summary>
         public void Handle(byte fromSlot, byte[] payload, WorldSim sim, uint tick, EventSink events)
         {
             if (sim == null || events == null || !_roundOpen || !LabyrinthRule.IsRunMode(sim) || _roles == null || !_roles.RoundOpen)
@@ -238,11 +261,18 @@ namespace Pesky.Session.Rules
                 NetDebug.Log("host: curse from slot " + fromSlot + " refused: not a Mage");
                 return;
             }
+            // A banished Mage has no powers; nothing is cast while the game is paused (docs/VOTING.md).
+            if (sim.Vote.IsBanished(fromSlot) || sim.Pause.Paused)
+            {
+                NetDebug.Log("host: curse from slot " + fromSlot + " refused: banished or paused");
+                return;
+            }
             CurseReqMsg req;
             if (!CurseReqMsg.TryDecode(payload, out req)) return;
             PlayerState from = sim.Players[fromSlot];
             if (from == null || !from.present) return;
             RunDef def = sim.Data != null ? sim.Data.run : null;
+            uint game = sim.Pause.GameTick(tick);
             bool practice = req.targetSlot == NudgeReqMsg.PracticeTarget;
             string what = "curse " + req.curse + " on " + (practice ? "the practice dummy" : "slot " + req.targetSlot) + " from slot " + fromSlot;
 
@@ -253,9 +283,9 @@ namespace Pesky.Session.Rules
             }
 
             uint cooldown = LabyrinthRule.Ticks(def != null ? def.curseCooldown : 30f);
-            if (_curseUsed[fromSlot] && tick < _lastCurseTick[fromSlot] + cooldown)
+            if (_curseUsed[fromSlot] && game < _lastCurseTick[fromSlot] + cooldown)
             {
-                Refuse(events, fromSlot, req.targetSlot, CurseRefusal.Cooldown, _lastCurseTick[fromSlot] + cooldown - tick, what);
+                Refuse(events, fromSlot, req.targetSlot, CurseRefusal.Cooldown, _lastCurseTick[fromSlot] + cooldown - game, what);
                 return;
             }
 
@@ -291,7 +321,7 @@ namespace Pesky.Session.Rules
             }
 
             _curseUsed[fromSlot] = true;
-            _lastCurseTick[fromSlot] = tick;
+            _lastCurseTick[fromSlot] = game;
 
             float seconds = def != null ? def.curseDuration : 20f;
             uint tenths = (uint)Mathf.RoundToInt(seconds * 10f);

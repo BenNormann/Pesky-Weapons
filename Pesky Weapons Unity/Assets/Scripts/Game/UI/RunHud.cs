@@ -10,15 +10,17 @@ namespace Pesky.Game
 {
     /// <summary>
     /// The run's own HUD layer (docs/RUN.md), above the weapon HUD: the TIMER everybody sees, the role reveal
-    /// at round start, the result banner, the victim's CURSE line, the BLINDNESS overlay, and - for a Mage
-    /// alone - the ABILITY BAR at the bottom of the screen (the five curses and the nudge, built from the
-    /// <see cref="abilities"/> list by <see cref="AbilityBar"/>) plus the quiet refusal line. Nothing sits
-    /// by the crosshair. There is no Tab overlay, no map, no pad and no compass here: those are the labyrinth's
-    /// (LabyrinthHud), set aside.
+    /// at round start, the result banner, the victim's CURSE line, the BLINDNESS overlay, the GHOST line of a
+    /// banished player (docs/VOTING.md), and the ABILITY BAR at the bottom of the screen: everybody's VOTE
+    /// slot, plus - for a Mage alone - the nudge and the five curses, built from the <see cref="abilities"/>
+    /// list by <see cref="AbilityBar"/>, with the quiet refusal line. Nothing sits by the crosshair. There is
+    /// no Tab overlay, no map, no pad and no compass here: those are the labyrinth's (LabyrinthHud), set aside.
+    /// The vote screen (VoteScreen) shares this document and lives under vote-root.
     ///
-    /// SECRETS. This peer's role lives in its own sim and nowhere else. The bar and the refusal line are
-    /// built only while this player is a Mage and are display:none otherwise; the curse line shows the
-    /// victim what is on them and never who did it, because nothing on this machine knows.
+    /// SECRETS. This peer's role lives in its own sim and nowhere else. The Mage slots and the refusal line
+    /// are built only while this player is a Mage and are display:none otherwise; the curse line shows the
+    /// victim what is on them and never who did it, because nothing on this machine knows. A banished
+    /// player's role is public (VOTE_END revealed it) and is said on the ghost line and the result banner.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
@@ -34,47 +36,55 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] RunDef fallbackDef;
 
         [Header("Timing")]
-        [Tooltip("How long after the round opens the role reveal appears, so a ROLE_ASSIGN can land first.")]
+        [Tooltip("How long after the round opens the role reveal appears at the earliest. It waits for this round's ROLE_ASSIGN (every player gets one, Weapon or Mage).")]
         [SerializeField] float roleRevealDelay = 1.5f;
+        [Tooltip("If this round's ROLE_ASSIGN has still not arrived this long after roleRevealDelay, reveal anyway (as a weapon, which is what an untold player is).")]
+        [SerializeField] float roleWaitSeconds = 3f;
         [SerializeField] float roleRevealSeconds = 6f;
         [SerializeField] float noteSeconds = 1.6f;
 
         [Header("Text")]
         [SerializeField] string weaponTitle = "YOU ARE A WEAPON";
-        [SerializeField] string weaponSub = "five rooms, one exit, five minutes. one of you is not helping.";
+        [SerializeField] string weaponSub = "five rooms, one exit, five minutes. one of you is not helping. V calls a vote.";
         [SerializeField] string mageTitle = "YOU ARE A FRAGMENT OF THE ARCH MAGE";
-        [SerializeField] string mageSub = "1-5 curse whoever you look at. click nudges them in the air. do not get caught.";
+        [SerializeField] string mageSub = "1-5 curse whoever you look at. click nudges them in the air. do not get caught: a vote banishes you.";
         [SerializeField] string escapedTitle = "THE WEAPONS ESCAPED";
         [SerializeField] string timedOutTitle = "TIME IS UP - THE ARCH MAGE WINS";
         [SerializeField] string resurrectedTitle = "THE ARCH MAGE WINS";
+        [SerializeField] string weaponsGoneTitle = "EVERY WEAPON WAS BANISHED - THE ARCH MAGE WINS";
+        [SerializeField] string ghostMageText = "BANISHED - YOU WERE THE ARCH MAGE. SPECTATE AS A GHOST: FLY, PASS DOORS, TOUCH NOTHING.";
+        [SerializeField] string ghostWeaponText = "BANISHED - YOU WERE A WEAPON. SPECTATE AS A GHOST: FLY, PASS DOORS, TOUCH NOTHING.";
 
         [Header("Tutorial")]
         [Tooltip("Draw nothing at all until Wake() is called. The tutorial's Mage room wakes it; a real round leaves this off.")]
         [SerializeField] bool startAsleep;
 
-        [Header("Ability bar (Mage only)")]
-        [Tooltip("The Mage's ability bar at the bottom of the screen, left to right. Putting a power on it is adding an entry here (docs/RUN.md 6.5); an entry's cooldown source must be one some script pushes with SetCooldown.")]
+        [Header("Ability bar")]
+        [Tooltip("The ability bar at the bottom of the screen, left to right. Putting a power on it is adding an entry here (docs/RUN.md 6.5); an entry's cooldown source must be one some script pushes with SetCooldown. mageOnly entries show for a Mage alone.")]
         [SerializeField] List<AbilitySlotDef> abilities = AbilityBar.DefaultSlots();
         [Tooltip("How long a slot pulses after its power is used.")]
         [SerializeField] float abilityPulseSeconds = 0.18f;
 
         // the page
-        Label _timer, _roleTitle, _roleSub, _resultTitle, _resultSub, _curseName, _curseTime, _note;
+        Label _timer, _roleTitle, _roleSub, _resultTitle, _resultSub, _curseName, _curseTime, _note, _ghost;
         VisualElement _rolePanel, _resultPanel, _cursePanel, _barRoot, _blind;
         AbilityBar _bar;
 
         NetSession _session;
         bool _awake = true;
         bool _roleShown;
+        bool _shownMage;
         float _roundSeenAt = -1f;
         float _roleUntil = -1f;
         bool _roundOver;
         float _noteUntil = -1f;
         bool _barShown;
+        bool _ghostShown;
+        bool _ghostMageShown;
         bool _timerWarning;
         string _timerText = "";
 
-        // local cooldown guides by AbilityCooldownSource, pushed by MageNudge / MageCurse. The host owns the real ones.
+        // local cooldown guides by AbilityCooldownSource, pushed by MageNudge / MageCurse / VoteCaller. The host owns the real ones.
         readonly float[] _readyAt = new float[AbilityBar.SourceCount];
         readonly float[] _cooldownSeconds = new float[AbilityBar.SourceCount];
 
@@ -115,13 +125,19 @@ namespace Pesky.Game
             _cooldownSeconds[i] = seconds;
         }
 
+        /// <summary>A word on a source's slots saying why the power cannot be used right now (USED, WAIT, PAUSED, OUT); empty clears it.</summary>
+        public void SetAbilityLock(AbilityCooldownSource source, string text)
+        {
+            if (_bar != null) _bar.SetLock(source, text);
+        }
+
         /// <summary>A power was just used: its slot pulses briefly. For a curse, only that curse's slot.</summary>
         public void PulseAbility(AbilityCooldownSource source, CurseKind curse)
         {
             if (_bar != null && _barShown) _bar.Pulse(source, curse, Time.time, abilityPulseSeconds);
         }
 
-        /// <summary>A short, quiet line under the middle of the screen: why a nudge or a curse did not happen. Only the Mage's own actions ever cause one.</summary>
+        /// <summary>A short, quiet line under the middle of the screen: why a nudge, a curse or a vote call did not happen. Only this player's own actions ever cause one.</summary>
         public void ShowNote(string text)
         {
             if (_note == null || !_awake) return;
@@ -186,6 +202,7 @@ namespace Pesky.Game
             _curseName = root.Q<Label>("curse-name");
             _curseTime = root.Q<Label>("curse-time");
             _note = root.Q<Label>("note");
+            _ghost = root.Q<Label>("ghost-status");
             _barRoot = root.Q<VisualElement>("ability-bar");
             _bar = new AbilityBar(_barRoot, abilities);
             _blind = root.Q<VisualElement>("blind-overlay");
@@ -195,10 +212,12 @@ namespace Pesky.Game
             Show(_resultPanel, false);
             Show(_cursePanel, false);
             Show(_note, false);
+            Show(_ghost, false);
             Show(_barRoot, false);
             Show(_blind, false);
             Show(_timer, false);
             _barShown = false;
+            _ghostShown = false;
             _awake = !startAsleep;
 
             if (authority != null)
@@ -225,6 +244,7 @@ namespace Pesky.Game
             RefreshTimer();
             RefreshRole();
             RefreshBar();
+            RefreshGhost();
             if (_noteUntil > 0f && Time.time >= _noteUntil)
             {
                 _noteUntil = -1f;
@@ -248,14 +268,20 @@ namespace Pesky.Game
             }
         }
 
+        /// <summary>This round's role, from this peer's own sim. It is Weapon-and-unknown from the round start until this round's ROLE_ASSIGN lands, so nothing of a previous round can show here (round 10).</summary>
         bool IsMage { get { return authority != null && authority.LocalRole == LabyrinthRole.Mage; } }
+
+        bool RoleKnown { get { return authority != null && authority.LocalRoleKnown; } }
+
+        /// <summary>This player was banished: a ghost. Public knowledge (VOTE_END).</summary>
+        bool IsGhost { get { return authority != null && authority.LocalIsGhost; } }
 
         // ---------------------------------------------------------------- the timer
 
         /// <summary>
         /// mm:ss for everybody. Before the first player leaves the start room it shows the full timer,
-        /// dimmed; then it counts down on the room clock, and turns red inside warningSeconds. Hidden once
-        /// the round is over.
+        /// dimmed; then it counts down on GAME time (room time with the pauses taken out: SessionRunner.GameMs),
+        /// so it stands still through a vote, and turns red inside warningSeconds. Hidden once the round is over.
         /// </summary>
         void RefreshTimer()
         {
@@ -278,9 +304,11 @@ namespace Pesky.Game
             float warning = def != null ? def.warningSeconds : 30f;
             float left;
             bool idle;
-            if (run != null && run.Started)
+            if (run.Started)
             {
-                long nowMs = _session.IsHost || _session.Clock.HasEstimate ? _session.Clock.NowMs : Protocol.Tick.ToMs(sim.Tick);
+                long nowMs = sessionRunner != null && (_session.IsHost || _session.Clock.HasEstimate)
+                    ? sessionRunner.GameMs
+                    : Protocol.Tick.ToMs(sim.Pause.GameTick(sim.Tick));
                 long leftMs = Protocol.Tick.ToMs(run.DeadlineTick) - nowMs;
                 left = leftMs > 0 ? leftMs / 1000f : 0f;
                 idle = false;
@@ -307,26 +335,35 @@ namespace Pesky.Game
             Show(_timer, true);
         }
 
-        // ---------------------------------------------------------------- the Mage's ability bar
+        // ---------------------------------------------------------------- the ability bar
 
-        /// <summary>The bar is drawn for a Mage alone, and not after the result. Cooldowns are local guides; the host decides.</summary>
+        /// <summary>Everybody's bar while the round runs (the VOTE slot); the Mage slots for a Mage who is not banished. Cooldowns are local guides; the host decides.</summary>
         void RefreshBar()
         {
-            bool mage = IsMage && !_roundOver;
-            if (mage != _barShown)
+            WorldSim sim = _session != null ? _session.Sim : null;
+            bool show = sim != null && sim.Phase == SessionPhase.Playing && !_roundOver;
+            if (show != _barShown)
             {
-                _barShown = mage;
-                Show(_barRoot, mage);
+                _barShown = show;
+                Show(_barRoot, show);
             }
-            if (!mage || _bar == null) return;
+            if (!show || _bar == null) return;
+            _bar.SetMageSlots(IsMage && !IsGhost);
             _bar.Refresh(Time.time, _readyAt, _cooldownSeconds);
         }
 
+        // ---------------------------------------------------------------- the ghost line
 
-
-
-
-
+        void RefreshGhost()
+        {
+            bool ghost = IsGhost && !_roundOver;
+            bool mage = ghost && authority.RevealedRole(authority.LocalSlot) == LabyrinthRole.Mage;
+            if (ghost == _ghostShown && mage == _ghostMageShown) return;
+            _ghostShown = ghost;
+            _ghostMageShown = mage;
+            if (_ghost != null) _ghost.text = mage ? ghostMageText : ghostWeaponText;
+            Show(_ghost, ghost);
+        }
 
         // ---------------------------------------------------------------- blindness
 
@@ -360,7 +397,13 @@ namespace Pesky.Game
             WorldSim sim = _session != null ? _session.Sim : null;
             if (_roundSeenAt < 0f && sim != null && sim.Phase == SessionPhase.Playing) _roundSeenAt = Time.time;
 
-            if (!_roleShown && _roundSeenAt >= 0f && Time.time >= _roundSeenAt + roleRevealDelay) ShowRole();
+            if (!_roleShown && _roundSeenAt >= 0f)
+            {
+                // Never before roleRevealDelay, and then as soon as this round's role is known; a role that
+                // never comes is shown as a weapon after roleWaitSeconds more.
+                float since = Time.time - _roundSeenAt;
+                if (since >= roleRevealDelay && (RoleKnown || since >= roleRevealDelay + roleWaitSeconds)) ShowRole();
+            }
 
             if (_roleUntil > 0f && Time.time >= _roleUntil)
             {
@@ -374,6 +417,7 @@ namespace Pesky.Game
             if (!_awake) return;
             _roleShown = true;
             bool mage = IsMage;
+            _shownMage = mage;
             if (_roleTitle != null) _roleTitle.text = mage ? mageTitle : weaponTitle;
             if (_roleSub != null) _roleSub.text = mage ? mageSub : weaponSub;
             if (_rolePanel != null) _rolePanel.EnableInClassList("is-mage", mage);
@@ -390,10 +434,10 @@ namespace Pesky.Game
             _roleShown = false;
         }
 
-        /// <summary>ROLE_ASSIGN arrived: this peer is a Mage. Show it again, in case the reveal already said otherwise.</summary>
+        /// <summary>This round's ROLE_ASSIGN arrived. If the reveal already said something else, say it again; otherwise RefreshRole shows it when it is due.</summary>
         void OnRoleLearned()
         {
-            ShowRole();
+            if (_roleShown && _shownMage != IsMage) ShowRole();
         }
 
         void OnRoundEnded(RoundOutcome outcome, byte escapedMask, byte mageMask)
@@ -403,15 +447,18 @@ namespace Pesky.Game
             Show(_barRoot, false);
             Show(_cursePanel, false);
             Show(_blind, false);
+            Show(_ghost, false);
             _barShown = false;
+            _ghostShown = false;
             if (_resultTitle != null)
             {
                 string title = resurrectedTitle;
                 if (outcome == RoundOutcome.Escaped) title = escapedTitle;
                 else if (outcome == RoundOutcome.TimedOut) title = timedOutTitle;
+                else if (outcome == RoundOutcome.WeaponsGone) title = weaponsGoneTitle;
                 _resultTitle.text = title;
             }
-            if (_resultSub != null) _resultSub.text = MageNames(mageMask);
+            if (_resultSub != null) _resultSub.text = MageNames(mageMask) + BanishedNames();
             Show(_resultPanel, true);
         }
 
@@ -430,6 +477,27 @@ namespace Pesky.Game
             }
             if (sb.Length == 0) return "no fragment was drawn";
             sb.Insert(0, "the arch mage was:   ");
+            return sb.ToString();
+        }
+
+        /// <summary>Who was banished this run, with the role each reveal named (public since its VOTE_END).</summary>
+        string BanishedNames()
+        {
+            WorldSim sim = _session != null ? _session.Sim : null;
+            if (sim == null) return string.Empty;
+            VoteState vote = sim.Vote;
+            PlayerTable players = sim.Players;
+            System.Text.StringBuilder sb = new System.Text.StringBuilder(64);
+            for (int i = 0; i < Wire.MaxPlayers; i++)
+            {
+                if (!vote.IsBanished(i)) continue;
+                PlayerState p = players[i];
+                if (sb.Length > 0) sb.Append("   ");
+                sb.Append(p != null && !string.IsNullOrEmpty(p.name) ? p.name : "P" + i);
+                sb.Append(vote.RevealedRole(i) == LabyrinthRole.Mage ? " (the mage)" : " (a weapon)");
+            }
+            if (sb.Length == 0) return string.Empty;
+            sb.Insert(0, "\nbanished:   ");
             return sb.ToString();
         }
     }

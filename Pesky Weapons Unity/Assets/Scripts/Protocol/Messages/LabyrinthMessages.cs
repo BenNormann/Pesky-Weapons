@@ -163,8 +163,9 @@ namespace Pesky.Protocol
     }
 
     /// <summary>
-    /// 0x35 ROLE_ASSIGN, reply: "you are a Mage". 2 bytes: type u8 | role u8 (LabyrinthRole). Sent to each
-    /// Mage alone at round start and to nobody else: a player who is told nothing is a weapon.
+    /// 0x35 ROLE_ASSIGN, reply: "this round you are a Mage / a Weapon". 2 bytes: type u8 | role u8 (LabyrinthRole).
+    /// Since round 10 sent to EVERY present player alone at round start (and to a late joiner as Weapon), the
+    /// same size either way; each peer resets its role to Weapon on the edge into Playing before it lands.
     /// </summary>
     public struct RoleAssignMsg
     {

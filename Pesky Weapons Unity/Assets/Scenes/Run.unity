@@ -860,6 +860,91 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7407475054367945845, guid: 9d5ad40d35c62fb438352437b76a4ce2, type: 3}
   m_PrefabInstance: {fileID: 281633388}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &301547495
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1550701251}
+    m_Modifications:
+    - target: {fileID: 844792934160226158, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_Name
+      value: Settings
+      objectReference: {fileID: 0}
+    - target: {fileID: 1437810094002411782, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: pauseGate
+      value: 
+      objectReference: {fileID: 1330584237}
+    - target: {fileID: 1437810094002411782, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: orbitCamera
+      value: 
+      objectReference: {fileID: 354245134}
+    - target: {fileID: 1437810094002411782, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: sessionRunner
+      value: 
+      objectReference: {fileID: 881703863}
+    - target: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+--- !u!4 &301547496 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1954383147347116866, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+  m_PrefabInstance: {fileID: 301547495}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &301547497 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1437810094002411782, guid: b9d626cc5c8f1294abbad97be09f0cf4, type: 3}
+  m_PrefabInstance: {fileID: 301547495}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53c507354f25dcf46b7436208eb532b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.SettingsFlow
 --- !u!1 &304488940
 GameObject:
   m_ObjectHideFlags: 0
@@ -4811,6 +4896,8 @@ Transform:
   - {fileID: 1809392806}
   - {fileID: 30994147}
   - {fileID: 487540612}
+  - {fileID: 1330584238}
+  - {fileID: 1320192656}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1316489883
@@ -5015,6 +5102,107 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: caff9496beb1e09478887d1b1713cf0a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.Door
+--- !u!1 &1320192655
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1320192656}
+  - component: {fileID: 1320192657}
+  m_Layer: 0
+  m_Name: VoteCaller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1320192656
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1320192655}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1305334875}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1320192657
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1320192655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3266b46401b3424299612d9caaaa58a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.VoteCaller
+  authority: {fileID: 1960929547}
+  sessionRunner: {fileID: 881703863}
+  orbitCamera: {fileID: 354245134}
+  runHud: {fileID: 1919186518}
+  fallbackDef: {fileID: 11400000, guid: 1092ea459fa74e74a877fd6d9aee6b59, type: 2}
+  controls: {fileID: -944628639613478452, guid: d7fa017c9d71d80479773323f7966a5d, type: 3}
+  actionMap: Gameplay
+  voteAction: Vote
+--- !u!1 &1330584236
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1330584238}
+  - component: {fileID: 1330584237}
+  m_Layer: 0
+  m_Name: PauseGate
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1330584237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1330584236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 581cd0abca2869e439cafa01d41effea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.PauseGate
+  authority: {fileID: 1960929547}
+  spawner: {fileID: 988650622}
+  orbitCamera: {fileID: 354245134}
+  settings: {fileID: 301547497}
+  voteScreen: {fileID: 1919186521}
+--- !u!4 &1330584238
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1330584236}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1305334875}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1484749154
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5519,6 +5707,7 @@ Transform:
   - {fileID: 1191960302}
   - {fileID: 1140538878}
   - {fileID: 1919186520}
+  - {fileID: 301547496}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1606853104
@@ -6450,6 +6639,8 @@ MonoBehaviour:
   authority: {fileID: 1960929547}
   viewPrefab: {fileID: 5442623511255715562, guid: 517b67c8f951c4043ab485a66e199a91, type: 3}
   viewRoot: {fileID: 1850189135}
+  banishedMageTag: BANISHED - THE ARCH MAGE
+  banishedWeaponTag: BANISHED - A WEAPON
 --- !u!1 &1919186517
 GameObject:
   m_ObjectHideFlags: 0
@@ -6461,6 +6652,7 @@ GameObject:
   - component: {fileID: 1919186520}
   - component: {fileID: 1919186519}
   - component: {fileID: 1919186518}
+  - component: {fileID: 1919186521}
   m_Layer: 0
   m_Name: RunHud
   m_TagString: Untagged
@@ -6486,6 +6678,7 @@ MonoBehaviour:
   sessionRunner: {fileID: 881703863}
   fallbackDef: {fileID: 11400000, guid: 1092ea459fa74e74a877fd6d9aee6b59, type: 2}
   roleRevealDelay: 1.5
+  roleWaitSeconds: 3
   roleRevealSeconds: 6
   noteSeconds: 1.6
   weaponTitle: YOU ARE A WEAPON
@@ -6496,8 +6689,22 @@ MonoBehaviour:
   escapedTitle: THE WEAPONS ESCAPED
   timedOutTitle: TIME IS UP - THE ARCH MAGE WINS
   resurrectedTitle: THE ARCH MAGE WINS
+  weaponsGoneTitle: EVERY WEAPON WAS BANISHED - THE ARCH MAGE WINS
+  ghostMageText: 'BANISHED - YOU WERE THE ARCH MAGE. SPECTATE AS A GHOST: FLY, PASS
+    DOORS, TOUCH NOTHING.'
+  ghostWeaponText: 'BANISHED - YOU WERE A WEAPON. SPECTATE AS A GHOST: FLY, PASS
+    DOORS, TOUCH NOTHING.'
   startAsleep: 0
   abilities:
+  - id: vote
+    keyLabel: V
+    displayName: Call vote
+    iconGlyph: V
+    iconTint: {r: 0.46, g: 0.36, b: 0.58, a: 1}
+    cooldown: 3
+    curse: 0
+    gapBefore: 0
+    mageOnly: 0
   - id: nudge
     keyLabel: LMB / RMB
     displayName: Nudge / Pull
@@ -6505,7 +6712,8 @@ MonoBehaviour:
     iconTint: {r: 0.34, g: 0.36, b: 0.41, a: 1}
     cooldown: 2
     curse: 0
-    gapBefore: 0
+    gapBefore: 1
+    mageOnly: 1
   - id: magnetic
     keyLabel: 1
     displayName: Magnetic
@@ -6514,6 +6722,7 @@ MonoBehaviour:
     cooldown: 1
     curse: 1
     gapBefore: 1
+    mageOnly: 1
   - id: nausea
     keyLabel: 2
     displayName: Nausea
@@ -6522,6 +6731,7 @@ MonoBehaviour:
     cooldown: 1
     curse: 2
     gapBefore: 0
+    mageOnly: 1
   - id: slippery
     keyLabel: 3
     displayName: Slippery
@@ -6530,6 +6740,7 @@ MonoBehaviour:
     cooldown: 1
     curse: 3
     gapBefore: 0
+    mageOnly: 1
   - id: blindness
     keyLabel: 4
     displayName: Blindness
@@ -6538,6 +6749,7 @@ MonoBehaviour:
     cooldown: 1
     curse: 4
     gapBefore: 0
+    mageOnly: 1
   - id: heavy
     keyLabel: 5
     displayName: Heavy
@@ -6546,6 +6758,7 @@ MonoBehaviour:
     cooldown: 1
     curse: 5
     gapBefore: 0
+    mageOnly: 1
   abilityPulseSeconds: 0.18
 --- !u!114 &1919186519
 MonoBehaviour:
@@ -6585,6 +6798,32 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1550701251}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1919186521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1919186517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6c0caf029c7a504ba7a8dc24bcc07f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.VoteScreen
+  document: {fileID: 1919186519}
+  authority: {fileID: 1960929547}
+  sessionRunner: {fileID: 881703863}
+  orbitCamera: {fileID: 354245134}
+  calledByPrefix: 'VOTE CALLED BY '
+  dummyName: DUMMY
+  banishedFormat: '{0} WAS BANISHED'
+  wasMage: they were THE ARCH MAGE
+  wasWeapon: they were A WEAPON
+  nobodyTitle: NO ONE WAS BANISHED
+  nobodySub: 'a tie, or SKIP on top: everybody stays'
+  sentStatus: your vote is in
+  watchStatus: 'you are watching: you have no vote in this meeting'
+  refusedStatus: the host refused that vote
 --- !u!1001 &1922640830
 PrefabInstance:
   m_ObjectHideFlags: 0

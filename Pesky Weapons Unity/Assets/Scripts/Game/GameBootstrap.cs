@@ -19,6 +19,8 @@ namespace Pesky.Game
 
         void Start()
         {
+            // The player's saved volume from the first frame on (docs/SETTINGS.md); the rest of GameSettings is read lazily.
+            AudioSettings.Apply();
             if (loadOnStart) Load();
         }
 

@@ -63,6 +63,15 @@ namespace Pesky.Sim
         public ScratchPadState Pad { get; }
         /// <summary>The simplified run: the room sequence and the timer. Public, never a secret (docs/RUN.md).</summary>
         public RunState Run { get; }
+        /// <summary>The host-owned pause (docs/VOTING.md): frozen or not, and the ticks every pause has taken out of game time. Public, snapshotted.</summary>
+        public PauseState Pause { get; }
+        /// <summary>The vote (docs/VOTING.md): who is banished and with which revealed role, the running meeting and its votes. Public, snapshotted.</summary>
+        public VoteState Vote { get; }
+
+        // Round 10: messages of the next round that overtook its SESSION_PHASE(Playing) on a client (a Reply or a
+        // State applies on arrival; an Event waits for its tick). The round-start reset in SetPhase keeps them.
+        bool _roleAheadOfRound;
+        bool _runAheadOfRound;
 
 
         public WorldSim(GameData data, uint seed)
@@ -79,6 +88,8 @@ namespace Pesky.Sim
             Pad = new ScratchPadState();
             Pad.Configure(data != null ? data.labyrinth : null);
             Run = new RunState();
+            Pause = new PauseState();
+            Vote = new VoteState();
 
             Phase = SessionPhase.Lobby;
             EndReason = SessionEndReason.HostEnded;
@@ -140,6 +151,7 @@ namespace Pesky.Sim
         public void Apply(in PeerSlotsMsg msg)
         {
             Players.Apply(msg);
+            Vote.ClearAbsent(Players);
         }
 
         public void Apply(in SessionEndMsg msg)
@@ -360,6 +372,9 @@ namespace Pesky.Sim
         public void Apply(in RunLayoutMsg msg)
         {
             Run.Apply(msg);
+            // A State applies on arrival: on a client it can land before the round's SESSION_PHASE (an Event that
+            // waits for its tick). Then it belongs to the round about to start, and that start must keep it.
+            _runAheadOfRound = Phase != SessionPhase.Playing;
         }
 
         public void Apply(in RunStartMsg msg)
@@ -372,11 +387,24 @@ namespace Pesky.Sim
         {
         }
 
+        // ---- the pause and the vote (docs/VOTING.md) ----
+        // Neither bumps WorldSim.Rev. Views watch PauseState.Rev / VoteState.Rev, or hear the authority's events.
+        public void Apply(in PauseBeginMsg msg) { Pause.Apply(msg); }
+        public void Apply(in PauseEndMsg msg) { Pause.Apply(msg); }
+        public void Apply(in VoteStartMsg msg) { Vote.Apply(msg); }
+        public void Apply(in VoteTallyMsg msg) { Vote.Apply(msg); }
+        /// <summary>The group cooldown counts from the meeting's end in GAME ticks; the pause is still on at this tick, so that is the game tick the pause began at, the same on every peer.</summary>
+        public void Apply(in VoteEndMsg msg) { Vote.Apply(msg, Pause.GameTick(msg.header.tick)); }
+
 
         /// <summary>A Reply meant for this peer alone: its own secret role. It is never sent on again.</summary>
         public void Apply(in RoleAssignMsg msg)
         {
             Labyrinth.Apply(msg);
+            // A Reply applies on arrival, so on a client it can overtake the round's SESSION_PHASE(Playing), which
+            // waits in PendingEvents for its tick. The host only ever sends it while Playing, so one that lands
+            // here before this sim is Playing is THIS round's role: the round-start reset must keep it.
+            _roleAheadOfRound = Phase != SessionPhase.Playing;
         }
 
         /// <summary>A Reply meant for this peer alone: what its own compass points at, never who bent it.</summary>
@@ -418,6 +446,10 @@ namespace Pesky.Sim
                 case SnapshotPartKind.Run:
                     Run.Write(w);
                     return true;
+                case SnapshotPartKind.Vote:
+                    Pause.Write(w);
+                    Vote.Write(w);
+                    return true;
 
             }
             return false;
@@ -439,6 +471,12 @@ namespace Pesky.Sim
                     EndReason = (SessionEndReason)r.U8();
                     FinalScore = r.I32();
                     SceneHash = r.U32();
+                    // A snapshot that says Playing is no round-start edge: whatever arrived ahead of it is this round's.
+                    if (Phase == SessionPhase.Playing)
+                    {
+                        _roleAheadOfRound = false;
+                        _runAheadOfRound = false;
+                    }
                     return !r.Failed;
                 case SnapshotPartKind.Players:
                     Players.Read(r);
@@ -461,6 +499,10 @@ namespace Pesky.Sim
                 case SnapshotPartKind.Run:
                     Run.Read(r);
                     return !r.Failed;
+                case SnapshotPartKind.Vote:
+                    Pause.Read(r);
+                    Vote.Read(r);
+                    return !r.Failed;
 
             }
             return false;
@@ -478,6 +520,7 @@ namespace Pesky.Sim
             WritePart(SnapshotPartKind.Labyrinth, w);
             WritePart(SnapshotPartKind.Pad, w);
             WritePart(SnapshotPartKind.Run, w);
+            WritePart(SnapshotPartKind.Vote, w);
 
             var bytes = w.ToArray();
             return SimHash.Fnv1a64(bytes, 1, bytes.Length - 1);
@@ -488,6 +531,25 @@ namespace Pesky.Sim
             if (Phase == phase) return;
             Phase = phase;
             PhaseStartTick = tick;
+            // No pause survives a phase change (a round that ends mid-meeting, the trip back to the lobby).
+            Pause.Reset();
+            // A NEW ROUND (Lobby -> Playing, on every peer, from SESSION_PHASE or SESSION_INFO): nothing of the
+            // last round survives in this session's sim, which lives on across rounds. Above all this peer's
+            // secret role goes back to Weapon-and-unknown here, BEFORE this round's ROLE_ASSIGN can arrive (the
+            // host sends it after SESSION_PHASE on the same ordered stream). In run mode nothing else ever reset
+            // it: LAB_LAYOUT did that for the labyrinth, and the run sends none - which is how a Mage of the last
+            // round kept the Mage HUD in the next. The run's sequence and timer go too (RUN_LAYOUT refills them).
+            // A snapshot sets Phase directly (ReadPart) and never comes through here, so a mid-round resync
+            // keeps the role.
+            // Except what of the NEW round already overtook this phase change (see Apply(RoleAssignMsg)).
+            if (phase == SessionPhase.Playing)
+            {
+                Labyrinth.ResetRound(_roleAheadOfRound);
+                if (!_runAheadOfRound) Run.ResetRound();
+                Vote.ResetRound();
+                _roleAheadOfRound = false;
+                _runAheadOfRound = false;
+            }
         }
     }
 }

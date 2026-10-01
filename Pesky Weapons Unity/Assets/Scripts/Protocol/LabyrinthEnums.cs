@@ -8,8 +8,8 @@ namespace Pesky.Protocol
     public enum Heading : byte { North = 0, East = 1, South = 2, West = 3 }
 
     /// <summary>
-    /// A player's secret role. Only the host knows the whole table; each Mage learns its own from a
-    /// ROLE_ASSIGN addressed to it alone. Everyone else is a Weapon and is never told anything.
+    /// A player's secret role. Only the host knows the whole table; each player learns its own from a
+    /// ROLE_ASSIGN addressed to it alone at every round start (Mage or Weapon, round 10).
     /// </summary>
     public enum LabyrinthRole : byte { Weapon = 0, Mage = 1 }
 
@@ -29,5 +29,7 @@ namespace Pesky.Protocol
         Resurrected = 2,
         /// <summary>The run's timer ran out before the crew stood in the Exit room: the Mage wins.</summary>
         TimedOut = 3,
+        /// <summary>Every non-Mage player was banished by vote (docs/VOTING.md): the Mage wins at once.</summary>
+        WeaponsGone = 4,
     }
 }

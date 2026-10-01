@@ -44,6 +44,11 @@ namespace Pesky.Session
                 case MsgId.RunLayout: { if (!RunLayoutMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.RunStart: { if (!RunStartMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.CurseEvent: { if (!CurseEventMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
+                case MsgId.PauseBegin: { if (!PauseBeginMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
+                case MsgId.PauseEnd: { if (!PauseEndMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
+                case MsgId.VoteStart: { if (!VoteStartMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
+                case MsgId.VoteTally: { if (!VoteTallyMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
+                case MsgId.VoteEnd: { if (!VoteEndMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
 
                 
 // One case per Pesky Weapons message the sim keeps goes here as

@@ -10,7 +10,10 @@ part written and read back, and the edit-mode scene validator on `Boot`, `MainMe
 `Tutorial`, `Run` and `Dev/FeelBox` (0 problems each). **Nothing was run: no play mode, no
 test, no socket, no build.** Round 9 (same day, also implemented, untested): the Mage's
 **ability bar** (section 6.5) replaced the `N` / `C` rings by the crosshair, and the tutorial's
-exit ring was shrunk and moved to the far corner of the practice hall (section 7).
+exit ring was shrunk and moved to the far corner of the practice hall (section 7). **Round 12**
+(2026-10-01, implemented, untested): **VOTING and the PAUSE** (`docs/VOTING.md`): the exit rule counts
+only non-banished weapons, the ability bar is everybody's (a VOTE slot first), and the run timer runs on
+GAME time (pauses excluded).
 
 The labyrinth grid, the Tab map / scratch pad, the compass and the Resurrection Room are
 **set aside, not deleted**: the code, `Labyrinth.unity` and `docs/LABYRINTH.md` stay in the
@@ -118,7 +121,9 @@ the `IIntentValidator` for CURSE_REQ, registered right after `LabyrinthRule` in
 `HostAuthority.CreateDefault()`. It runs only when `GameData.mode` is `Run`.
 
 **Roles are LabyrinthRule's, unchanged.** In run mode `LabyrinthRule` keeps only its secret
-Mage table (`AssignRoles` -> ROLE_ASSIGN to each Mage alone, the same path as the labyrinth)
+Mage table (`AssignRoles` -> ROLE_ASSIGN to each player alone, the same path as the labyrinth;
+since round 10 every player is told, Weapon or Mage, every round, and every peer resets its role
+on the edge into Playing - docs/BUILD-LOG.md round 10)
 and the nudge validator; the grid rebuild, LAB_LAYOUT, the respawns, the swap, the bend and
 the two labyrinth endings are skipped (`LabyrinthRule.IsRunMode`). `RunRule` reads that table
 on the same host through `IsMage(slot)` / `MageMask(sim)` and never copies it anywhere.
@@ -139,7 +144,10 @@ rooms: `Start`, `Rooms` = any room of this run, `Exit` = inside the Exit room's 
 box, `Unknown` = no pose or no room). The first scan on which any present player is in
 `Rooms` or `Exit` emits **RUN_START** with `deadline = now + timerSeconds` (in ticks). "Left
 the start room" is measured by arrival, not by the door event, because the host's door sensor
-never sees a remote (kinematic) body cross it. Up to 200 ms late.
+never sees a remote (kinematic) body cross it. Up to 200 ms late. A banished player (a ghost) cannot
+start it. Since round 12 RUN_START's `startTick` / `deadlineTick` are **game ticks** (room ticks with
+the pauses taken out, `PauseState.GameTick`), so a vote meeting stops the clock; `RunHud` counts down
+from `SessionRunner.GameMs`.
 
 ### 4.3 The two endings
 
@@ -148,9 +156,14 @@ gathering:
 
 - **Time out** - `tick >= DeadlineTick` -> `ROUND_RESULT(TimedOut, escaped 0, mages)` and
   `SESSION_END(CrewLost)`. **Instant Mage win.**
-- **Exit** - every present **non-Mage** player is `Exit` at once (a non-Mage with no pose yet
-  counts as not there; the Mage may be anywhere) -> `ROUND_RESULT(Escaped, escapedMask,
-  mages)` and `SESSION_END(Escaped)`. **The weapons win.**
+- **Exit** - every present **non-Mage, non-banished** player is `Exit` at once (a non-Mage with no
+  pose yet counts as not there; the Mage may be anywhere; a banished weapon is neither needed nor
+  counted) -> `ROUND_RESULT(Escaped, escapedMask, mages)` and `SESSION_END(Escaped)`. **The weapons
+  win.**
+- **Every weapon banished** (round 12) - a vote left no non-Mage, non-banished player standing ->
+  `ROUND_RESULT(WeaponsGone, 0, mages)` and `SESSION_END(CrewLost)`. **Instant Mage win.** A round
+  that never had a weapon (a solo Mage) runs on as before.
+- Nothing ends while the game is paused (`docs/VOTING.md`); a banishment's ending fires after the thaw.
 
 ROUND_RESULT is still the one message that ever names the Mages; `RunHud` shows the outcome
 ("THE WEAPONS ESCAPED" / "TIME IS UP - THE ARCH MAGE WINS") and the fragments' names, then
@@ -180,7 +193,9 @@ another present player holding a weapon - not a soul, not himself, with at least
 or the tutorial dummy via `IHostWorld.TryGetPracticeTarget`; within `curseRange` of the
 asker's own streamed pose. Any state of the target but a free soul is fine (in the air, on
 the floor, stuck in wood). No line-of-sight check. Accepted: **CURSE_EVENT** to everybody
-with the target, the curse and `curseDuration`, and **no author**.
+with the target, the curse and `curseDuration`, and **no author**. Round 12: a banished Mage, or
+any Mage while the game is paused, is refused in silence; the shared cooldown is kept in game
+ticks, so a pause does not run it down.
 
 **Who applies it.** Only the victim. `WorldAuthority.OnCurseEvent` raises `Cursed(kind,
 seconds)` when the target is this peer's slot (or calls `PracticeDummy.Curse` on the host for
@@ -233,6 +248,11 @@ All on `Assets/Data/Run.asset` (`RunDef`) unless said otherwise.
 | `blindnessClearRadius` | 0.12 | of the screen height |
 | `blindnessOpacity` | 0.96 | |
 | `heavySpeedScale` | **0.5** | |
+| `voteCallsPerPlayer` | **1** | round 12: vote calls per player per run (`docs/VOTING.md`) |
+| `voteGroupCooldown` | **45 s** | after any meeting ends, game time, before the next call |
+| `voteNoVoteBeforeSeconds` | **30 s** | after the run timer starts; none at all before it starts |
+| `voteMeetingSeconds` | **25 s** | the meeting, room time (the game is paused) |
+| `voteResultSeconds` | **4 s** | the result on screen, still paused, before PAUSE_END |
 | `LabyrinthDef.nudgeImpulse`, `pullImpulse` | **8** (was 4) | the nudge, doubled |
 | `LabyrinthDef.mageBaseCount` etc. | unchanged | roles are drawn exactly as before |
 | `MenuFlow.runLine` | "5 rooms, 5:00" | only used when `GameData.run` is missing |
@@ -251,8 +271,8 @@ copy of the labyrinth scene; validator **0 problems**.
 
 | Root | What |
 |---|---|
-| `_Managers` | `SessionRunner`, `LevelClock`, `WorldAuthority` (+ `run`), `LabyrinthDirector` (+ `run`), `PlayerSpawner`, `PoseStreamer`, `RemotePlayerSpawner`, `MageNudge` (`runHud`), **`RunDirector`, `MageCurse`, `CurseEffects`**. `CompassModel` is gone |
-| `_UI` | `HUD`, **`RunHud`** (sortingOrder 1, `Run.uxml` + `Run.uss`), `DebugOverlay`. `LabyrinthHud` is gone |
+| `_Managers` | `SessionRunner`, `LevelClock`, `WorldAuthority` (+ `run`), `LabyrinthDirector` (+ `run`), `PlayerSpawner`, `PoseStreamer`, `RemotePlayerSpawner`, `MageNudge` (`runHud`), **`RunDirector`, `MageCurse`, `CurseEffects`**, round 12: **`PauseGate`, `VoteCaller`**. `CompassModel` is gone |
+| `_UI` | `HUD`, **`RunHud`** (sortingOrder 1, `Run.uxml` + `Run.uss`; round 12: the same GameObject carries **`VoteScreen`**), `DebugOverlay`, `Settings` (round 10; its `pauseGate` override points at `_Managers/PauseGate`). `LabyrinthHud` is gone |
 | `Environment/Rooms` | the same 25 room instances on the same 200 m lattice |
 
 `WorldAuthority` arrays: `magicDoors` **50**, `rooms` **25**, `doors` **24**, `levers` **23**,
@@ -293,23 +313,28 @@ those sides are declared sealed (`SceneValidator.IsSealedDoorwaySlot`, new).
 | `timer` | top centre, `m:ss`. Hidden until RUN_LAYOUT; dim ("5:00") until the first player leaves; red (`is-warning`) inside `warningSeconds`; hidden after the result |
 | `note` | the quiet refusal line, 1.6 s |
 | `curse-status` | `CURSED: <NAME>` and the seconds left, the victim only |
-| `ability-bar` | round 9: an empty row, bottom centre, 18 px up; `RunHud` fills it with one slot per `abilities` entry (section 6.5). display:none unless this player is a Mage and the round is not over |
+| `ability-bar` | round 9: an empty row, bottom centre, 18 px up; `RunHud` fills it with one slot per `abilities` entry (section 6.5). Round 12: shown to everybody while the round runs; the `mageOnly` slots only for a Mage who is not banished |
 | `blind-overlay` | painted by `RunHud.OnDrawBlind` while blind |
-| `role-reveal`, `result-banner` | as the labyrinth's, with the run's words |
+| `role-reveal`, `result-banner` | as the labyrinth's, with the run's words; the banner also lists the banished with their revealed roles (round 12) |
+| `ghost-status` | round 12: the banished player's own line (`BANISHED - YOU WERE ...`) |
+| `vote-root` | round 12: the vote screen (`docs/VOTING.md` section 7), read by `VoteView` / `VoteScreen` |
 
 No Tab overlay, no map, no pad, no compass: the `Map` input action is still bound but nothing
 listens to it in the run. **Nothing sits by the crosshair**: the round-8 `mage-rings` (the
 tiny `N` / `C` rings right of the screen centre) were removed in round 9.
 
-### 6.5 The Mage's ability bar (round 9)
+### 6.5 The ability bar (round 9; everybody's since round 12)
 
-An MMO-style row of square slots centred at the bottom of the screen, shown **to a Mage
-alone** (a weapon's page has nothing there), hidden with the result banner. Default slots,
+An MMO-style row of square slots centred at the bottom of the screen, shown to **everybody** while
+the round runs (round 12; it used to be a Mage's alone), hidden with the result banner. The
+`mageOnly` slots (the nudge and the curses) are displayed for a Mage who is not banished
+(`AbilityBar.SetMageSlots`); a weapon, or a banished Mage, sees the VOTE slot alone. Default slots,
 left to right:
 
 | Key | Name | Glyph | Cooldown source | Pulses on |
 |---|---|---|---|---|
-| LMB / RMB | Nudge / Pull | N/P | `Nudge` (8 s, `LabyrinthDef.nudgeCooldown`) | a nudge or pull |
+| V | Call vote | V | `Vote` (the 45 s group cooldown or the "no votes yet" wait as a shade; USED / WAIT / PAUSED / OUT / GONE as a word, `RunHud.SetAbilityLock`; `docs/VOTING.md`) | a call |
+| LMB / RMB | Nudge / Pull | N/P | `Nudge` (8 s, `LabyrinthDef.nudgeCooldown`), set apart (`gapBefore`) | a nudge or pull |
 | 1 | Magnetic | M | `Curse` (set a little apart, `gapBefore`) | curse 1 cast |
 | 2 | Nausea | N | `Curse` | curse 2 cast |
 | 3 | Slippery | S | `Curse` | curse 3 cast |
@@ -340,7 +365,8 @@ pulses (called by `MageCurse.Fire` / `MageNudge.Fire` on an accepted ask).
    open **Ability bar (Mage only) > Abilities**, press **+**.
 2. Fill `id` (short, unique; the slot element is named `ability-<id>`), `keyLabel` (what is
    printed in the corner), `displayName` (under the slot), `iconGlyph` (one to three
-   characters) and `iconTint` (the tile colour). Tick `gapBefore` to start a new group.
+   characters) and `iconTint` (the tile colour). Tick `gapBefore` to start a new group; untick
+   `mageOnly` for a slot everybody should see (round 12; the vote is the only one so far).
 3. Pick `cooldown`: an existing source (`Curse`, `Nudge`) or `None` (never darkens). For a
    `Curse` slot set `curse` to the `CurseKind` that pulses it.
 4. Drag it to its place in the list; the bar is laid out in list order. Save the scene.
@@ -378,6 +404,8 @@ coordinates, in walking order:
 | `Sign_Exit` | (-5.5, 0, -10.5), south wall, text `EXIT. STAND IN THE LIT RING TO END THE TUTORIAL.` | north |
 | `ExitRing` | **(-8.5, 0, -8.5)**, the far south-west corner, yaw 45 (its arch faces the way in) | north-east |
 | `RoomSign` (`ENTRY HALL`) | (3.5, 0, 10.5), north wall by the way in | south |
+| `Sign_Vote` (round 12) | (-10.5, 0, 2), west wall, yaw -90 (sign id 2078) | east |
+| `DummyRestore` (round 12) | (6, 2, 5), a 10 x 4 x 8 trigger box over the entry door's arrival: a repeatable `TutorialTrigger` that switches `PracticeDummy` back on | |
 
 `ExitRing`: the floor disc `Live/GatherRing` is 4 x 0.02 x 4 (a **2 m radius**; was 12 = 6 m),
 `Busy/Held` 2.7, the gold bar `Live/Arch` at 3.2 m (was 4.2). Its `BoxCollider` (shared by
@@ -403,6 +431,15 @@ counting down (`PracticeDummy.Curse`). Rooms 1-5 are unchanged. The NavMesh was 
 
 Because the tutorial has one player, that player is the Mage, no run layout ever arrives (no
 `RunDirector`) and no timer shows; the ring ends it as before.
+
+**The practice vote (round 12).** `Sign_Vote` on the west wall says what V does. Pressing V in the
+hall (HUD awake) sends VOTE_CALL_REQ with candidate `VoteTarget.Dummy` (0xFE, the reserved id the
+nudge and the curses use): the host - this player, loopback - freezes the game (the dummy stops
+hopping, the body holds) and opens the real vote screen with `DUMMY` as the only candidate; voting
+it out plays `DUMMY WAS BANISHED - they were A WEAPON`, the dummy's GameObject is switched off, and
+4 s later the game thaws. Re-entering the hall through the entry door crosses `DummyRestore`, which
+switches it back on. The practice vote spends no call and ignores the cooldown and the timing.
+Details: `docs/VOTING.md` section 9.
 
 ---
 
@@ -474,3 +511,4 @@ Everything is still there. To play the grid again:
    four rectangles around the circle instead.
 9. **The MainMenu line** reads `GameData.run`; a data asset without one falls back to
    `runLine`.
+10. **The vote and the pause** have their own list: `docs/VOTING.md` section 10.

@@ -175,3 +175,18 @@ experience simple. The game is now a friend-slop co-op puzzle dungeon escape wit
   Invisibility, goblin commands and lights-out: later rounds.
 - Tutorial updated to match: no map / compass / bend lessons; teach the timer, nudge / pull and
   the five curses on the practice dummy.
+
+## Owner decisions, 2026-10-01: VOTING
+- V calls a vote; it is a slot in EVERYONE's ability bar (weapons see Vote; the Mage sees Vote
+  plus his powers). The meeting is an Among Us style screen: "CALLED BY <name>", a 2-column
+  grid of player-name buttons (up to 8), SKIP at the bottom, a 25 s countdown, votes shown as
+  they land. Plurality wins; a tie or a skip majority banishes nobody.
+- The game enters a PAUSE state for the meeting: everyone freezes in place (inputs off),
+  enemies stop, scheduled movers stop, and the RUN TIMER PAUSES. Voice chat is the discussion.
+- Limits: ONE call per player per run; a GROUP cooldown of 45 s after any vote; no votes in the
+  first 30 s after leaving the start room. Fragments can call and vote like anyone else.
+- Result: the voted player is BANISHED, permanently out of the run, whatever their role, and
+  their ROLE IS REVEALED to all. Banishing the Mage does NOT end the run: the others still have
+  to reach the Exit before the timer. A banished player becomes a ghost spectator (a soul that
+  may pass teleport doors, cannot possess, interact, call or vote). The Exit rule counts only
+  non-banished non-Mage players; if none remain, the Mage wins.

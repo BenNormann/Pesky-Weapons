@@ -15,6 +15,10 @@ namespace Pesky.Game
     /// While the player is a free soul the pose moves this object's glowing orb. While they hold a weapon
     /// the pose moves THAT scene weapon (kinematic, colliders on, via WeaponBody.RemoteMove in FixedUpdate)
     /// and the orb hides. The name label floats above whichever it is and faces the view camera.
+    ///
+    /// PAUSED (docs/VOTING.md): while the host has the game frozen the view neither interpolates nor
+    /// extrapolates: it sits exactly on the last sample (and snaps to a new one, e.g. the soul popping out of
+    /// a banished weapon). On PAUSE_END the ring is emptied, so the first sample after the pause snaps.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class RemotePlayerView : MonoBehaviour
@@ -44,6 +48,7 @@ namespace Pesky.Game
         bool _soulBody = true;
         bool _snap = true;
         bool _hasPose;
+        bool _paused;
         Vector3 _pos;
         Quaternion _rot = Quaternion.identity;
 
@@ -63,6 +68,30 @@ namespace Pesky.Game
             if (nameLabel == null) return;
             string text = string.IsNullOrEmpty(playerName) ? "Player " + (Slot + 1) : playerName;
             if (nameLabel.text != text) nameLabel.text = text;
+        }
+
+        /// <summary>The pause: hold on the last sample; on its end forget the old samples so the next one snaps.</summary>
+        public void SetPaused(bool on)
+        {
+            if (_paused == on) return;
+            _paused = on;
+            if (on)
+            {
+                HoldLastSample();
+                return;
+            }
+            _ring.Clear();
+            _snap = true;
+        }
+
+        void HoldLastSample()
+        {
+            int n = _ring.Count;
+            if (n == 0) return;
+            Sample s = _ring[n - 1];
+            _pos = s.pos;
+            _rot = s.rot;
+            _hasPose = true;
         }
 
         /// <summary>Called every frame by the spawner with the slot's sim row and the weapon the authority says it drives.</summary>
@@ -97,7 +126,8 @@ namespace Pesky.Game
 
         void Update()
         {
-            _hasPose = Evaluate(Time.unscaledTime - InterpDelay, out _pos, out _rot);
+            if (_paused) HoldLastSample();
+            else _hasPose = Evaluate(Time.unscaledTime - InterpDelay, out _pos, out _rot);
             if (!_hasPose) return;
 
             bool showOrb = _soulBody || _weapon == null;

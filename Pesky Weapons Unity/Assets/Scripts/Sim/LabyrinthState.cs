@@ -31,8 +31,11 @@ namespace Pesky.Sim
         /// <summary>One bit per slot: who the Mages were. Zero until ROUND_RESULT reveals them.</summary>
         public byte MageMask { get; private set; }
 
-        /// <summary>LOCAL ONLY. This peer's own role. Never snapshotted, never broadcast, never logged.</summary>
+        /// <summary>LOCAL ONLY. This peer's own role. Never snapshotted, never broadcast, never logged. Weapon again at every round start (ResetRound, called by WorldSim on the edge into Playing) until this round's ROLE_ASSIGN lands.</summary>
         public LabyrinthRole LocalRole { get; private set; }
+
+        /// <summary>LOCAL ONLY. True once this round's ROLE_ASSIGN arrived (the host tells every player, Weapon or Mage). False from the round start until then, so a view can wait for it instead of guessing.</summary>
+        public bool LocalRoleKnown { get; private set; }
 
         /// <summary>LOCAL ONLY. What this peer's compass points at. GoodEnd is the truth and the default.</summary>
         public CompassTargetKind LocalCompassKind { get; private set; }
@@ -87,6 +90,12 @@ namespace Pesky.Sim
 
         public void ResetRound()
         {
+            ResetRound(false);
+        }
+
+        /// <summary>Clears the round. keepLocalRole: this round's ROLE_ASSIGN already arrived (it overtook the round's SESSION_PHASE on a client) and must survive the round-start reset.</summary>
+        public void ResetRound(bool keepLocalRole)
+        {
             for (int i = 0; i < _legend.Length; i++) _legend[i] = 0;
             for (int i = 0; i < _respawnTick.Length; i++) _respawnTick[i] = 0;
             _downMask = 0;
@@ -94,7 +103,11 @@ namespace Pesky.Sim
             OutcomeTick = 0;
             EscapedMask = 0;
             MageMask = 0;
-            LocalRole = LabyrinthRole.Weapon;
+            if (!keepLocalRole)
+            {
+                LocalRole = LabyrinthRole.Weapon;
+                LocalRoleKnown = false;
+            }
             LocalCompassKind = CompassTargetKind.GoodEnd;
             LocalCompassCell = LabyrinthGrid.NoCell;
             Rev++;
@@ -152,6 +165,7 @@ namespace Pesky.Sim
         public void Apply(in RoleAssignMsg msg)
         {
             LocalRole = msg.role;
+            LocalRoleKnown = true;
         }
 
         /// <summary>A Reply addressed to this peer alone. It does not say who set it, and neither does this.</summary>

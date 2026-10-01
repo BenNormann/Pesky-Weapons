@@ -39,7 +39,7 @@ namespace Pesky.Protocol
     /// </summary>
     public enum SnapshotPartKind : byte
     {
-        World = 0, Players = 1, Weapons = 2, Enemies = 3, Kit = 4, Labyrinth = 5, Pad = 6, Run = 7, End = 8,
+        World = 0, Players = 1, Weapons = 2, Enemies = 3, Kit = 4, Labyrinth = 5, Pad = 6, Run = 7, Vote = 8, End = 9,
     }
 
     /// <summary>What a hit claim says it hit. World means the blast found nothing claimable.</summary>

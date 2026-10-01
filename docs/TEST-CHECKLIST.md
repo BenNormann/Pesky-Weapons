@@ -684,3 +684,157 @@ design and every number: `docs/RUN.md`.
       its painted edge must not end it (the trigger is a 3.6 m square box, 3.5 m tall, turned
       with the ring: its sides sit just inside the 4 m circle, its four corners poke about
       0.5 m past the edge).
+
+## 10. Round 10: settings screen + role reset (2026-09-30; implemented, untested)
+
+Details in `docs/SETTINGS.md`; the bug's cause in `docs/BUILD-LOG.md` round 10.
+
+### 10.1 The Mage HUD no longer survives a round (two players, then three)
+
+- [ ] Host + one client. Play a run to its end (or let the timer run out: set `Run.asset`
+      `timerSeconds` low for the test). Note who was the Mage (the result banner names them).
+- [ ] Back on the room page the host presses START again, **several times over several runs**.
+      Each run: exactly the players the host drew see "YOU ARE A FRAGMENT ..." and the ability bar;
+      **everybody else sees "YOU ARE A WEAPON" and no bar**, whatever they were last run. Check
+      the case the owner hit: Mage last run, weapon this run -> no bar, keys 1-5 and clicks do
+      nothing, no nudge marker floats over an airborne player. And the reverse: weapon last run, Mage this run -> the bar.
+- [ ] Same with the **host** as last run's Mage (the host's own role resets too).
+- [ ] The reveal appears about 1.5 s into the run, not later than ~4.5 s, and says the right
+      thing the first time (it no longer guesses before the role has arrived).
+- [ ] With the debug overlay on (`?debug=1` or the Editor), the console of every player prints
+      one `reply: ROLE_ASSIGN - this peer is a Weapon` or `... Mage` per run (weapons used to
+      print nothing).
+- [ ] **Late joiner**: start a run with two players, then join a third mid-run. The third sees
+      "YOU ARE A WEAPON", no bar, and its console prints the ROLE_ASSIGN Weapon line.
+- [ ] Second run's timer: on the room page -> START, the timer is hidden until the new rooms are
+      known, then shows 5:00 dim; it never flashes last run's red 0:00. The start room's south
+      door leads into this run's first room, not last run's.
+- [ ] Tutorial after a run (same machine): you are still the Mage in the practice hall.
+
+### 10.2 Opening and closing the settings screen (solo tutorial is enough, then a run)
+
+- [ ] In the tutorial, click to lock the pointer, then **Escape**: the dimmed sheet with the
+      PAUSED panel appears, the cursor is free, the camera stops following the mouse.
+- [ ] While it is open: Space does not launch, E does not possess, Q does not leave the weapon,
+      WASD does not fly the soul or roll the Orb, left / right click and 1-5 do nothing (as the
+      Mage in the practice hall, aim at the dummy first). The world keeps running behind it.
+- [ ] **RESUME** closes it and the pointer locks again (in a browser it may take one more
+      click). The view does **not** jump on the first mouse movement after resuming.
+- [ ] Escape again (open -> Escape) closes it the same way.
+- [ ] A click on the dark sheet **outside** the panel closes it too, and that click does not
+      nudge anything (as the Mage, aim at the airborne dummy, open, click outside the panel).
+- [ ] **Alt-tab** away while playing (pointer locked for more than half a second): coming back,
+      the settings screen is open. Clicking out of the browser page does the same. In the
+      browser, pressing Escape once while locked opens the screen and does **not** immediately
+      close it again.
+- [ ] Right after the level loads (before you ever clicked to lock), nothing opens by itself.
+- [ ] MainMenu: Escape does nothing new; the room page and title page work as before.
+
+### 10.3 The settings themselves
+
+- [ ] **Sensitivity**: drag to 0.20x - the view turns very slowly; to 3.00x - fast. The value
+      label follows the slider. It applies while you drag (look after resuming). Quit and start
+      again (or reload the page): the value is kept.
+- [ ] **Audio**: MASTER 0 silences the game (if anything makes sound), 100 restores; MUSIC, SFX,
+      VOICE move and show their numbers but change nothing (the caption says so). All four are
+      kept after a restart.
+
+### 10.4 Keybinds
+
+- [ ] KEYBINDS shows 16 rows: LAUNCH / SOUL UP (SPACE), POSSESS (E), LEAVE WEAPON (Q), MOVE
+      FORWARD / BACK / LEFT / RIGHT (W S A D), SOUL DOWN (SHIFT), MAP (TAB), MAGE: NUDGE (LMB),
+      MAGE: PULL (RMB), MAGE: CURSE 1-5 (1-5). No LOOK, no PAUSE / ESC row.
+- [ ] Click POSSESS's key: it turns amber and reads PRESS A KEY; press F: it reads F with an
+      amber border, the status line says "saved". Resume: F possesses, E does nothing.
+- [ ] Rebind MAGE: NUDGE to a key or to the middle mouse button; it works in the practice hall.
+- [ ] While a key reads PRESS A KEY, **Escape** keeps the old key ("kept the old key") and does
+      **not** close the settings screen.
+- [ ] Restart the game (or reload the page): the rebinds are still there, in the tutorial and in
+      a run. **RESET ALL** puts every key back and the amber borders go.
+- [ ] BACK returns to the PAUSED page.
+
+### 10.5 EXIT TO MAIN MENU
+
+- [ ] Tutorial (offline): EXIT goes straight to the title page, no question.
+- [ ] **Client** in a two-player run: EXIT -> the client lands on the title page with "you left
+      the room"; the host's run goes on and the client's weapon / soul disappears for the host.
+- [ ] **Host** with a client in the room: EXIT shows the confirm page ("YOU ARE THE HOST.
+      LEAVING ENDS THE SESSION FOR EVERYBODY ..."). CANCEL returns to the PAUSED page. END THE
+      SESSION AND EXIT: the host lands on the title page with "you ended the session for
+      everyone"; the client lands on the title page with "the host left the room".
+- [ ] After any EXIT, HOST / JOIN / TUTORIAL from the title page work normally.
+
+## 11. Round 11: settings polish (2026-09-30; implemented, untested)
+
+- [ ] The MOUSE card has only SENSITIVITY and the KEYBINDS button: **no SPIKE FILTER row**.
+      KEYBINDS has a clear gap above it (about the gap between two cards), not flush under the
+      slider row.
+- [ ] The spike filter is still on: a very hard flick under pointer lock still adds to
+      `lookDrops` on the debug overlay, as in section 6.2.
+- [ ] KEYBINDS page: the scrollbar on the right is **thin and dark** (dark track, grey rounded
+      thumb, lighter on hover), with **no arrow buttons**, and sits a little apart from the key
+      buttons without covering them. No horizontal bar.
+- [ ] The mouse wheel scrolls the list; dragging the thumb scrolls it; scrolled to the end, the
+      last row (MAGE: CURSE 5) is fully visible with its bottom line.
+
+## 12. Round 12: voting + the pause (2026-10-01; implemented, untested)
+
+Design, rules and risks: `docs/VOTING.md`. Everything below is untested.
+
+### 12.1 Solo, in the tutorial
+- [ ] In the practice hall the ability bar shows a **V - Call vote** slot FIRST (left of Nudge / Pull),
+      the curses after it. Before the hall (HUD asleep) V does nothing.
+- [ ] Read `Sign_Vote` on the west wall. Press **V**: everything freezes (the dummy stops hopping, mid-air
+      if it was up; your weapon stops dead; no launch, no E / Q, WASD does nothing), the cursor appears,
+      and the vote screen says `VOTE CALLED BY <your name>`, a 25 s countdown, one card `DUMMY`, SKIP
+      VOTE, CONFIRM greyed.
+- [ ] Click DUMMY (amber border), CONFIRM: your chip (your colour, your first three letters) appears on
+      the card at once, the screen says "your vote is in", and the result follows immediately (you are
+      the only voter): `DUMMY WAS BANISHED` / `they were A WEAPON`.
+- [ ] About 4 s later the screen closes, the pointer re-locks, the dummy is gone, the weapon moves again
+      (a weapon frozen mid-air carries on along its arc). The Vote slot reads **GONE**; V shows a quiet
+      line.
+- [ ] Escape during the meeting opens the settings screen on top; RESUME leaves the cursor free and the
+      vote screen up; nothing in the world reacts to clicks.
+- [ ] Leave the hall through the entry door and come back: the dummy is back and hopping; V works again.
+      SKIP VOTE then CONFIRM: `NO ONE WAS BANISHED`, the dummy stays.
+- [ ] Curse the dummy (1-5), then call a vote at once: the curse's countdown over its head STOPS during
+      the meeting and resumes after.
+- [ ] KEYBINDS lists CALL VOTE (V); rebinding it works.
+
+### 12.2 Two players (Editor hosts, a build joins; one is the Mage)
+- [ ] Both bars show the Vote slot; the Mage's shows its powers after it. In the start room, before
+      anybody leaves, the slot reads **WAIT** and V says "no votes before the timer starts".
+- [ ] Leave the start room (the timer starts): for 30 s the slot shows a cooldown shade counting down;
+      after it the slot is clear. On the host and on the client alike.
+- [ ] The weapon presses V while the Mage is in a launch: **both** screens freeze at once (the Mage's
+      weapon hangs in the air on both machines, no drift, no sliding), the **timer stops** on both, the
+      vote screen opens on both with both names, `YOU` on your own card, the caller named in the header.
+- [ ] Each votes the other: the chips land on both screens as each vote comes in; the second vote
+      resolves the meeting at once (no waiting for the countdown). A 1-1 tie: `NO ONE WAS BANISHED`.
+- [ ] Nobody votes: the countdown runs to 0 and resolves to nobody. Only one votes for the other: that
+      one is banished (plurality 1-0).
+- [ ] After the result the game thaws on both; the timer resumes from where it stopped (compare the
+      clock before and after: the difference is the meeting plus 4 s, not 0).
+- [ ] The caller's slot now reads **USED**; the other's shows the 45 s group cooldown counting down, then
+      clears. A second call by the same player: refused with "your vote call is used up".
+- [ ] Banish the WEAPON (the Mage votes it, it skips): its weapon breaks on both machines, its soul pops
+      out, the result says `they were A WEAPON`, its chip on the Mage's screen reads `BANISHED - A
+      WEAPON`, its own HUD shows the purple BANISHED line, its bar has only a greyed Vote slot (OUT).
+      Then: the run ends right after the thaw with `EVERY WEAPON WAS BANISHED - THE ARCH MAGE WINS` (it
+      was the only weapon). With three players (two weapons) the run goes on instead.
+- [ ] The ghost flies **through a teleport door** (the soul passes the opening and comes out of the
+      twin, the camera turns with it) but not through a locked exit door; E on a weapon does nothing; it
+      cannot call or vote in the next meeting (the screen says it is watching).
+- [ ] Banish the MAGE: `they were THE ARCH MAGE`; the run does NOT end; the Mage's bar loses its powers;
+      1-5 and clicks do nothing; the weapon(s) still have to reach the Exit before the timer; the result
+      banner at the end lists `banished: <name> (the mage)`.
+- [ ] Exit rule: with three players, banish one weapon; the remaining weapon alone in the Exit room wins.
+- [ ] Goblins: start a meeting with a hostile goblin mid-chase; it stops dead (host and client), its
+      strike does not land during the pause, and it resumes the chase afterwards.
+- [ ] The nudge / curse cooldowns on the Mage's bar do not run down during the pause (compare before /
+      after), and the host does not refuse a curse that the bar says is ready right after the thaw.
+- [ ] Late join during a meeting (three players): the joiner lands frozen with the vote screen open,
+      read-only ("you are watching"), and thaws with everybody.
+- [ ] A client leaves mid-meeting: the meeting resolves without its vote (the others' votes decide, or
+      the countdown runs out).

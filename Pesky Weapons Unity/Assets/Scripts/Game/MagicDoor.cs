@@ -181,7 +181,7 @@ namespace Pesky.Game
 
         // ---------------------------------------------------------------- sensing
 
-void FixedUpdate()
+        void FixedUpdate()
         {
             if (authority == null) return;
             float rangeSq = sensorRange * sensorRange;
@@ -201,16 +201,23 @@ void FixedUpdate()
                 if (Watch(w.Body, w.Body.worldCenterOfMass, passable)) authority.RequestMagicDoorTraverse(this, w);
             }
 
-            // A FREE SOUL IS NOT A TRAVELLER. The doorway is solid to it (the SoulBlock collider on the
-            // SoulBarrier layer fills the opening), and the sensor does not watch it at all, so a soul can
-            // never ask for a traversal. All it gets is a reminder to possess a weapon first.
+            // A FREE SOUL IS NOT A TRAVELLER - except a GHOST (a banished player's spectating soul, docs/VOTING.md),
+            // which is watched exactly like a weapon and whose collider ignores the SoulBlock. For the rest the
+            // doorway is solid (the SoulBlock collider on the SoulBarrier layer fills the opening), the sensor
+            // does not watch them at all, and all they get is a reminder to possess a weapon first.
             IReadOnlyList<PlayerSoul> souls = authority.Souls;
             for (int i = 0; i < souls.Count; i++)
             {
                 PlayerSoul s = souls[i];
                 if (s == null || s.Body == null) continue;
+                if (sensorRange > 0f && (s.Body.position - here).sqrMagnitude > rangeSq) { _previous.Remove(s.Body); continue; }
+                if (s.IsGhost && !s.IsPossessing)
+                {
+                    if (!passableKnown) { passable = IsPassable; passableKnown = true; }
+                    if (Watch(s.Body, s.Body.position, passable)) authority.RequestMagicDoorTraverse(this, s);
+                    continue;
+                }
                 _previous.Remove(s.Body);
-                if (sensorRange > 0f && (s.Body.position - here).sqrMagnitude > rangeSq) continue;
                 if (!s.IsPossessing && PressingOnTheOpening(s.Body)) authority.NoteSoulBlockedByDoor(this, s);
             }
         }

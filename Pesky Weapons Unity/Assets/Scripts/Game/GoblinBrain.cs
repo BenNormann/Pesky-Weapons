@@ -265,6 +265,7 @@ namespace Pesky.Game
         {
             if (_puppet) { PuppetUpdate(); return; }
             if (_state == State.Dead) return;
+            if (NetPaused()) return; // the pause (GoblinBrainNet, docs/VOTING.md)
 
             float dt = Time.deltaTime;
             _stateTime += dt;

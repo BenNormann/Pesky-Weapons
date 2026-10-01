@@ -21,6 +21,7 @@ namespace Pesky.Session.Validators
         public void Handle(byte fromSlot, byte[] payload, WorldSim sim, uint tick, EventSink events)
         {
             if (!BatClaimMsg.TryDecode(payload, out var claim)) return;
+            if (sim.Pause.Paused) return; // nobody bats while the game is frozen (docs/VOTING.md)
             if (claim.targetSlot == fromSlot) return;
             var from = sim.Players[fromSlot];
             var target = sim.Players[claim.targetSlot];

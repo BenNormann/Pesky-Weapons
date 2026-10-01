@@ -61,6 +61,7 @@ namespace Pesky.Game
         InputAction _pull;
         bool _armedLastFrame;
         float _readyAt;
+        float _pausedAt;
         GameObject _marker;
         readonly NudgeWisp[] _wisps = new NudgeWisp[4];
 
@@ -80,6 +81,7 @@ namespace Pesky.Game
             {
                 authority.Nudged += OnNudged;
                 authority.NudgeRefused += OnRefused;
+                authority.PauseChanged += OnPauseChanged;
             }
         }
 
@@ -89,6 +91,7 @@ namespace Pesky.Game
             {
                 authority.Nudged -= OnNudged;
                 authority.NudgeRefused -= OnRefused;
+                authority.PauseChanged -= OnPauseChanged;
             }
             if (_marker != null) _marker.SetActive(false);
             _armedLastFrame = false;
@@ -114,7 +117,7 @@ namespace Pesky.Game
         {
             get
             {
-                return authority != null && authority.LocalRole == LabyrinthRole.Mage && HudAwake;
+                return authority != null && authority.LocalRole == LabyrinthRole.Mage && !authority.LocalIsGhost && HudAwake;
             }
         }
 
@@ -240,6 +243,14 @@ namespace Pesky.Game
             _readyAt = reason == NudgeRefusal.Cooldown ? Time.time + secondsLeft : Time.time;
             Note(Text(reason, secondsLeft));
         }
+
+        /// <summary>The local cooldown guide is on Time.time; the host's is on game ticks, which stand still through a pause (docs/VOTING.md). Shift it by the pause's length.</summary>
+        void OnPauseChanged(bool paused)
+        {
+            if (paused) _pausedAt = Time.time;
+            else _readyAt += Time.time - _pausedAt;
+        }
+
 
         static string Text(NudgeRefusal reason, float secondsLeft)
         {
