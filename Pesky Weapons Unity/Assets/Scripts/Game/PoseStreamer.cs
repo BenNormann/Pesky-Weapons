@@ -12,6 +12,10 @@ namespace Pesky.Game
     /// PoseFlags.Teleport rides the next three poses after a MagicDoor trip, a body swap (soul to weapon
     /// and back) or any jump too far to be motion, so remote views snap instead of interpolating.
     /// Owner authoritative: nobody ever corrects this body from the wire.
+    ///
+    /// The pause (docs/VOTING.md) needs no flag: the frozen body sends its resting pose once (the Airborne
+    /// bit drops, the velocity is zero) and then only keepalives; on PAUSE_END the next frame sends at once
+    /// so the remote views, which emptied their rings, snap onto the body before it moves.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PoseStreamer : MonoBehaviour
@@ -25,7 +29,7 @@ namespace Pesky.Game
 
         [SerializeField] SessionRunner session;
         [SerializeField] PlayerSpawner spawner;
-        [Tooltip("Listened to for magic-door traversals of the local player.")]
+        [Tooltip("Listened to for magic-door traversals of the local player, and for the pause.")]
         [SerializeField] WorldAuthority authority;
 
         static ushort s_seq;
@@ -41,17 +45,31 @@ namespace Pesky.Game
 
         void OnEnable()
         {
-            if (authority != null) authority.MagicDoorTraversed += OnTraversed;
+            if (authority != null)
+            {
+                authority.MagicDoorTraversed += OnTraversed;
+                authority.PauseChanged += OnPauseChanged;
+            }
         }
 
         void OnDisable()
         {
-            if (authority != null) authority.MagicDoorTraversed -= OnTraversed;
+            if (authority != null)
+            {
+                authority.MagicDoorTraversed -= OnTraversed;
+                authority.PauseChanged -= OnPauseChanged;
+            }
         }
 
         void OnTraversed(MagicDoorTraversal trip)
         {
             if (spawner != null && trip.soul != null && trip.soul == spawner.LocalSoul) Invalidate(true);
+        }
+
+        void OnPauseChanged(bool paused)
+        {
+            // Either edge: the frozen pose goes out at once, and so does the first live one after the thaw.
+            Invalidate(false);
         }
 
         /// <summary>Forces the next frame to send. teleport = remote views must snap to it.</summary>
@@ -82,7 +100,7 @@ namespace Pesky.Game
                 rot = rb.rotation;
                 vel = rb.isKinematic ? Vector3.zero : rb.linearVelocity;
                 if (weapon.IsAnimate) flags |= PoseFlags.Animate;
-                // Off the ground, not racked, not carried: the host lets a Mage nudge / pull only this.
+                // Off the ground, not racked, not carried, not frozen: the host lets a Mage nudge / pull only this.
                 if (!rb.isKinematic && !weapon.IsGrounded && !weapon.IsHeldAtHome && !weapon.IsCarried)
                     flags |= PoseFlags.Airborne;
             }

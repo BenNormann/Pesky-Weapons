@@ -155,6 +155,7 @@ namespace Pesky.Game
         public bool RequestMagicDoorTraverse(MagicDoor door, WeaponBody weapon)
         {
             if (door == null || weapon == null || weapon.IsBroken || weapon.Body == null) return false;
+            if (IsPaused) return false; // no travel while the game is frozen (docs/VOTING.md)
             MagicDoor exit = door.Twin;
             if (exit == null || !door.GateOpen) return false;
             Rigidbody rb = weapon.Body;
@@ -177,14 +178,36 @@ namespace Pesky.Game
         }
 
         /// <summary>
-        /// A FREE SOUL may never use a magic door - a soul passes only as a weapon. This is the host's half
+        /// A FREE SOUL may never use a magic door - a soul passes only as a weapon - EXCEPT a GHOST (a banished
+        /// player's spectating soul, docs/VOTING.md): the door's sensor watches it like a weapon and it is moved
+        /// through here with its motion turned; a locked gate still stops it. For every other soul this is the host's half
         /// of that rule (the doorway is also physically SOLID to a soul, via the SoulBlock collider on the
         /// SoulBarrier layer, and the door's own sensor ignores souls), so a forged or replayed request from
         /// a peer is refused here too and no MagicDoorTraversed is ever raised for a free soul.
         /// </summary>
         public bool RequestMagicDoorTraverse(MagicDoor door, PlayerSoul soul)
         {
-            return false;
+            if (door == null || soul == null || !soul.IsGhost || soul.IsPossessing || soul.Body == null) return false;
+            if (IsPaused) return false;
+            MagicDoor exit = door.Twin;
+            if (exit == null || !door.GateOpen) return false;
+            Rigidbody rb = soul.Body;
+            if (WarpedRecently(rb, door.ReentryCooldown)) return false;
+
+            MagicDoorTraversal t = new MagicDoorTraversal();
+            t.from = door;
+            t.to = exit;
+            t.weapon = null;
+            t.soul = soul;
+            t.turn = door.TurnTo(exit);
+            t.fromPosition = rb.position;
+            t.toPosition = door.MapPosition(exit, rb.position, rb.position);
+
+            soul.Warp(t.toPosition, t.turn * rb.linearVelocity);
+            _lastWarp[rb] = Time.time;
+            exit.NoteArrival(rb, rb.position);
+            if (MagicDoorTraversed != null) MagicDoorTraversed(t);
+            return true;
         }
 
         /// <summary>

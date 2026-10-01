@@ -2,9 +2,9 @@
   <Project Path="Pesky.Session.csproj" />
   <Project Path="Pesky.Transport.csproj" />
   <Project Path="Pesky.Game.csproj" />
+  <Project Path="Pesky.Protocol.csproj" />
   <Project Path="Pesky.Sim.csproj" />
   <Project Path="Pesky.Data.csproj" />
-  <Project Path="Pesky.Protocol.csproj" />
   <Project Path="Pesky.Editor.csproj" />
   <Project Path="Pesky.Tests.csproj" />
 </Solution>

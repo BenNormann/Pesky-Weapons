@@ -13,6 +13,7 @@ namespace Pesky.Session.Validators
         public void Handle(byte fromSlot, byte[] payload, WorldSim sim, uint tick, EventSink events)
         {
             if (!KitReqMsg.TryDecode(payload, out var req)) return;
+            if (sim.Pause.Paused) return; // kit stands still while the game is frozen (docs/VOTING.md)
             if (events.World == null) return;
             var player = sim.Players[fromSlot];
             if (player == null || !player.present) return;

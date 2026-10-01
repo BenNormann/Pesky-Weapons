@@ -776,3 +776,65 @@ Details in `docs/SETTINGS.md`; the bug's cause in `docs/BUILD-LOG.md` round 10.
       buttons without covering them. No horizontal bar.
 - [ ] The mouse wheel scrolls the list; dragging the thumb scrolls it; scrolled to the end, the
       last row (MAGE: CURSE 5) is fully visible with its bottom line.
+
+## 12. Round 12: voting + the pause (2026-10-01; implemented, untested)
+
+Design, rules and risks: `docs/VOTING.md`. Everything below is untested.
+
+### 12.1 Solo, in the tutorial
+- [ ] In the practice hall the ability bar shows a **V - Call vote** slot FIRST (left of Nudge / Pull),
+      the curses after it. Before the hall (HUD asleep) V does nothing.
+- [ ] Read `Sign_Vote` on the west wall. Press **V**: everything freezes (the dummy stops hopping, mid-air
+      if it was up; your weapon stops dead; no launch, no E / Q, WASD does nothing), the cursor appears,
+      and the vote screen says `VOTE CALLED BY <your name>`, a 25 s countdown, one card `DUMMY`, SKIP
+      VOTE, CONFIRM greyed.
+- [ ] Click DUMMY (amber border), CONFIRM: your chip (your colour, your first three letters) appears on
+      the card at once, the screen says "your vote is in", and the result follows immediately (you are
+      the only voter): `DUMMY WAS BANISHED` / `they were A WEAPON`.
+- [ ] About 4 s later the screen closes, the pointer re-locks, the dummy is gone, the weapon moves again
+      (a weapon frozen mid-air carries on along its arc). The Vote slot reads **GONE**; V shows a quiet
+      line.
+- [ ] Escape during the meeting opens the settings screen on top; RESUME leaves the cursor free and the
+      vote screen up; nothing in the world reacts to clicks.
+- [ ] Leave the hall through the entry door and come back: the dummy is back and hopping; V works again.
+      SKIP VOTE then CONFIRM: `NO ONE WAS BANISHED`, the dummy stays.
+- [ ] Curse the dummy (1-5), then call a vote at once: the curse's countdown over its head STOPS during
+      the meeting and resumes after.
+- [ ] KEYBINDS lists CALL VOTE (V); rebinding it works.
+
+### 12.2 Two players (Editor hosts, a build joins; one is the Mage)
+- [ ] Both bars show the Vote slot; the Mage's shows its powers after it. In the start room, before
+      anybody leaves, the slot reads **WAIT** and V says "no votes before the timer starts".
+- [ ] Leave the start room (the timer starts): for 30 s the slot shows a cooldown shade counting down;
+      after it the slot is clear. On the host and on the client alike.
+- [ ] The weapon presses V while the Mage is in a launch: **both** screens freeze at once (the Mage's
+      weapon hangs in the air on both machines, no drift, no sliding), the **timer stops** on both, the
+      vote screen opens on both with both names, `YOU` on your own card, the caller named in the header.
+- [ ] Each votes the other: the chips land on both screens as each vote comes in; the second vote
+      resolves the meeting at once (no waiting for the countdown). A 1-1 tie: `NO ONE WAS BANISHED`.
+- [ ] Nobody votes: the countdown runs to 0 and resolves to nobody. Only one votes for the other: that
+      one is banished (plurality 1-0).
+- [ ] After the result the game thaws on both; the timer resumes from where it stopped (compare the
+      clock before and after: the difference is the meeting plus 4 s, not 0).
+- [ ] The caller's slot now reads **USED**; the other's shows the 45 s group cooldown counting down, then
+      clears. A second call by the same player: refused with "your vote call is used up".
+- [ ] Banish the WEAPON (the Mage votes it, it skips): its weapon breaks on both machines, its soul pops
+      out, the result says `they were A WEAPON`, its chip on the Mage's screen reads `BANISHED - A
+      WEAPON`, its own HUD shows the purple BANISHED line, its bar has only a greyed Vote slot (OUT).
+      Then: the run ends right after the thaw with `EVERY WEAPON WAS BANISHED - THE ARCH MAGE WINS` (it
+      was the only weapon). With three players (two weapons) the run goes on instead.
+- [ ] The ghost flies **through a teleport door** (the soul passes the opening and comes out of the
+      twin, the camera turns with it) but not through a locked exit door; E on a weapon does nothing; it
+      cannot call or vote in the next meeting (the screen says it is watching).
+- [ ] Banish the MAGE: `they were THE ARCH MAGE`; the run does NOT end; the Mage's bar loses its powers;
+      1-5 and clicks do nothing; the weapon(s) still have to reach the Exit before the timer; the result
+      banner at the end lists `banished: <name> (the mage)`.
+- [ ] Exit rule: with three players, banish one weapon; the remaining weapon alone in the Exit room wins.
+- [ ] Goblins: start a meeting with a hostile goblin mid-chase; it stops dead (host and client), its
+      strike does not land during the pause, and it resumes the chase afterwards.
+- [ ] The nudge / curse cooldowns on the Mage's bar do not run down during the pause (compare before /
+      after), and the host does not refuse a curse that the bar says is ready right after the thaw.
+- [ ] Late join during a meeting (three players): the joiner lands frozen with the vote screen open,
+      read-only ("you are watching"), and thaws with everybody.
+- [ ] A client leaves mid-meeting: the meeting resolves without its vote (the others' votes decide, or
+      the countdown runs out).

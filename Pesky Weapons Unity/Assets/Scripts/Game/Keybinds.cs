@@ -33,6 +33,7 @@ namespace Pesky.Game
             { "Move", "MOVE" },
             { "Descend", "SOUL DOWN" },
             { "Map", "MAP" },
+            { "Vote", "CALL VOTE" },
             { "Nudge", "MAGE: NUDGE" },
             { "Pull", "MAGE: PULL" },
             { "Curse1", "MAGE: CURSE 1" },

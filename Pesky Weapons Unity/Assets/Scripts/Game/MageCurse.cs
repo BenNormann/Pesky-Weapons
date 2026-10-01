@@ -38,6 +38,7 @@ namespace Pesky.Game
 
         readonly InputAction[] _actions = new InputAction[5];
         float _readyAt;
+        float _pausedAt;
 
         RunDef Def
         {
@@ -55,7 +56,7 @@ namespace Pesky.Game
         {
             get
             {
-                return authority != null && authority.LocalRole == LabyrinthRole.Mage
+                return authority != null && authority.LocalRole == LabyrinthRole.Mage && !authority.LocalIsGhost
                     && (runHud == null || runHud.IsAwake);
             }
         }
@@ -78,12 +79,20 @@ namespace Pesky.Game
                     if (_actions[i] != null) _actions[i].Enable();
                 }
             }
-            if (authority != null) authority.CurseRefused += OnRefused;
+            if (authority != null)
+            {
+                authority.CurseRefused += OnRefused;
+                authority.PauseChanged += OnPauseChanged;
+            }
         }
 
         void OnDisable()
         {
-            if (authority != null) authority.CurseRefused -= OnRefused;
+            if (authority != null)
+            {
+                authority.CurseRefused -= OnRefused;
+                authority.PauseChanged -= OnPauseChanged;
+            }
         }
 
         void Update()
@@ -139,6 +148,14 @@ namespace Pesky.Game
             _readyAt = reason == CurseRefusal.Cooldown ? Time.time + secondsLeft : Time.time;
             Note(Text(reason, secondsLeft));
         }
+
+        /// <summary>The local cooldown guide is on Time.time; the host's is on game ticks, which stand still through a pause (docs/VOTING.md). Shift it by the pause's length.</summary>
+        void OnPauseChanged(bool paused)
+        {
+            if (paused) _pausedAt = Time.time;
+            else _readyAt += Time.time - _pausedAt;
+        }
+
 
         static string Text(CurseRefusal reason, float secondsLeft)
         {

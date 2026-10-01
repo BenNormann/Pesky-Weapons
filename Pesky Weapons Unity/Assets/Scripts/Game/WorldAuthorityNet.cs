@@ -90,6 +90,16 @@ namespace Pesky.Game
         public event Action<CurseKind, float> Cursed;
         /// <summary>(reason, targetSlot, secondsLeft) the host refused this peer's own CURSE_REQ. Only a Mage ever hears it.</summary>
         public event Action<CurseRefusal, byte, float> CurseRefused;
+        /// <summary>(paused) the host froze or unfroze the game (PAUSE_BEGIN / PAUSE_END), on every peer (docs/VOTING.md).</summary>
+        public event Action<bool> PauseChanged;
+        /// <summary>A vote meeting opened (VOTE_START); the sim's VoteState has the caller, the deadline, the voters and the candidates.</summary>
+        public event Action VoteStarted;
+        /// <summary>(voter, target) a vote landed (VOTE_TALLY); the sim already holds it.</summary>
+        public event Action<byte, byte> VoteTallied;
+        /// <summary>(banished, role) the meeting is over (VOTE_END): a slot, VoteTarget.Dummy, or VoteTarget.None, and the revealed role.</summary>
+        public event Action<byte, LabyrinthRole> VoteEnded;
+        /// <summary>(reason, secondsLeft) the host refused THIS peer's own vote call or cast. Raised on this machine alone.</summary>
+        public event Action<VoteRefusal, float> VoteRefused;
 
         /// <summary>This peer learned its own role. Raised on a Mage's client alone.</summary>
         public event Action RoleLearned;
@@ -273,6 +283,11 @@ namespace Pesky.Game
                 case MsgId.BatEvent: { BatEventMsg m; if (BatEventMsg.TryDecode(payload, out m)) OnBatEvent(m); break; }
                 case MsgId.NudgeEvent: { NudgeEventMsg m; if (NudgeEventMsg.TryDecode(payload, out m)) OnNudgeEvent(m); break; }
                 case MsgId.CurseEvent: { CurseEventMsg m; if (CurseEventMsg.TryDecode(payload, out m)) OnCurseEvent(m); break; }
+                case MsgId.PauseBegin: { PauseBeginMsg m; if (PauseBeginMsg.TryDecode(payload, out m)) OnPause(true); break; }
+                case MsgId.PauseEnd: { PauseEndMsg m; if (PauseEndMsg.TryDecode(payload, out m)) OnPause(false); break; }
+                case MsgId.VoteStart: { VoteStartMsg m; if (VoteStartMsg.TryDecode(payload, out m)) { if (VoteStarted != null) VoteStarted(); } break; }
+                case MsgId.VoteTally: { VoteTallyMsg m; if (VoteTallyMsg.TryDecode(payload, out m)) { if (VoteTallied != null) VoteTallied(m.voter, m.target); } break; }
+                case MsgId.VoteEnd: { VoteEndMsg m; if (VoteEndMsg.TryDecode(payload, out m)) OnVoteEnd(m); break; }
                 case MsgId.KitState:
                 {
                     KitStateMsg m;
@@ -611,6 +626,57 @@ namespace Pesky.Game
             }
         }
 
+        // ------------------------------------------------------------------ the pause and the vote (docs/VOTING.md)
+
+        /// <summary>The host has the game frozen (PAUSE_BEGIN to PAUSE_END), as this peer's sim has it.</summary>
+        public bool IsPaused { get { return _session != null && _session.Sim != null && _session.Sim.Pause.Paused; } }
+
+        /// <summary>The vote state of this peer's sim (banishments, the running meeting). Null outside a session.</summary>
+        public VoteState Vote { get { return _session != null && _session.Sim != null ? _session.Sim.Vote : null; } }
+
+        public bool IsBanished(byte slot) { VoteState v = Vote; return v != null && v.IsBanished(slot); }
+
+        /// <summary>The role VOTE_END revealed for a banished slot (public). Weapon for anybody else: it says nothing about a living player.</summary>
+        public LabyrinthRole RevealedRole(byte slot) { VoteState v = Vote; return v != null ? v.RevealedRole(slot) : LabyrinthRole.Weapon; }
+
+        /// <summary>This peer's own player was banished: a ghost spectator.</summary>
+        public bool LocalIsGhost { get { return _session != null && _session.Slots.HasLocalSlot && IsBanished(LocalSlot); } }
+
+        /// <summary>V. candidate = VoteTarget.None for a real vote, VoteTarget.Dummy for the tutorial's practice vote. The host checks everything (VoteRule) and answers a refusal to this peer alone.</summary>
+        public bool RequestVoteCall(byte candidate)
+        {
+            if (_session == null || LocalIsGhost) return false;
+            VoteCallReqMsg req = new VoteCallReqMsg();
+            req.candidate = candidate;
+            _session.Send(req.Encode());
+            return true;
+        }
+
+        /// <summary>One final vote: a candidate slot, VoteTarget.Skip, or VoteTarget.Dummy in a practice vote.</summary>
+        public bool RequestVoteCast(byte target)
+        {
+            if (_session == null || LocalIsGhost) return false;
+            VoteCastReqMsg req = new VoteCastReqMsg();
+            req.target = target;
+            _session.Send(req.Encode());
+            return true;
+        }
+
+        void OnPause(bool paused)
+        {
+            DebugGate.Log(paused ? "pause: the host froze the game" : "pause: the game runs again");
+            if (PauseChanged != null) PauseChanged(paused);
+            // A door whose condition came true during the pause was refused then; look again now (host).
+            if (!paused && IsHostPeer) EvaluateDoors();
+        }
+
+        /// <summary>VOTE_END on every peer: the practice dummy vanishes on the host when it was voted out; the banished player's own soul follows LocalIsGhost by itself.</summary>
+        void OnVoteEnd(VoteEndMsg msg)
+        {
+            if (msg.banished == VoteTarget.Dummy && practiceDummy != null && IsHostPeer) practiceDummy.gameObject.SetActive(false);
+            if (VoteEnded != null) VoteEnded(msg.banished, msg.role);
+        }
+
         // ------------------------------------------------------------------ kit: one generic path
 
         /// <summary>
@@ -623,6 +689,7 @@ namespace Pesky.Game
             ushort actorId = actor != null ? (ushort)actor.Id : Wire.NoId;
             if (_session.IsHost)
             {
+                if (IsPaused) return false; // kit stands still while the game is frozen (docs/VOTING.md)
                 KitStateMsg msg = new KitStateMsg();
                 msg.header = _session.HostHeader();
                 msg.kind = kind;
@@ -830,6 +897,13 @@ void OnNetReply(byte id, byte[] payload)
                 if (!NudgeRefusedMsg.TryDecode(payload, out m)) return;
                 DebugGate.Log("reply: NUDGE_REFUSED - " + m.reason + (m.waitTenths > 0 ? ", " + (m.waitTenths / 10f).ToString("0.0") + " s left" : ""));
                 if (NudgeRefused != null) NudgeRefused(m.reason, m.targetSlot, m.waitTenths / 10f);
+            }
+            else if (id == MsgId.VoteRefused)
+            {
+                VoteRefusedMsg m;
+                if (!VoteRefusedMsg.TryDecode(payload, out m)) return;
+                DebugGate.Log("reply: VOTE_REFUSED - " + m.reason + (m.waitTenths > 0 ? ", " + (m.waitTenths / 10f).ToString("0.0") + " s left" : ""));
+                if (VoteRefused != null) VoteRefused(m.reason, m.waitTenths / 10f);
             }
         }
 

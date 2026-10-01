@@ -84,6 +84,13 @@ the flight inputs are cleared; `PossessHeld` is false); `MageNudge` and `MageCur
 required it. **The game does not pause** - it is multiplayer - so a weapon in flight keeps
 flying and the timer keeps running.
 
+Round 12: the host's PAUSE (`docs/VOTING.md`, a vote meeting) uses the same flag. While the game is
+paused `PauseGate` keeps `InputEnabled` off, and `SettingsFlow.Close` asks it (`pauseGate`, an
+instance override on each scene's `_UI/Settings`) before switching the input back on: it does not,
+and the pointer re-locks only if the vote screen is not holding it free. The pause's end gives the
+input back. The subtitle "the run keeps going for everybody else" is still true of the settings
+screen itself.
+
 ### 2.3 EXIT TO MAIN MENU
 
 `SessionRunner.LeaveToMenu()`: a **client** calls `NetSession.Leave()` (the host sees it go)

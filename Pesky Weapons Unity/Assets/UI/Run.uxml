@@ -25,5 +25,26 @@
             <ui:Label name="result-title" class="result-title" text="" picking-mode="Ignore" />
             <ui:Label name="result-sub" class="result-sub" text="" picking-mode="Ignore" />
         </ui:VisualElement>
+
+        <ui:Label name="ghost-status" class="ghost-status" text="" picking-mode="Ignore" />
+
+        <ui:VisualElement name="vote-root" class="vote-root">
+            <ui:VisualElement name="vote-panel" class="vote-panel">
+                <ui:Label name="vote-title" class="vote-title" text="VOTE CALLED BY" />
+                <ui:Label name="vote-sub" class="vote-sub" text="everybody is frozen. one vote each, and every vote is public. click a name or SKIP VOTE, then CONFIRM." />
+                <ui:Label name="vote-timer" class="vote-timer" text="25" />
+                <ui:VisualElement name="vote-grid" class="vote-grid" />
+                <ui:VisualElement name="vote-skip-row" class="vote-skip-row">
+                    <ui:Button name="vote-skip" text="SKIP VOTE" class="vote-card vote-card--skip" />
+                    <ui:VisualElement name="vote-skip-chips" class="vote-chips vote-chips--skip" />
+                </ui:VisualElement>
+                <ui:Button name="vote-confirm" text="CONFIRM" class="vote-confirm" />
+                <ui:Label name="vote-status" class="vote-status" text="" />
+                <ui:VisualElement name="vote-result" class="vote-result">
+                    <ui:Label name="vote-result-title" class="vote-result-title" text="" />
+                    <ui:Label name="vote-result-sub" class="vote-result-sub" text="" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

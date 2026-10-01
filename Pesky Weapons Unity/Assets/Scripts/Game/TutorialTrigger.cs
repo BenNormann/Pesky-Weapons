@@ -8,6 +8,8 @@ namespace Pesky.Game
     /// One beat of the tutorial: a trigger box that fires once, the first time the player's weapon
     /// reaches it. It switches signs and props on or off, it can wake the labyrinth HUD for the Mage
     /// lesson, and the last one of them ends the run, which is what returns the player to the menu.
+    /// A REPEATABLE one fires on every entry instead (the practice hall's entrance brings the practice
+    /// dummy back after a practice vote banished it, docs/VOTING.md).
     ///
     /// It decides nothing shared and it knows nothing about the labyrinth. Ending the run is the
     /// host's own <see cref="NetSession.EndRun"/> - the same call a rule makes when a crew escapes -
@@ -35,9 +37,12 @@ namespace Pesky.Game
         [Tooltip("The last beat: end the run, which sends every peer back to the menu.")]
         [SerializeField] bool endsTutorial;
 
+        [Tooltip("Fire on every entry, not just the first (the practice hall's entrance restoring the dummy).")]
+        [SerializeField] bool repeatable;
+
         bool _fired;
 
-        /// <summary>True once this beat has played. Nothing resets it: a tutorial is walked once.</summary>
+        /// <summary>True once this beat has played. Nothing resets it: a tutorial is walked once (a repeatable beat plays again anyway).</summary>
         public bool Fired { get { return _fired; } }
 
         void Awake()
@@ -48,7 +53,7 @@ namespace Pesky.Game
 
         void OnTriggerEnter(Collider other)
         {
-            if (_fired || !IsWeapon(other)) return;
+            if ((_fired && !repeatable) || !IsWeapon(other)) return;
             _fired = true;
 
             for (int i = 0; i < activate.Length; i++)

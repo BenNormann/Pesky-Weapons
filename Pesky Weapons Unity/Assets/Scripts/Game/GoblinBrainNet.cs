@@ -22,6 +22,8 @@ namespace Pesky.Game
         float _fromYaw, _toYaw, _lerpT;
 
         bool _sentOnce;
+        bool _pausedBrain;
+        float _pausedAt;
         Vector3 _sentPos;
         float _sentYaw, _sentHp, _sentShield, _sentTime;
         byte _sentState;
@@ -36,6 +38,38 @@ namespace Pesky.Game
         {
             _puppet = on;
             if (on && agent != null) agent.enabled = false;
+        }
+
+        // ---------------------------------------------------------------- host: the pause (docs/VOTING.md)
+
+        /// <summary>
+        /// Host, at the top of Update: true while the game is paused, in which case the brain skips the frame
+        /// (the agent stopped where it stands, no state time, no perception, no strike). On the edges it stops /
+        /// restarts the agent and shifts every Time.time stamp the brain keeps by the pause's length, so a wander
+        /// pause, a hit flash, the calm-down timer or the porter cooldown resume with the time they had left.
+        /// </summary>
+        bool NetPaused()
+        {
+            bool paused = authority != null && authority.IsPaused;
+            if (paused == _pausedBrain) return paused;
+            _pausedBrain = paused;
+            bool agentLive = agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
+            if (paused)
+            {
+                _pausedAt = Time.time;
+                if (agentLive) agent.isStopped = true;
+                return true;
+            }
+            float lost = Time.time - _pausedAt;
+            _flashUntil += lost;
+            _wanderPauseUntil += lost;
+            _ignoreCuriousUntil += lost;
+            _lastHurtTime += lost;
+            _lastAnimateSeen += lost;
+            _porterCooldownUntil += lost;
+            if (_lookSince >= 0f) _lookSince += lost;
+            if (agentLive) agent.isStopped = false;
+            return false;
         }
 
         // ---------------------------------------------------------------- host: the row

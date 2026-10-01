@@ -21,6 +21,7 @@ namespace Pesky.Session.Validators
         static void OnPossess(byte fromSlot, byte[] payload, WorldSim sim, EventSink events)
         {
             if (!PossessReqMsg.TryDecode(payload, out var req)) return;
+            if (sim.Pause.Paused || sim.Vote.IsBanished(fromSlot)) return; // frozen, or a ghost (docs/VOTING.md)
             var player = sim.Players[fromSlot];
             if (player == null || !player.present || player.weaponId != Wire.NoId) return;
             var w = sim.Weapons.Get(req.weaponId);
@@ -38,6 +39,7 @@ namespace Pesky.Session.Validators
         static void OnRelease(byte fromSlot, byte[] payload, WorldSim sim, EventSink events)
         {
             if (!ReleaseReqMsg.TryDecode(payload, out var req)) return;
+            if (sim.Pause.Paused) return; // frozen (docs/VOTING.md)
             var w = sim.Weapons.Get(req.weaponId);
             if (w == null || w.broken || w.ownerSlot != fromSlot) return;
 

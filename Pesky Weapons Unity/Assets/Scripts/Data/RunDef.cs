@@ -73,6 +73,22 @@ namespace Pesky.Data
         [Tooltip("The launch speed is multiplied by this while heavy.")]
         [Range(0.05f, 1f)] public float heavySpeedScale = 0.5f;
 
+        [Header("Voting (V, everybody; docs/VOTING.md)")]
+        [Tooltip("How many votes one player may call per run.")]
+        [Min(0)] public int voteCallsPerPlayer = 1;
+
+        [Tooltip("Seconds after any meeting ends before anybody may call the next one. Game time: the pause does not count.")]
+        [Min(0f)] public float voteGroupCooldown = 45f;
+
+        [Tooltip("Seconds after the run timer starts before the first vote may be called. Before the timer starts: no votes at all.")]
+        [Min(0f)] public float voteNoVoteBeforeSeconds = 30f;
+
+        [Tooltip("Seconds a meeting stays open; it closes earlier once every eligible voter has voted. Room time: the game is paused meanwhile.")]
+        [Min(1f)] public float voteMeetingSeconds = 25f;
+
+        [Tooltip("Seconds the result stays on screen (the game stays paused) before PAUSE_END.")]
+        [Min(0f)] public float voteResultSeconds = 4f;
+
         /// <summary>The five curses' names, by CurseKind value (1..5). Empty for anything else.</summary>
         public static string CurseName(int curse)
         {

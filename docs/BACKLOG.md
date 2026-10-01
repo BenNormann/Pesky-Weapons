@@ -18,6 +18,9 @@ Agreed work not yet built, in rough order. Update when something lands.
 - Curse draft at checkpoints; the shop-window epilogue
 - Player death: nothing calls ReportPlayerDown yet; nothing awards legend
 - Loose (unheld) weapons are not position-synced after release
+- Voice chat as the discussion during a vote meeting (the pause is built; the voice control is
+  dormant)
+- The pause does not freeze loose weapons or broken-weapon respawns (VOTING.md section 3)
 
 ## Labyrinth (set aside 2026-09-29, kept in the project)
 - Crossing the Exit doorway should end the round (today: gather near it)
@@ -43,6 +46,12 @@ Agreed work not yet built, in rough order. Update when something lands.
 - Tutorial: teach the two-player verbs once a second local player is possible
 
 ## Done
+- **Voting + the pause state**, 2026-10-01: V calls a 25 s meeting that freezes everybody (inputs,
+  bodies, remote views, goblins, the level clock and the run timer); one final vote each, public
+  tallies, the plurality banishes (a tie or SKIP on top: nobody); the banished player's body breaks,
+  their role is revealed and they spectate as a ghost that passes doors; the Exit rule counts only
+  non-banished weapons; one call per player, a 45 s group cooldown, none in the first 30 s; a
+  practice vote on the tutorial dummy. Implemented, untested. See docs/VOTING.md.
 - **Settings screen / pause menu and in-level LEAVE**, 2026-09-30: Escape (or losing the pointer
   lock) in the tutorial or a run opens it; RESUME, mouse sensitivity, spike filter, four volume
   sliders (Master works, the rest are a stub), rebindable keys saved in PlayerPrefs, EXIT TO MAIN

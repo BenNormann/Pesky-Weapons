@@ -501,13 +501,20 @@ namespace Pesky.Session.Rules
             if (!NudgeReqMsg.TryDecode(payload, out req)) return;
             PlayerState from = sim.Players[fromSlot];
             if (from == null || !from.present) return;
+            // A banished player has no powers, and nothing moves while the game is paused (docs/VOTING.md).
+            if (sim.Vote.IsBanished(fromSlot) || sim.Pause.Paused)
+            {
+                NetDebug.Log("host: nudge from slot " + fromSlot + " refused: banished or paused");
+                return;
+            }
+            uint game = sim.Pause.GameTick(tick);
             bool practice = req.targetSlot == NudgeReqMsg.PracticeTarget;
             string what = "nudge " + req.mode + " on " + (practice ? "the practice dummy" : "slot " + req.targetSlot) + " from slot " + fromSlot;
 
             uint cooldown = Ticks(def != null ? def.nudgeCooldown : 8f);
-            if (_nudgeUsed[fromSlot] && tick < _lastNudgeTick[fromSlot] + cooldown)
+            if (_nudgeUsed[fromSlot] && game < _lastNudgeTick[fromSlot] + cooldown)
             {
-                RefuseNudge(events, fromSlot, req.targetSlot, NudgeRefusal.Cooldown, _lastNudgeTick[fromSlot] + cooldown - tick, what);
+                RefuseNudge(events, fromSlot, req.targetSlot, NudgeRefusal.Cooldown, _lastNudgeTick[fromSlot] + cooldown - game, what);
                 return;
             }
 
@@ -599,7 +606,7 @@ namespace Pesky.Session.Rules
             }
 
             _nudgeUsed[fromSlot] = true;
-            _lastNudgeTick[fromSlot] = tick;
+            _lastNudgeTick[fromSlot] = game;
             // A co-signed pair is spent: a later nudge starts a new pair.
             _nudgedBy[targetIndex] = coSigned ? Wire.NoSlot : fromSlot;
             _nudgedAtTick[targetIndex] = tick;

@@ -1579,3 +1579,73 @@ key is not even a packet. RUN_START / RUN_LAYOUT are read by `RunHud` (the timer
   `NetSession.Leave()` outside the inbox drain - a client's leave, or a host's
   `SESSION_END(HostLeft)` - then loads `menuScene`. S4.8's "no pause menu and no in-level leave"
   is done (docs/SETTINGS.md).
+
+## Round 12 - voting and the pause (2026-10-01)
+
+**Implemented, untested.** Checks made: a clean compile after every script change (0 errors), each
+new message encoded and decoded once in the Editor (sizes as listed), the Vote snapshot part
+round-tripped (65 bytes, nothing left over), the pause arithmetic checked on a sim, `Run.uxml`
+instantiated in edit mode (23 elements present), the scene validator on every build scene and
+`Dev/FeelBox` (0 problems). **Nothing was run.** Design, rules, tunables and the pause: `docs/VOTING.md`.
+
+`Wire.ProtocolVersion` is now **7** (reason: eight new ids and a new snapshot part; a version-6 peer
+would mis-size the snapshot table array and drop PAUSE_BEGIN).
+
+### R12.1 The eight messages, 0x70-0x77 (a new domain)
+
+| Id | Name | Kind | Bytes | Layout after the type byte |
+|---|---|---|---|---|
+| 0x70 | PAUSE_BEGIN | Event | 6 | `tick u32, reason u8 (PauseReason: 0 None, 1 Vote)` |
+| 0x71 | PAUSE_END | Event | 6 | `tick u32, reason u8` |
+| 0x72 | VOTE_CALL_REQ | Intent | 2 | `candidate u8` (0xFF a real vote, 0xFE the tutorial dummy) |
+| 0x73 | VOTE_START | Event | 13 | `tick u32, caller u8, deadlineTick u32 (sim tick), eligibleMask u8, candidateMask u8, flags u8 (1 Practice)` |
+| 0x74 | VOTE_CAST_REQ | Intent | 2 | `target u8` (a slot, 0xFD SKIP, 0xFE the dummy) |
+| 0x75 | VOTE_TALLY | Event | 7 | `tick u32, voter u8, target u8` |
+| 0x76 | VOTE_END | Event | 15 | `tick u32, banished u8 (slot / 0xFE / 0xFF nobody), role u8 (LabyrinthRole), tally u8 x 8` |
+| 0x77 | VOTE_REFUSED | **Reply** | 4 | `reason u8 (VoteRefusal 0-10), waitTenths u16` - to the asker alone |
+
+`SnapshotPartKind.Vote = 8`, `End = 9`; body = `PauseState` (10 B: paused, reason, pauseStartTick,
+pausedTotalTicks) + `VoteState` (55 B: banishedMask, revealedRole x 8, callsUsed x 8, the running
+meeting, the eight votes, the last result and its game tick). `MessageApplier.Apply` has cases for
+the five events; VOTE_REFUSED is a Reply that `ApplyReply` ignores (Game hears it through
+`ReplyReceived`). `RoundOutcome.WeaponsGone = 4`.
+
+### R12.2 Who decides
+
+`VoteRule` (`Session/Rules/VoteRule.cs`) after `RunRule` in `HostAuthority.CreateDefault()`, validator
+for VOTE_CALL_REQ and VOTE_CAST_REQ (VOTING.md section 4: the call checks, PAUSE_BEGIN + VOTE_START at
+one tick, one final vote each broadcast as VOTE_TALLY, plurality with ties and SKIP banishing nobody,
+VOTE_END with the reveal read from `LabyrinthRule.IsMage`, WEAPON_BROKEN(HostForced) for the banished
+body, PAUSE_END `voteResultSeconds` later). The pause is host owned and reusable (`PauseState.Begin /
+EndPayload`); every peer applies it at the same tick. While paused the host drops HIT_CLAIM, KIT_REQ,
+BAT_CLAIM, POSSESS_REQ and RELEASE_REQ, refuses its own kit publications and door traversals, and
+checks no ending. GAME ticks (`PauseState.GameTick`, room ticks minus the pauses) now carry RUN_START's
+`startTick` / `deadlineTick`, the run deadline check and the host's curse / nudge cooldowns.
+`PossessValidator` refuses a banished slot; `LabyrinthRule` / `RunRule` refuse a banished Mage's powers
+(and anybody's while paused) in silence.
+
+### R12.3 Every peer applies
+
+PAUSE_BEGIN / PAUSE_END -> `WorldAuthority.PauseChanged` -> `PauseGate` (input off, body frozen
+kinematic with its velocities kept), `RemotePlayerView.SetPaused` (hold the last sample),
+`PoseStreamer` (send at once on both edges), `GoblinBrain.NetPaused` (host: agent stopped, FSM
+skipped, `Time.time` stamps shifted on the thaw), `MageCurse` / `MageNudge` (local cooldown guides
+shifted), `LevelClock` (snaps to `SessionRunner.LevelMs`, now game time: everything scheduled on it
+stands still). VOTE_START / VOTE_TALLY / VOTE_END -> `VoteScreen` (the sim already holds the state);
+VOTE_END also switches the practice dummy off on the host when it was the one voted out. Banishment
+is read live from `sim.Vote` by `PlayerSoul` (ghost: `excludeLayers` on the SoulBarrier layer, no
+possession), `RunHud` (bar, ghost line, result banner), `RemotePlayerSpawner` (chip tag), `MagicDoor` /
+`WorldAuthorityKit` (a ghost soul is watched and moved through doors like a weapon).
+
+### R12.4 Secrecy, checked
+
+- VOTE_END names the banished player's role: intended, that player is out for good. No message says a
+  living player's role; `VoteState.RevealedRole` is Weapon for everybody not banished and means nothing.
+- VOTE_REFUSED goes to one peer. A ghost's VOTE_CALL_REQ / VOTE_CAST_REQ is not even sent
+  (`WorldAuthority.RequestVoteCall / Cast` refuse) and is refused if forged.
+- `NetDebug` / `DebugGate` lines (`host: vote call from slot 0 accepted`, `vote: cast slot 2`,
+  `pause: the host froze the game`) are Editor / development / `?debug=1` only.
+
+### R12.5 Riskiest untested assumptions
+
+VOTING.md section 10.

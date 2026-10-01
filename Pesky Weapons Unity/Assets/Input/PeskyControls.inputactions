@@ -155,6 +155,16 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "Vote",
+                    "type": "Button",
+                    "id": "420bf33b-f05f-478b-8686-013b0bd56695",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -452,6 +462,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "Curse5",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e950046f-f6c4-4288-9d2e-8196182c94ff",
+                    "path": "<Keyboard>/v",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Vote",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4ab251b4-d08d-4a84-a09b-3c9d0375383a",
+                    "path": "<Gamepad>/rightShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Vote",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

@@ -75,6 +75,15 @@ namespace Pesky.Protocol
             t[RunLayoutMsg.Id] = RunLayoutMsg.Kind;
             t[RunStartMsg.Id] = RunStartMsg.Kind;
 
+            t[PauseBeginMsg.Id] = PauseBeginMsg.Kind;
+            t[PauseEndMsg.Id] = PauseEndMsg.Kind;
+            t[VoteCallReqMsg.Id] = VoteCallReqMsg.Kind;
+            t[VoteStartMsg.Id] = VoteStartMsg.Kind;
+            t[VoteCastReqMsg.Id] = VoteCastReqMsg.Kind;
+            t[VoteTallyMsg.Id] = VoteTallyMsg.Kind;
+            t[VoteEndMsg.Id] = VoteEndMsg.Kind;
+            t[VoteRefusedMsg.Id] = VoteRefusedMsg.Kind;
+
             
 t[MsgId.Frame] = MsgKind.Container;
             return t;

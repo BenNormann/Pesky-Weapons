@@ -91,6 +91,12 @@ public static HostAuthority CreateDefault()
             var run = new RunRule(labyrinth);
             authority.AddRule(run);
             authority.SetValidator(MsgId.CurseReq, run);
+            // The vote (docs/VOTING.md), after the run: it reads the same secret table for the reveal and the
+            // run's timer for its timing rule, and owns the pause the run's deadline respects.
+            var vote = new VoteRule(labyrinth);
+            authority.AddRule(vote);
+            authority.SetValidator(MsgId.VoteCallReq, vote);
+            authority.SetValidator(MsgId.VoteCastReq, vote);
             // The shared scratch pad, last of all: it wipes itself when a round opens and rate-limits the
             // strokes. It decides nothing about the labyrinth and knows none of its secrets.
             var pad = new PadRule();

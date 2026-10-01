@@ -2472,3 +2472,55 @@ checks: `docs/TEST-CHECKLIST.md` section 11.
 **Risks.** The scrollbar look is reasoned from the default theme's rules, not seen: if Unity
 positions the vertical dragger inline (it sets only its height today) the thumb could sit off the
 track. The KEYBINDS gap value (14 px) is a judgement call.
+
+## Round 12: voting + pause (2026-10-01)
+
+The owner's voting decisions (`docs/PREMISE.md`, last section). **Implemented, untested**: no play mode, no
+tests, no screenshots, no browser, no build. Clean compile after every script change; every new message
+encoded and decoded once, the Vote snapshot part round-tripped (65 B), the pause arithmetic checked on a
+sim, `Run.uxml` re-instantiated in edit mode (23 elements); `SceneValidator` **0 problems** on `Boot`,
+`MainMenu`, `Tutorial`, `Run` and `Dev/FeelBox`, each loaded alone; `Run.unity` and `Tutorial.unity` saved.
+Full write-up: **`docs/VOTING.md`**; the wire in `docs/NETCODE-STATUS.md` round 12; the owner's checks in
+`docs/TEST-CHECKLIST.md` section 12.
+
+- **Housekeeping.** The Editor was not running when the round began and the agent could not launch it
+  (refused by its permission layer); the whole round was drafted first, then the orchestrator launched
+  6000.3.23f1 on the project and the drafts were applied through the MCP. `execute_code` here is C# 6
+  (no Roslyn), so Editor automation passes `in` arguments as `ref`.
+- **Wire (protocol 6 -> 7).** 0x70 PAUSE_BEGIN / 0x71 PAUSE_END (events, 6 B, a reason byte), 0x72
+  VOTE_CALL_REQ (2 B), 0x73 VOTE_START (13 B), 0x74 VOTE_CAST_REQ (2 B), 0x75 VOTE_TALLY (7 B), 0x76
+  VOTE_END (15 B: the banished slot, its revealed role, the eight final votes), 0x77 VOTE_REFUSED (reply,
+  4 B). `SnapshotPartKind.Vote = 8`, `End = 9`. `RoundOutcome.WeaponsGone`. New `Protocol/VoteEnums.cs`,
+  `Protocol/Messages/VoteMessages.cs`.
+- **The pause state.** `Sim/PauseState.cs` (host owned, snapshotted, reusable: `BeginPayload` /
+  `EndPayload`; `GameTick` / `PausedMsAt` take the pauses out of room time). `SessionRunner.GameMs` /
+  `LevelMs` on game time, `LevelClock` snaps while paused; RUN_START and the deadline, the host's curse and
+  nudge cooldowns moved to game ticks. `Game/PauseGate.cs` freezes the local input (the settings flag) and
+  body (`PlayerSoul.SetFrozen`: kinematic, velocities kept), `RemotePlayerView.SetPaused` holds, the host's
+  goblins stop and shift their timers (`GoblinBrainNet.NetPaused`), the host drops hits / kit / bats /
+  possession and refuses door traversals and endings while paused.
+- **The vote.** `Sim/VoteState.cs`, `Session/Rules/VoteRule.cs` (call checks, PAUSE_BEGIN + VOTE_START,
+  one final vote each as VOTE_TALLY, plurality / tie / SKIP, VOTE_END with the reveal, WEAPON_BROKEN for
+  the banished, PAUSE_END after 4 s). `RunDef`: `voteCallsPerPlayer` 1, `voteGroupCooldown` 45,
+  `voteNoVoteBeforeSeconds` 30, `voteMeetingSeconds` 25, `voteResultSeconds` 4 (both run assets took the
+  defaults).
+- **Banishment.** Ghost soul (`PlayerSoul.IsGhost`: passes the SoulBarrier via `excludeLayers`, watched and
+  moved by `MagicDoor` / `WorldAuthorityKit.RequestMagicDoorTraverse(door, soul)`, possesses nothing; the
+  host refuses its possession, powers and votes), chip tag `BANISHED - ...`, the HUD's ghost line, the exit
+  rule on non-banished weapons, `WeaponsGone` when none remain, the result banner's banished list.
+- **UI.** `Run.uxml` / `Run.uss` (through manage_ui): `vote-root` (header, countdown, the two-column grid,
+  SKIP, CONFIRM, chips, the result) and `ghost-status`; `Game/UI/VoteView.cs`, `Game/UI/VoteScreen.cs` on
+  `_UI/RunHud`. The ability bar is everybody's: `AbilitySlotDef.mageOnly`, a VOTE slot first
+  (`AbilityCooldownSource.Vote`), `AbilityBar.SetMageSlots` / `SetLock` (USED / WAIT / PAUSED / OUT /
+  GONE). `Game/VoteCaller.cs` (V; `Gameplay/Vote` = `<Keyboard>/v` + `<Gamepad>/rightShoulder`, added with
+  `InputActionSetupExtensions` and the asset's JSON rewritten, as the curses were; `Keybinds` names it CALL
+  VOTE). `SettingsFlow` leaves the input with the pause on close.
+- **Scenes.** `_Managers/PauseGate`, `_Managers/VoteCaller`, `VoteScreen` on `_UI/RunHud`, the ability
+  lists rewritten to the new default (7 entries), `Settings.pauseGate`, in `Run.unity` and
+  `Tutorial.unity`; the tutorial's `Sign_Vote` (west wall, id 2078) and the repeatable `DummyRestore`
+  trigger over the entry door's arrival; the practice vote on the dummy (candidate 0xFE). No NavMesh rebake
+  (no World collider moved). Build settings unchanged.
+- Docs: VOTING (new), RUN, NETCODE-STATUS, TEST-CHECKLIST (12), BACKLOG, SETTINGS (2.2), this.
+
+**Left open.** Untested (VOTING.md section 10). Loose weapons and broken-weapon respawns are not frozen by
+the pause; the gameplay scenes still have no EventSystem; voice chat is still dormant.

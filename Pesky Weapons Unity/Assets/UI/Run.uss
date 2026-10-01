@@ -1,5 +1,6 @@
-/* The run layer (docs/RUN.md): the timer, the Mage's ability bar at the bottom of the screen,
-   the victim's curse line, the blindness sheet, the role reveal and the result banner.
+/* The run layer (docs/RUN.md): the timer, the ability bar at the bottom of the screen (everybody's VOTE
+   slot, the Mage's powers), the victim's curse line, the blindness sheet, the role reveal, the result
+   banner, the banished player's ghost line and the vote screen (docs/VOTING.md).
    Same ground and amber as the menu and the weapon HUD. Nothing sits by the crosshair.
    Sizes are panel pixels (UiPanelSettings scales with the screen from 1920 x 1080). */
 
@@ -29,7 +30,7 @@
     color: rgb(235, 72, 60);
 }
 
-/* ---- the Mage's ability bar: centred at the bottom, Mage only (RunHud + AbilityBar build the slots) ---- */
+/* ---- the ability bar: centred at the bottom, everybody's since round 12 (RunHud + AbilityBar build the slots) ---- */
 
 .ability-bar {
     position: absolute;
@@ -142,7 +143,25 @@
     border-color: rgb(238, 200, 100);
 }
 
-/* ---- the quiet line: why a nudge or a curse did not happen ---- */
+/* a locked slot (USED / WAIT / PAUSED / OUT / GONE): darkened fully, the word in the middle */
+.ability.is-locked .ability-glyph {
+    color: rgba(238, 238, 234, 0.35);
+}
+
+.ability.is-locked .ability-time {
+    display: flex;
+}
+
+.ability.is-locked .ability-name {
+    color: rgb(112, 116, 126);
+}
+
+.ability-time--text {
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+/* ---- the quiet line: why a nudge, a curse or a vote call did not happen ---- */
 
 .note {
     position: absolute;
@@ -241,6 +260,280 @@
 
 .result-sub {
     font-size: 15px;
+    letter-spacing: 2px;
+    color: rgb(178, 182, 192);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-top: 10px;
+}
+
+/* ---- the ghost line: this player was banished (docs/VOTING.md) ---- */
+
+.ghost-status {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 11%;
+    font-size: 16px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    color: rgb(181, 140, 230);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+/* ---- the vote screen: a dimmed sheet and a centred panel, like the settings screen (VoteScreen / VoteView) ---- */
+
+.vote-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(8, 9, 12, 0.82);
+    padding: 24px 16px;
+}
+
+.vote-panel {
+    width: 100%;
+    max-width: 700px;
+    max-height: 100%;
+    background-color: rgb(14, 16, 20);
+    border-width: 1px;
+    border-color: rgb(38, 42, 52);
+    border-radius: 8px;
+    padding: 20px 24px 14px 24px;
+    align-items: stretch;
+}
+
+.vote-title {
+    font-size: 26px;
+    -unity-font-style: bold;
+    letter-spacing: 6px;
+    color: rgb(238, 238, 234);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin: 0 0 2px 0;
+}
+
+.vote-sub {
+    font-size: 13px;
+    color: rgb(110, 116, 128);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin: 0 0 8px 0;
+}
+
+.vote-timer {
+    font-size: 34px;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    color: rgb(238, 200, 100);
+    -unity-text-align: middle-center;
+    margin: 0 0 10px 0;
+}
+
+.vote-timer.is-warning {
+    color: rgb(235, 72, 60);
+}
+
+/* two columns of cards */
+.vote-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+Button.vote-card {
+    width: 49%;
+    min-height: 58px;
+    margin: 0 0 8px 0;
+    padding: 8px 10px;
+    align-items: stretch;
+    justify-content: flex-start;
+    background-color: rgb(23, 26, 32);
+    border-width: 2px;
+    border-color: rgb(38, 42, 52);
+    border-radius: 6px;
+    color: rgb(238, 238, 234);
+    transition-property: border-color, background-color;
+    transition-duration: 0.1s, 0.1s;
+}
+
+Button.vote-card:hover {
+    background-color: rgb(30, 34, 42);
+    border-color: rgb(80, 88, 104);
+}
+
+Button.vote-card:focus {
+    border-color: rgb(80, 88, 104);
+}
+
+Button.vote-card.is-selected {
+    border-color: rgb(226, 186, 74);
+    background-color: rgb(34, 36, 40);
+}
+
+Button.vote-card.is-locked {
+    opacity: 0.45;
+}
+
+Button.vote-card.is-banished {
+    opacity: 0.3;
+}
+
+Button.vote-card.is-unselectable:hover {
+    background-color: rgb(23, 26, 32);
+    border-color: rgb(38, 42, 52);
+}
+
+Button.vote-card:disabled {
+    opacity: 0.5;
+}
+
+.vote-card-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.vote-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    margin-right: 10px;
+}
+
+.vote-name {
+    flex-grow: 1;
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(238, 238, 234);
+    -unity-text-align: middle-left;
+    margin: 0;
+    overflow: hidden;
+}
+
+.vote-you {
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(226, 186, 74);
+    margin: 0 0 0 8px;
+}
+
+.vote-gone {
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(235, 72, 60);
+    margin: 0 0 0 8px;
+}
+
+/* the voters' chips beside a candidate */
+.vote-chips {
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-height: 18px;
+    margin-top: 6px;
+}
+
+.vote-chips--skip {
+    flex-grow: 1;
+    margin: 0 0 0 12px;
+    align-items: center;
+}
+
+.vote-chip {
+    min-width: 34px;
+    height: 18px;
+    border-radius: 9px;
+    margin: 0 4px 4px 0;
+    padding: 0 6px;
+    align-items: center;
+    justify-content: center;
+}
+
+.vote-chip-text {
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(18, 18, 20);
+    margin: 0;
+    padding: 0;
+}
+
+/* SKIP VOTE at the bottom, its chips beside it */
+.vote-skip-row {
+    flex-direction: row;
+    align-items: center;
+    margin: 4px 0 10px 0;
+}
+
+Button.vote-card.vote-card--skip {
+    width: 49%;
+    min-height: 46px;
+    margin: 0;
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    -unity-text-align: middle-center;
+    color: rgb(178, 182, 192);
+}
+
+Button.vote-confirm {
+    min-height: 46px;
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(18, 18, 20);
+    background-color: rgb(226, 186, 74);
+    border-width: 1px;
+    border-color: rgb(226, 186, 74);
+    border-radius: 4px;
+    padding: 0 18px;
+    margin: 0 0 8px 0;
+}
+
+Button.vote-confirm:hover {
+    background-color: rgb(238, 200, 100);
+    border-color: rgb(238, 200, 100);
+}
+
+Button.vote-confirm:disabled {
+    opacity: 0.35;
+}
+
+.vote-status {
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: rgb(132, 138, 150);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin: 0 0 4px 0;
+}
+
+/* the result, in the grid's place */
+.vote-result {
+    display: none;
+    align-items: center;
+    padding: 28px 0 20px 0;
+}
+
+.vote-result-title {
+    font-size: 34px;
+    -unity-font-style: bold;
+    letter-spacing: 6px;
+    color: rgb(238, 200, 100);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.vote-result-sub {
+    font-size: 16px;
     letter-spacing: 2px;
     color: rgb(178, 182, 192);
     -unity-text-align: middle-center;

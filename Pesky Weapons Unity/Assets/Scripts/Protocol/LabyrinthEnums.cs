@@ -29,5 +29,7 @@ namespace Pesky.Protocol
         Resurrected = 2,
         /// <summary>The run's timer ran out before the crew stood in the Exit room: the Mage wins.</summary>
         TimedOut = 3,
+        /// <summary>Every non-Mage player was banished by vote (docs/VOTING.md): the Mage wins at once.</summary>
+        WeaponsGone = 4,
     }
 }

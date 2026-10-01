@@ -43,6 +43,8 @@ namespace Pesky.Game
         [SerializeField] OrbitCamera orbitCamera;
         [Tooltip("EXIT TO MAIN MENU leaves through it (SessionRunner.LeaveToMenu).")]
         [SerializeField] SessionRunner sessionRunner;
+        [Tooltip("The pause (docs/VOTING.md): while it holds the input, closing this screen must not give it back.")]
+        [OptionalRef][SerializeField] PauseGate pauseGate;
 
         [Header("Pointer lock")]
         [Tooltip("Seconds the pointer lock must have been held before losing it opens this screen. A lock the browser has not granted yet flickers.")]
@@ -200,6 +202,13 @@ namespace Pesky.Game
             _lockHeldSince = -1f;
             if (orbitCamera != null)
             {
+                if (pauseGate != null && pauseGate.IsPaused)
+                {
+                    // The pause owns the input (docs/VOTING.md): it stays off. The cursor goes back to whoever had
+                    // it - the vote screen keeps it free, otherwise it locks again.
+                    if (!pauseGate.PointerFree) orbitCamera.LockPointer();
+                    return;
+                }
                 // InputEnabled back on makes the look filter skip the next delta (the cursor's jump back to the
                 // centre); the lock itself makes it skip one more when it lands (LookFilter.Track).
                 orbitCamera.InputEnabled = true;

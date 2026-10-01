@@ -66,13 +66,30 @@ namespace Pesky.Game
             }
         }
 
-        /// <summary>Milliseconds since the run went to Playing, the same number on every peer. LevelClock follows it.</summary>
+        /// <summary>True while the host has the game frozen (PAUSE_BEGIN to PAUSE_END, docs/VOTING.md). Only meaningful while Playing.</summary>
+        public bool IsPaused
+        {
+            get { return Session != null && Session.IsStarted && Session.Sim != null && Session.Sim.Pause.Paused; }
+        }
+
+        /// <summary>Room milliseconds with every pause taken out: GAME time, the scale the run timer's deadline is on.</summary>
+        public long GameMs
+        {
+            get
+            {
+                if (Session == null || !Session.IsStarted || Session.Sim == null) return 0L;
+                long now = Session.Clock.NowMs;
+                return now - Session.Sim.Pause.PausedMsAt(now);
+            }
+        }
+
+        /// <summary>Milliseconds of GAME time since the run went to Playing, the same number on every peer. LevelClock follows it, so it stands still through a pause.</summary>
         public long LevelMs
         {
             get
             {
                 if (!HasLevelClock) return 0L;
-                long ms = Session.Clock.NowMs - Tick.ToMs(Session.Sim.PhaseStartTick);
+                long ms = GameMs - Tick.ToMs(Session.Sim.PhaseStartTick);
                 return ms > 0L ? ms : 0L;
             }
         }

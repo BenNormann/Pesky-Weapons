@@ -27,7 +27,8 @@ namespace Pesky.Protocol
 
         // Pesky Weapons' gameplay domains, 0x20 to 0x7E, are assigned by the
         // stage that adds them: players 0x20-0x2F, the labyrinth 0x30-0x3F,
-        // enemies 0x40-0x4F, world (kit pieces) 0x50-0x5F, the run 0x60-0x6F. 0x70-0x7E are free.
+        // enemies 0x40-0x4F, world (kit pieces) 0x50-0x5F, the run 0x60-0x6F,
+        // the pause and the vote 0x70-0x77. 0x78-0x7E are free.
 
         // Players and their weapons, 0x20-0x2F.
         public const byte PossessReq = 0x20;
@@ -83,6 +84,19 @@ namespace Pesky.Protocol
         public const byte RunLayout = 0x60;
         public const byte RunStart = 0x61;
         // 0x62-0x6F unused.
+
+        // The PAUSE and the VOTE (docs/VOTING.md), 0x70-0x77. The pause is host owned and reusable; the vote
+        // is its first user. VOTE_END is the one event, beside ROUND_RESULT, that names a role: the banished
+        // player's, who is out of the run for good.
+        public const byte PauseBegin = 0x70;
+        public const byte PauseEnd = 0x71;
+        public const byte VoteCallReq = 0x72;
+        public const byte VoteStart = 0x73;
+        public const byte VoteCastReq = 0x74;
+        public const byte VoteTally = 0x75;
+        public const byte VoteEnd = 0x76;
+        public const byte VoteRefused = 0x77;
+        // 0x78-0x7E unused.
 
         
 /// <summary>The container: count:u8 then [len:u16 body] per message. See <see cref="Frame"/>.</summary>
