@@ -2696,3 +2696,21 @@ Owner's list after playing round 17/18.
 - Spawn facing: the eight soul spawn points now look at the north rack (yaw 310-355) instead of straight at
   the sealed north wall with the rack off to the left.
 Untested by me.
+
+## Round 20: the relay, Plan B for campus wifi (2026-10-02)
+Owner: the only goal is that the game works on the university wifi; no paid TURN; a spare Railway service.
+Research: Railway's public edge is TCP only and its TCP proxy port is random, so TURN there is TURN over
+TCP on a random port, which a campus firewall that allows only 443 would still block. The one path that
+passes wherever a browser can browse is a WebSocket on Railway's own HTTPS domain. Hence an
+application-level relay instead of TURN:
+- `relay/` (Node, `ws`): rooms by code, binary frames forwarded to one peer or all, JSON hello/join/leave,
+  origin allow-list, 8 per room, 64 KB frames, 600 msg/s per socket, pings. README has the five Railway
+  clicks the owner does himself (new service from the repo with root `relay`, generate domain,
+  `ALLOWED_ORIGINS`, sleeping off, paste the domain).
+- `net.js`: `window.PESKY_RELAY_URL` (index.html, empty = off). The relay socket opens beside the WebRTC
+  room for the same code and peer id; per-peer routing (WebRTC when that peer's connection is up, relay
+  otherwise, never both); relay frames and joins feed the existing OnNetMessage / liveness; `?relay=force`
+  skips WebRTC for testing; the 12 s signaling watchdog and trystero join errors are log lines while the
+  relay is up. Unity, the protocol and the menu are untouched. Voice stays WebRTC only.
+- Not yet wired: the URL stays empty until the owner's Railway domain exists; then one line in the template
+  and a publish. Untested by me; the owner tests at home with `?relay=force`, then on campus.

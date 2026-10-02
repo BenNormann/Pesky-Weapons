@@ -1137,7 +1137,7 @@ impossible and is the single biggest hole in ATCK's test story.
   (`docs/ARCHITECTURE.md:156`). This is what makes the EditMode tests possible at all.
 - **Seeds ride on events** so cosmetic randomness matches without syncing it
   (`docs/ARCHITECTURE.md:159`).
-- **STUN only, no relay, by design** — "the game is peer to peer and never relays through
+- **STUN only, no TURN, by design** (round 20 adds an application-level WebSocket relay as a fallback beside WebRTC: docs/WEB-BUILD.md 'The relay') — "the game is peer to peer and never relays through
   a server" (`net.js:50`–`:54`). The documented cost: with symmetric NAT on either side
   (phone hotspot, office or campus network) **no direct path exists** and the join simply
   fails with a diagnosis (`net.js:109`).
