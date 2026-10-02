@@ -1,5 +1,6 @@
 using System;
 using UnityEngine.InputSystem;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Pesky.Game
@@ -98,6 +99,20 @@ namespace Pesky.Game
             Hook("keybinds-button", () => KeybindsClicked);
             Hook("keys-back", () => BackClicked);
 
+            // The full-screen toggle sits in the top-right corner of the whole screen, outside the panel. A click
+            // is a user gesture, which is what the browser needs to grant full screen on WebGL.
+            _fullscreen = _root.Q<Button>("fullscreen-button");
+            if (_fullscreen != null)
+            {
+                _fullscreen.clicked += () =>
+                {
+                    bool want = !Screen.fullScreen;
+                    Screen.fullScreen = want;
+                    SetFullscreenText(want);
+                };
+            }
+            SetFullscreenText(Screen.fullScreen);
+
             // ClickEvent arrives on the release, so the press that started it already went by with the game's
             // input off: closing on it cannot also fire a nudge on the left button.
             _root.RegisterCallback<ClickEvent>(e =>
@@ -106,6 +121,13 @@ namespace Pesky.Game
             });
 
             Keys = new KeybindsPage(_keysPage, controls);
+        }
+
+        Button _fullscreen;
+
+        void SetFullscreenText(bool fullscreen)
+        {
+            if (_fullscreen != null) _fullscreen.text = fullscreen ? "WINDOWED" : "FULL SCREEN";
         }
 
         void Hook(string buttonName, Func<Action> handler)
@@ -135,6 +157,7 @@ namespace Pesky.Game
 
         public void SetVisible(bool on)
         {
+            if (on) SetFullscreenText(Screen.fullScreen);
             if (_root == null) return;
             _root.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
             // A hidden button must not keep the focus: Space or Enter would "click" it in the middle of a run.

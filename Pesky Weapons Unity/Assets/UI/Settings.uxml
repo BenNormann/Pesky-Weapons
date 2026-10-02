@@ -66,5 +66,6 @@
                 <ui:Button name="confirm-cancel" text="CANCEL" class="button" />
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:Button name="fullscreen-button" text="FULL SCREEN" class="button fullscreen-button" />
     </ui:VisualElement>
 </ui:UXML>

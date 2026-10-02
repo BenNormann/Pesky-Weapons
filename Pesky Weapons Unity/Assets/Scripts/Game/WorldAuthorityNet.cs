@@ -529,7 +529,25 @@ namespace Pesky.Game
 
             float mA = Mathf.Max(0.01f, mine.Body.mass);
             float mB = Mathf.Max(0.01f, theirs.Body.mass);
-            Vector3 dv = relativeVelocity * ((1f + bounce) * mA / (mA + mB));
+            Vector3 dv;
+            if (theirs.IsBraced)
+            {
+                // A BRACED friend (standing up, Shift held) takes the bat along MY aim, the direction my launch set out
+                // on, at the brace speed scaled by my share of the two masses: a Mace or Hammer on a Dagger or Banana
+                // clears the Bat Room's chasm, a Sword on a Dagger does not (docs/level-design/rooms-v3.md).
+                float braceSpeed = data != null ? data.batBraceSpeed : 19f;
+                WeaponMotor motor = mine.GetComponent<WeaponMotor>();
+                Vector3 dir = motor != null ? motor.LastLaunchDirection : Vector3.zero;
+                if (dir.sqrMagnitude < 1e-6f) dir = relativeVelocity.sqrMagnitude > 1e-6f ? relativeVelocity.normalized : Vector3.up;
+                dv = dir * (braceSpeed * mA / (mA + mB));
+                // The batter gave its momentum away: it stops dead and drops where it struck.
+                if (data == null || data.batterStops)
+                {
+                    mine.Body.linearVelocity = Vector3.zero;
+                    mine.Body.angularVelocity = Vector3.zero;
+                }
+            }
+            else dv = relativeVelocity * ((1f + bounce) * mA / (mA + mB));
 
             BatClaimMsg claim = new BatClaimMsg();
             claim.targetSlot = holder.slot;

@@ -40,6 +40,7 @@ namespace Pesky.Game
         float _pitchDeg = 20f;
         Vector2 _roll;
         float _lastLaunchTime = -999f;
+        Vector3 _lastLaunchDirection = Vector3.up;
         float _lastWallJumpFixedTime = -999f;
         int _wallJumpsUsed;
 
@@ -48,6 +49,8 @@ namespace Pesky.Game
         public float PitchDeg { get { return _pitchDeg; } }
         public int WallJumpsUsed { get { return _wallJumpsUsed; } }
         public Vector2 RollInput { get { return _roll; } }
+        /// <summary>The direction the last launch set out on: a braced friend struck by this body flies along it.</summary>
+        public Vector3 LastLaunchDirection { get { return _lastLaunchDirection; } }
 
         /// <summary>The curse on whoever possesses this weapon, or null. Owned by the local player's CurseEffects.</summary>
         public ILaunchCurse Curse { get; set; }
@@ -151,6 +154,7 @@ namespace Pesky.Game
 
             weapon.MarkLaunched();
             _lastLaunchTime = Time.time;
+            if (velocity.sqrMagnitude > 1e-6f) _lastLaunchDirection = velocity.normalized;
             if (result == LaunchResult.WallJumped)
             {
                 _wallJumpsUsed++;

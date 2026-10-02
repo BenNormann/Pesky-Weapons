@@ -428,6 +428,13 @@ a trivial hop) and a Hammer (lies still).
 
 ## Room 5: BAT ROOM (finale, holds the EXIT)
 
+**As built (round 17, owner's version).** BRACE is real now: hold Left Shift while possessing and the weapon
+stands up on the spot (a blade on its point, anything else on its handle), frozen and still: a tall target. A
+heavier friend launching into a braced weapon bats it along the BATTER'S aim at 19 m/s times the batter's share of
+the two masses, and the batter stops dead. Mace or Hammer on a Dagger or Banana clears the 14 m chasm (14 to 17 m
+at 45 deg); a Sword on a Dagger lands 10 m out, in the chasm. No climb frame in the chasm any more: the west
+passage and the steps are the way back up. Numbers: `GameData.batBraceSpeed`, `batterStops`, `batMaxSpeed` 20.
+
 **Shape.** Rectangle, 24 x 52 m, 24 m high. Entry in the north wall at floor level (y 0). An entry
 floor 8 m deep, then STEPS: four risers of 1.5 m with 3 m treads (z 8 to 20) up to the DAIS at y 6
 (z 20 to 26, 21 m wide), the north bank of the CHASM. The chasm is 14 m wide (z 26 to 40), floor at

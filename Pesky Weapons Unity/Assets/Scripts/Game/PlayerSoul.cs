@@ -468,6 +468,8 @@ namespace Pesky.Game
             {
                 if (_jump.WasPressedThisFrame()) TryLaunch();
                 SetRoll(_move.ReadValue<Vector2>());
+                // Left Shift while possessing: BRACE, stand up on the spot and take a friend's bat (WeaponBody.TickBrace).
+                _weapon.SetBrace(_descend != null && _descend.IsPressed());
                 if (_release.WasPressedThisFrame()) Release();
             }
             else

@@ -60,6 +60,9 @@ namespace Pesky.Game
         Vector3 _stuckNormal = Vector3.up;
         float _stickRearmAt;
         bool _carried;
+        bool _braceWanted, _braced;
+        float _braceHoldOff = -999f;
+        const float BraceTurnDegreesPerSecond = 540f;
         float _lastImpactTime = -999f;
         float _lastImpactSpeed;
         public event Action<WeaponBody> Broken;
@@ -287,6 +290,7 @@ void FixedUpdate()
         {
             if (_broken) return;
             if (NetFixedUpdate()) return;
+            TickBrace();
 
             if (_stuck)
             {
@@ -373,7 +377,44 @@ public void Teleport(Vector3 position, Quaternion rotation)
             if (_broken || body == null) return;
             ReleaseHold();
             Unstick();
+            // A braced body takes the hit: the stance lets go for a moment so the next step does not zero the shove.
+            _braceHoldOff = Time.fixedTime + 1f;
+            if (_braced) { _braced = false; body.constraints = RigidbodyConstraints.None; }
             body.AddForce(velocityChange, ForceMode.VelocityChange);
+        }
+
+        /// <summary>The possessing player holds the brace key (Left Shift while possessing): stand up and take a bat.</summary>
+        public void SetBrace(bool on)
+        {
+            _braceWanted = on;
+        }
+
+        /// <summary>
+        /// BRACE (docs/level-design/rooms-v3.md, Bat Room). While the possessing player holds Shift and the weapon is on
+        /// the ground it stands up (a blade on its point, anything else on its handle), stops rolling and stays put: a
+        /// tall, still target. A heavier friend launching into it bats it along THEIR aim (WorldAuthority.RequestBat);
+        /// the shove arrives as a Knockback, which drops the stance for a second so the body flies.
+        /// </summary>
+        void TickBrace()
+        {
+            bool want = _braceWanted && IsLocallyPossessed && !_held && !_carried && !_stuck && IsGrounded
+                && body != null && !body.isKinematic && Time.fixedTime >= _braceHoldOff;
+            if (want != _braced)
+            {
+                _braced = want;
+                body.constraints = want ? RigidbodyConstraints.FreezeRotation : RigidbodyConstraints.None;
+                if (want) body.angularVelocity = Vector3.zero;
+            }
+            if (!_braced) return;
+            // Stand: local +Z (the point / the head) down for a blade, up for the rest; keep the facing.
+            Vector3 flat = Vector3.ProjectOnPlane(transform.up, Vector3.up);
+            if (flat.sqrMagnitude < 1e-4f) flat = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+            if (flat.sqrMagnitude < 1e-4f) flat = Vector3.forward;
+            Vector3 along = def != null && def.bladed ? Vector3.down : Vector3.up;
+            Quaternion target = Quaternion.LookRotation(along, flat.normalized);
+            body.MoveRotation(Quaternion.RotateTowards(body.rotation, target, BraceTurnDegreesPerSecond * Time.fixedDeltaTime));
+            Vector3 v = body.linearVelocity;
+            body.linearVelocity = new Vector3(0f, Mathf.Min(v.y, 0f), 0f);
         }
 
         /// <summary>The motor calls this on every launch.</summary>
