@@ -540,3 +540,82 @@ Button.vote-confirm:disabled {
     white-space: normal;
     margin-top: 10px;
 }
+
+/* ---- the end of the run: VICTORY / GAME OVER (RunEndScreen, docs/RUN.md 4.3) ----
+   The vote sheet's ground and panel, the result banner's amber for a win, the settings screen's red for a loss. */
+
+.end-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(8, 9, 12, 0.82);
+    padding: 24px 16px;
+}
+
+.end-panel {
+    width: 100%;
+    max-width: 640px;
+    background-color: rgb(14, 16, 20);
+    border-width: 1px;
+    border-color: rgb(38, 42, 52);
+    border-radius: 8px;
+    padding: 28px 24px 18px 24px;
+    align-items: center;
+}
+
+.end-title {
+    font-size: 44px;
+    -unity-font-style: bold;
+    letter-spacing: 8px;
+    color: rgb(226, 104, 84);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin: 0 0 6px 0;
+}
+
+.end-root.is-victory .end-title {
+    color: rgb(238, 200, 100);
+}
+
+.end-reason {
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: rgb(238, 238, 234);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin: 0 0 14px 0;
+}
+
+.end-mage {
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: rgb(178, 182, 192);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin: 0 0 20px 0;
+}
+
+Button.end-button {
+    min-height: 46px;
+    min-width: 280px;
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(18, 18, 20);
+    background-color: rgb(226, 186, 74);
+    border-width: 1px;
+    border-color: rgb(226, 186, 74);
+    border-radius: 4px;
+    padding: 0 18px;
+    margin: 0;
+}
+
+Button.end-button:hover {
+    background-color: rgb(238, 200, 100);
+    border-color: rgb(238, 200, 100);
+}

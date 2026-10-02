@@ -63,6 +63,11 @@ MonoBehaviour:
   porterCarrySpeed: 2.2
   porterPlaceSeconds: 0.6
   porterCooldownSeconds: 5
+  porterMaxMass: 0
+  porterReachThrough: 0
+  porterSummonSeconds: 8
+  porterRefuseSeconds: 3
+  porterRefuseLine: a shame I can only fit a dagger through the bars
   shieldMaxHp: 120
   shieldMinMass: 8
   bladedDamageBonus: 1.5

@@ -199,6 +199,7 @@ namespace Pesky.Game
             if (next == State.Curious || next == State.Fetch) ShowMarker("?", curiousColor);
             else if (next == State.Alarmed) ShowMarker("!", alarmColor);
             else if (next == State.Asleep) ShowMarker("z", sleepColor);
+            else if (next == State.Refuse) ShowMarker(def != null ? def.porterRefuseLine : "it will not fit", curiousColor);
             else HideMarker();
         }
     }

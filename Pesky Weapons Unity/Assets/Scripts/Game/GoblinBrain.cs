@@ -38,7 +38,9 @@ namespace Pesky.Game
             /// <summary>Porter: carrying a weapon along its route.</summary>
             Carry = 10,
             /// <summary>Porter: setting the weapon down on its stand.</summary>
-            Place = 11
+            Place = 11,
+            /// <summary>Porter: standing at the bars telling a weapon it will not fit through.</summary>
+            Refuse = 12
         }
         [Header("Identity")]
         [SerializeField] int id;
@@ -302,6 +304,7 @@ namespace Pesky.Game
                 case State.Fetch: TickFetch(); break;
                 case State.Carry: TickCarry(); break;
                 case State.Place: TickPlace(); break;
+                case State.Refuse: TickRefuse(); break;
             }
 
             UpdateLook();

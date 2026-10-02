@@ -8,7 +8,8 @@ namespace Pesky.Game
     /// deltaTime - so a late joiner or a rewind lands on the same spot (SLICE-1 section 6).
     /// Riders (weapons, enemies) are carried explicitly: PhysX friction alone does not hold a Rigidbody on a
     /// kinematic platform, so every physics step the platform's own delta is added to each body standing in
-    /// the rider box. Velocity is untouched, so a launch from the platform keeps its own arc.
+    /// the rider box. Grounded weapons are gently braked so they settle with the platform instead of
+    /// sliding off; recently launched weapons keep their full velocity, so jumping never feels glued.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
@@ -34,6 +35,10 @@ namespace Pesky.Game
         [SerializeField] Vector3 riderBoxSize = new Vector3(3.2f, 1.4f, 3.2f);
         [Tooltip("Weapon | Enemy.")]
         [SerializeField] LayerMask riderMask = (1 << 9) | (1 << 11);
+        [Tooltip("Horizontal braking of grounded weapons in m/s^2. 0 = off.")]
+        [SerializeField] float riderBrake = 18f;
+        [Tooltip("A weapon that launched less than this many seconds ago is not braked.")]
+        [SerializeField] float brakeLaunchGrace = 0.75f;
 
         readonly Collider[] _hits = new Collider[32];
         readonly List<Rigidbody> _riders = new List<Rigidbody>();
@@ -43,6 +48,9 @@ namespace Pesky.Game
         public float PeriodSeconds { get { return periodSeconds; } }
         public Transform PointA { get { return pointA; } }
         public Transform PointB { get { return pointB; } }
+        public Vector3 RiderBoxSize { get { return riderBoxSize; } }
+        public float RiderBrake { get { return riderBrake; } }
+        public float BrakeLaunchGrace { get { return brakeLaunchGrace; } }
 
         void Reset()
         {
@@ -79,15 +87,35 @@ namespace Pesky.Game
             Vector3 delta = target - _last;
             _last = target;
 
-            if (delta.sqrMagnitude > 1e-10f) CarryRiders(delta);
+            CarryRiders(delta);
             body.MovePosition(target);
         }
 
-void CarryRiders(Vector3 delta)
+        void CarryRiders(Vector3 delta)
         {
             // The rider fix is shared with the Lift: see RiderCarry (P_Slick surface plus one explicit delta).
             RiderCarry.Collect(transform, riderBoxCenter, riderBoxSize, riderMask, body, _hits, _riders);
-            RiderCarry.Move(_riders, delta);
+            if (delta.sqrMagnitude > 1e-10f) RiderCarry.Move(_riders, delta);
+            if (riderBrake > 0f) BrakeRiders();
+        }
+
+        void BrakeRiders()
+        {
+            float drop = riderBrake * Time.fixedDeltaTime;
+            for (int i = 0; i < _riders.Count; i++)
+            {
+                Rigidbody rb = _riders[i];
+                WeaponBody weapon = rb.GetComponent<WeaponBody>();
+                if (weapon == null || !weapon.IsGrounded || weapon.SecondsSinceLaunch < brakeLaunchGrace) continue;
+
+                Vector3 velocity = rb.linearVelocity;
+                Vector3 horizontal = new Vector3(velocity.x, 0f, velocity.z);
+                float speed = horizontal.magnitude;
+                if (speed < 0.001f) continue;
+
+                horizontal = speed <= drop ? Vector3.zero : horizontal * (1f - drop / speed);
+                rb.linearVelocity = new Vector3(horizontal.x, velocity.y, horizontal.z);
+            }
         }
 
         void OnDrawGizmosSelected()

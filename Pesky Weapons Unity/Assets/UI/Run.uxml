@@ -46,5 +46,13 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="end-root" class="end-root">
+            <ui:VisualElement name="end-panel" class="end-panel">
+                <ui:Label name="end-title" class="end-title" text="GAME OVER" picking-mode="Ignore" />
+                <ui:Label name="end-reason" class="end-reason" text="" picking-mode="Ignore" />
+                <ui:Label name="end-mage" class="end-mage" text="" picking-mode="Ignore" />
+                <ui:Button name="end-button" text="BACK TO THE ROOM" class="end-button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

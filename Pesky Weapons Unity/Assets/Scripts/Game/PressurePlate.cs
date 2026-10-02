@@ -14,6 +14,11 @@ namespace Pesky.Game
         [SerializeField] WorldAuthority authority;
         [Tooltip("Summed weapon mass needed to latch (SLICE-1 section 6: 10).")]
         [SerializeField] float massThreshold = 10f;
+        [Tooltip("On = the usual plate: reaching the threshold LATCHES for good. Off = a HOLD plate: Held is true only while enough mass rests on it (a parked body keeps a portcullis up).")]
+        [SerializeField] bool latching = true;
+        [Tooltip("Only METAL weapons count (a circuit gap that a wooden Staff or the Banana cannot bridge).")]
+        [SerializeField] bool metalOnly;
+        bool _held;
         [Tooltip("A weapon only counts while it is RESTING: slower than this. A fly-through never latches it.")]
         [SerializeField] float restSpeed = 1.5f;
         [Tooltip("The pad that sinks while the plate is pressed.")]
@@ -33,6 +38,9 @@ namespace Pesky.Game
         public float MassThreshold { get { return massThreshold; } }
         public float Mass { get { return _mass; } }
         public bool Latched { get { return _latched; } }
+        public bool IsLatching { get { return latching; } }
+        /// <summary>Host-decided: a latching plate once latched, a hold plate while enough mass rests on it.</summary>
+        public bool Held { get { return latching ? _latched : _held; } }
 
         void Awake()
         {
@@ -67,6 +75,7 @@ namespace Pesky.Game
                 WeaponBody w = _on[i];
                 if (w == null || w.IsBroken) { _on.RemoveAt(i); continue; }
                 if (w.Body == null) continue;
+                if (metalOnly && (w.Def == null || !w.Def.metal)) continue;
                 if (w.Body.linearVelocity.magnitude > restSpeed) continue;
                 sum += w.Body.mass;
             }
@@ -75,14 +84,23 @@ namespace Pesky.Game
         }
 
         /// <summary>Authority only: the validated mass report, which may latch the plate.</summary>
+/// <summary>Authority only: the validated mass report. Latching plates latch; hold plates track Held.</summary>
         public void ApplyMass(float mass)
         {
             _mass = mass;
-            if (!_latched && mass >= massThreshold)
+            if (latching)
             {
-                _latched = true;
-                Tint(latchedColor);
+                if (!_latched && mass >= massThreshold)
+                {
+                    _latched = true;
+                    Tint(latchedColor);
+                }
+                return;
             }
+            bool held = mass >= massThreshold;
+            if (held == _held) return;
+            _held = held;
+            Tint(held ? latchedColor : idleColor);
         }
 
         void Update()

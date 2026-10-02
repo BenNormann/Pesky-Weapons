@@ -74,6 +74,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.DropRamp
   rope: {fileID: 0}
+  lever: {fileID: 0}
   clock: {fileID: 0}
   body: {fileID: 6957959762494018464}
   mode: 0

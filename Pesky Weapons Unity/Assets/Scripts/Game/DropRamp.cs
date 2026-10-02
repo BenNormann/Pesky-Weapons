@@ -16,7 +16,9 @@ namespace Pesky.Game
     {
         public enum Mode { Swing = 0, Drop = 1 }
 
-        [SerializeField] Rope rope;
+        [OptionalRef][SerializeField] Rope rope;
+        [Tooltip("Optional. A lever instead of (or as well as) a rope: the ramp falls when the lever is ON, timed from the lever's OnMs (a drawbridge).")]
+        [OptionalRef][SerializeField] ImpactLever lever;
         [SerializeField] LevelClock clock;
         [SerializeField] Rigidbody body;
 
@@ -56,11 +58,15 @@ namespace Pesky.Game
         }
 
         /// <summary>Pure: how far through the fall the ramp is at a given clock time.</summary>
+/// <summary>Pure: how far through the fall the ramp is at a given clock time (rope cut or lever on).</summary>
         public float ProgressAt(long ms)
         {
-            if (rope == null || !rope.IsCut) return 0f;
-            if (fallSeconds <= 0.001f) return 1f;
-            double t = (ms - rope.CutMs) * 0.001;
+            long startMs;
+            if (rope != null && rope.IsCut) startMs = rope.CutMs;
+            else if (lever != null && lever.IsOn) startMs = lever.OnMs;
+            else return 0f;
+            if (fallSeconds <= 0.001f || startMs <= 0L) return 1f;
+            double t = (ms - startMs) * 0.001;
             float k = Mathf.Clamp01((float)(t / fallSeconds));
             return smooth ? Mathf.SmoothStep(0f, 1f, k) : k;
         }

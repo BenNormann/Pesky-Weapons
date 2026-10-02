@@ -531,11 +531,13 @@ namespace Pesky.Editor
                 RequireNotStatic<CrackedWall>(go, path, problems);
                 RequireNotStatic<PorterGate>(go, path, problems);
                 RequireNotStatic<ImpactLever>(go, path, problems);
+                RequireNotStatic<RopeSegment>(go, path, problems);
 
                 RequireSolidCollider<Rope>(go, path, problems);
                 RequireSolidCollider<Pot>(go, path, problems);
                 RequireSolidCollider<CrackedWall>(go, path, problems);
                 RequireSolidCollider<ImpactLever>(go, path, problems);
+                RequireSolidCollider<RopeSegment>(go, path, problems);
                 RequireTriggerCollider<LightningField>(go, path, problems);
                 RequireTriggerCollider<MassPan>(go, path, problems);
 
@@ -563,7 +565,7 @@ namespace Pesky.Editor
                 }
 
                 PorterGate gate = go.GetComponent<PorterGate>();
-                if (gate != null && gate.PorterCount == 0)
+                if (gate != null && gate.PorterCount == 0 && !gate.HasLatchLever)
                     problems.Add("PorterGate has no porters wired, so nothing can ever open it: " + path);
             }
         }
@@ -584,7 +586,7 @@ namespace Pesky.Editor
                         problems.Add("Porter goblin has no carrySocket, so it has nowhere to hold a weapon: " + path);
                     if (goblin.DropPoint == null)
                         problems.Add("Porter goblin has no dropPoint (the stand beyond its gate): " + path);
-                    if (goblin.Patrol == null)
+                    if (goblin.Patrol == null && goblin.BarsPoint == null)
                         problems.Add("Porter goblin has no PatrolRoute: it would walk straight at its stand and never use its gate: " + path);
                 }
 

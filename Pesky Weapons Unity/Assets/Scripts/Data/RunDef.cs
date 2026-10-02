@@ -19,6 +19,9 @@ namespace Pesky.Data
         [Tooltip("How many pool rooms a run strings together between the start room and the Exit room. Fewer if the pool is smaller.")]
         [Min(1)] public int roomsPerRun = 5;
 
+        [Tooltip("Room ids that appear first and in this exact order when they exist in the scene pool. Random rooms fill only any remaining slots.")]
+        public int[] guaranteedRoomIds = new int[0];
+
         [Tooltip("Seconds on the timer once the first player leaves the start room. The Mage wins the instant it reaches zero.")]
         [Min(10f)] public float timerSeconds = 300f;
 

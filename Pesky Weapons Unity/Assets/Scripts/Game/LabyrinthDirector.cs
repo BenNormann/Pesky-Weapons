@@ -43,6 +43,7 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] PlayerSpawner spawner;
 
         Renderer[][] _roomRenderers;
+        bool[][] _roomRendererOn;   // each renderer's enabled flag the moment its room was last culled
         Light[][] _roomLights;
         bool[] _roomDrawn;
 
@@ -101,10 +102,12 @@ namespace Pesky.Game
             BuildCullTables();
         }
 
-        /// <summary>What each room owns that can be switched off when the player is far away: its renderers (not a traveller's) and its lights.</summary>
+        /// <summary>What each room owns that can be switched off when the player is far away: its renderers (not a traveller's) and its lights.
+        /// A renderer the room ships switched off (a portcullis panel behind its bars) is not furniture: it is left out and never redrawn.</summary>
         void BuildCullTables()
         {
             _roomRenderers = new Renderer[rooms.Length][];
+            _roomRendererOn = new bool[rooms.Length][];
             _roomLights = new Light[rooms.Length][];
             _roomDrawn = new bool[rooms.Length];
             List<Renderer> keep = new List<Renderer>(128);
@@ -115,6 +118,7 @@ namespace Pesky.Game
                 if (room == null)
                 {
                     _roomRenderers[i] = new Renderer[0];
+                    _roomRendererOn[i] = new bool[0];
                     _roomLights[i] = new Light[0];
                     continue;
                 }
@@ -124,9 +128,12 @@ namespace Pesky.Game
                 {
                     // A weapon parked in a room is a traveller, not furniture: it leaves with a player and is never culled with the room.
                     if (all[r].GetComponentInParent<Rigidbody>() != null) continue;
+                    // Switched off by design (a grate's slab behind its bars): not ours to draw, ever.
+                    if (!all[r].enabled) continue;
                     keep.Add(all[r]);
                 }
                 _roomRenderers[i] = keep.ToArray();
+                _roomRendererOn[i] = new bool[_roomRenderers[i].Length];
                 _roomLights[i] = room.GetComponentsInChildren<Light>(true);
             }
         }
@@ -174,7 +181,14 @@ void Update()
                 if (drawn == _roomDrawn[i]) continue;
                 _roomDrawn[i] = drawn;
                 Renderer[] rs = _roomRenderers[i];
-                for (int r = 0; r < rs.Length; r++) if (rs[r] != null) rs[r].enabled = drawn;
+                bool[] on = _roomRendererOn[i];
+                for (int r = 0; r < rs.Length; r++)
+                {
+                    if (rs[r] == null) continue;
+                    // A room coming back is restored to what it was when it went (a rope cut meanwhile stays cut), never blanket-enabled.
+                    if (drawn) rs[r].enabled = on[r];
+                    else { on[r] = rs[r].enabled; rs[r].enabled = false; }
+                }
                 Light[] ls = _roomLights[i];
                 for (int l = 0; l < ls.Length; l++) if (ls[l] != null) ls[l].enabled = drawn;
             }

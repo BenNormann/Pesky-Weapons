@@ -119,6 +119,15 @@ namespace Pesky.Data
         public float porterPlaceSeconds = 0.6f;
         [Tooltip("Seconds after a delivery during which it will not pick anything up again.")]
         public float porterCooldownSeconds = 5f;
+        [Tooltip("Heaviest weapon the porter will carry (a grate only lets a Dagger through). 0 = anything.")]
+        public float porterMaxMass = 0f;
+        [Tooltip("Extra reach, metres, for picking a weapon up THROUGH bars from its own side.")]
+        public float porterReachThrough = 0f;
+        [Tooltip("A bang on its bell keeps the porter looking by the bars for this long.")]
+        public float porterSummonSeconds = 8f;
+        [Tooltip("How long it shows its refusal line over a weapon that will not fit.")]
+        public float porterRefuseSeconds = 3f;
+        public string porterRefuseLine = "a shame I can only fit a dagger through the bars";
 
         [Header("Shield boss (role = ShieldBoss)")]
         [Tooltip("Shield hit points. 0 = no shield, which is every ordinary goblin.")]

@@ -187,7 +187,8 @@ namespace Pesky.Game
         /// </summary>
         public bool RequestMagicDoorTraverse(MagicDoor door, PlayerSoul soul)
         {
-            if (door == null || soul == null || !soul.IsGhost || soul.IsPossessing || soul.Body == null) return false;
+            // A free soul may pass an OPEN gate (owner, 2026-10-02); a shut gate is refused below for everyone.
+            if (door == null || soul == null || soul.IsPossessing || soul.Body == null) return false;
             if (IsPaused) return false;
             MagicDoor exit = door.Twin;
             if (exit == null || !door.GateOpen) return false;

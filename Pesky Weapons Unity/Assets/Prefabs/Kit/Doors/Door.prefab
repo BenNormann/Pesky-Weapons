@@ -162,6 +162,10 @@ MonoBehaviour:
   room: {fileID: 0}
   plate: {fileID: 0}
   keyId: 1
+  lever: {fileID: 0}
+  scales: {fileID: 0}
+  plates: []
+  orCondition: {fileID: 0}
 --- !u!114 &3091131393107749143
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -180,3 +184,4 @@ MonoBehaviour:
   panel: {fileID: 191693713012440953}
   openOffset: {x: 3.1, y: 0, z: 0}
   slideSeconds: 0.8
+  closesAgain: 0

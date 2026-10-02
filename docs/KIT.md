@@ -273,7 +273,10 @@ scene validator enforces that.
 **Rule.** `Rope` is a taut cord with a capsule collider. A **bladed** weapon hitting it at `minCutSpeed`
 (5 m/s) or more cuts it; blunt weapons bounce off, which is the whole puzzle (a Mace must soul-swap for a
 blade). Cutting LATCHES: the rope hides its taut mesh, shows its cut ends, disables its collider and records
-the LevelClock time. `DropRamp` has **no host state of its own** — its pose is a pure function of
+the LevelClock time. A rope with more than one straight run adds **`RopeSegment`** objects (each its own solid
+collider on the World layer, not static, `rope` pointing back) and lists them in `Rope.segments`: a hit on any
+run is the same single cut, they are switched off with the taut mesh, and the host's claim-range check
+(`Rope.IsNear`) measures to the nearest point of any run, not just the root. `DropRamp` has **no host state of its own** — its pose is a pure function of
 (`rope.IsCut`, `rope.CutMs`, `clock.Ms`), so every client draws the same fall with no message. It is a
 kinematic Rigidbody moved with MovePosition / MoveRotation, so it shoves rather than tunnels, and it does
 **not** carry riders (nothing is standing on a ramp that is still up).
@@ -287,7 +290,8 @@ kinematic Rigidbody moved with MovePosition / MoveRotation, so it shoves rather 
 **positive** `swingDegrees` lowers that far end. For a deck `L` long, the far end drops `L*sin(a)` and pulls
 back to `L*cos(a)`, so a hinge at height `h` lands on the floor when `h = L*sin(a)` — 8 m deck at 40 deg needs
 `h = 5.14`. Hang the Rope at the deck's held far end. Per instance: `Rope.id` (1601+), `authority`, `clock`,
-`ramp`; `DropRamp.rope`, `clock`. Register the Rope in `ropes`. Neither may be marked static.
+`ramp`, `segments` (optional); each `RopeSegment.rope`; `DropRamp.rope`, `clock`. Register the Rope in `ropes`.
+None of them may be marked static.
 
 ### Pot — `Pot.prefab`
 **Rule.** Only a **blunt** weapon at `minSmashSpeed` (5 m/s) or more smashes it (Mace, Hammer, Staff). Bladed
@@ -372,8 +376,11 @@ stands in front of `MagicDoor_16_to_D`. That placeholder is still there — this
 **Rule.** A solid panel that blocks weapons and souls and slides open only while one of its `porters` is
 within `openRange` **and carrying something**. It does NOT latch: it shuts behind the porter. That is the
 Carry Room: you cannot open it, so you play dead and the porter opens it for itself.
-**Caveat (grey-box).** Goblins move with a NavMeshAgent and are not stopped by the panel, so any goblin can
-walk through a shut gate. Keep a porter gate on the porter's route and out of a fight.
+**Goblins and the panel.** Goblins move with a NavMeshAgent and the panel alone does not stop them. Either keep
+the gate on the porter's route and out of a fight, or (Porter Room v3) give the `Panel` a `NavMeshObstacle`
+(box, carving): shut, it carves the mesh so nobody paths through the bars; open, it rises clear of the floor
+and the way is free. With `latchLever` set the gate opens for good from a lever inside and needs no `porters`
+at all (`HasLatchLever`; the validator accepts that).
 **Tunables.** `openRange` 4, `requireCarrying` true, `openOffset` (0,3.6,0), `slideSeconds` 0.6.
 **Host state.** open flag. **Place and wire.** NOT static. `id` (2301+), `authority`, `porters`; register in
 `porterGates`.
@@ -391,7 +398,7 @@ patrol, sleep, porter, shield boss.
 | **View cone (all goblins)** | A goblin only sees inside a **110 deg** cone about its forward axis, plus anything within `closeSightRange`. Line of sight still has to be clear. This is what makes "move only when nobody looks" a puzzle. | `viewConeDeg` 110, `closeSightRange` 1.5 | none | Nothing to wire. The cone is drawn as a gizmo when the goblin is selected. |
 | **Patrol** | Wire a `PatrolRoute` on the goblin and it walks the route instead of wandering, at `patrolSpeed`, pausing `PatrolRoute.pauseSeconds` at each point. It goes back to the route after a fight. | `patrolSpeed` 1.6, `patrolArrive` 0.6 | none | `GoblinBrain.patrol`. |
 | **Sleep** — `GoblinSleeper.prefab` | `startAsleep`: it perceives **nothing** (no cone, no room aggro, a RoomVolume entry does not wake it) and shows a "z". It wakes on an ANIMATE weapon within `wakeAnimateRange` **4 m** or a weapon impact of `wakeImpactSpeed` 4 m/s within `wakeImpactRange` **8 m**, and then wakes sleeping goblins within `wakeNeighbourRadius` 6 m. Those neighbours do **not** wake further neighbours, so there is no chain across the room. | `wakeAnimateRange` 4, `wakeImpactRange` 8, `wakeImpactSpeed` 4, `wakeNeighbourRadius` 6 | asleep / awake | `startAsleep` on the instance, and its `room` — a sleeper with no RoomVolume can never hear anything (the validator says so). |
-| **Porter** — `GoblinPorter.prefab`, def `Assets/Data/Enemies/GoblinPorter.asset` | `role = Porter`. A weapon that has been INANIMATE for `porterInanimateSeconds` **2 s**, seen within `porterNoticeRange` 8 m, is walked to (Fetch), picked up (`porterReach` 2 m), carried along its PatrolRoute (Carry) through its PorterGate, and set down on `dropPoint` after `porterPlaceSeconds` (Place). It will not pick anything up again for `porterCooldownSeconds` 5 s, and never re-fetches a weapon already sitting on its stand. **Turn ANIMATE in its hands and it drops you and turns hostile.** While carried the weapon keeps gravity off, counts as GROUNDED (so a launch is allowed) and its velocity is never written back, so the launch takes. | `porterReach` 2, `porterInanimateSeconds` 2, `porterNoticeRange` 8, `porterCarrySpeed` 2.2, `porterPlaceSeconds` 0.6, `porterCooldownSeconds` 5 | the carried weapon | `role`, `carrySocket` (prefab child at (0,2.05,0.35), above the capsule so the weapon does not fight the body), `dropPoint` (a scene Transform beyond the gate — a `HammerStand` slot works), `patrol`, `room`, `authority`. The validator insists on all three. |
+| **Porter** — `GoblinPorter.prefab`, def `Assets/Data/Enemies/GoblinPorter.asset` | `role = Porter`. A weapon that has been INANIMATE for `porterInanimateSeconds` **2 s**, seen within `porterNoticeRange` 8 m, is walked to (Fetch), picked up (`porterReach` 2 m), carried along its PatrolRoute (Carry) through its PorterGate, and set down on `dropPoint` after `porterPlaceSeconds` (Place). It will not pick anything up again for `porterCooldownSeconds` 5 s, and never re-fetches a weapon already sitting on its stand. **Turn ANIMATE in its hands and it drops you and turns hostile.** While carried the weapon keeps gravity off, counts as GROUNDED (so a launch is allowed) and its velocity is never written back, so the launch takes. | `porterReach` 2, `porterInanimateSeconds` 2, `porterNoticeRange` 8, `porterCarrySpeed` 2.2, `porterPlaceSeconds` 0.6, `porterCooldownSeconds` 5, `porterMaxMass` 0 = any (`GoblinPorter.asset`: 1), `porterReachThrough` 0 (1.5), `porterSummonSeconds` 8, `porterRefuseSeconds` 3, `porterRefuseLine` | the carried weapon | `role`, `carrySocket` (prefab child at (0,2.05,0.35), above the capsule so the weapon does not fight the body), `dropPoint` (a scene Transform beyond the gate — a `HammerStand` slot works), `patrol` (route porter) or `bell` + `barsPoint` (bars porter), `room`, `authority`. The validator insists on `dropPoint` and on one of `patrol` / `barsPoint`. **Bars variant (v3 Porter Room).** `bell` is a NON-latching `ImpactLever` on the gate's `Panel` (every weapon impact at `minSpeed` 3 m/s is a bang) and `barsPoint` a Transform just inside the bars. A bang summons the porter for `porterSummonSeconds`: it walks to `barsPoint` and looks at every still weapon in the WORLD within `porterReach` + `porterReachThrough` of the bars, not only its own room. One of `porterMaxMass` or less (1 kg: Dagger, Banana) it pulls through and carries to `dropPoint`; a heavier one within reach puts it in state `Refuse` with `porterRefuseLine` over its head for `porterRefuseSeconds` ("a shame I can only fit a dagger through the bars"). |
 | **Shield boss** — `GoblinBoss.prefab`, def `Assets/Data/Enemies/GoblinBoss.asset` | `role = ShieldBoss`, body 1.8x. While `shieldHp > 0` **only a weapon of `shieldMinMass` 8 or more touches it at all** (Mace, Hammer) — everything else is turned away for 0 damage and only angers it. When the shield breaks the shield plate and its bar vanish and the body takes normal damage with `bladedDamageBonus` **1.5x** for blades. Same silver-arc telegraph, slower and wider. Two world-space bars: body and shield. | `shieldMaxHp` 120, `shieldMinMass` 8, `bladedDamageBonus` 1.5; body 140 HP, `moveSpeed` 2.2, `windupSeconds` 0.9, `strikeSeconds` 0.45, `strikeHalfAngleDeg` 100, `strikeReach` 3.4, `attackDamage` 30, `attackCooldown` 1.8, `viewConeDeg` 140 | shield HP, body HP | `role`, `def`, `shieldRenderer`, `shieldBar`, `shieldBarFill` (all wired in the prefab), plus `authority` / `room` per instance. Ordinary goblins keep `shieldMaxHp` 0 and `bladedDamageBonus` 1, so the damage arithmetic is unchanged for them. |
 
 **Damage path (changed).** `WorldAuthority.RequestHitEnemy` now asks `GoblinBrain.ResolveDamage(weapon, raw)`
@@ -443,6 +450,9 @@ launch up hop by hop.
   across and skips the puzzle. 5.0 m above the floor beats every weapon (Dagger apex at 80 deg = 4.75 m).
 
 ### Rope as a floor-to-deck stay
+A rope that turns a corner (the Well Room: the kit root standing on the platform's yoke, scaled up to the
+pulley wheel, then a `RopeSegment` slanting from the wheel down to the cleat) is one Rope plus one segment per
+further run; see `RoomsV3Builder.RopeCord`. Both capsules exclude the Soul layer, so a rope never blocks a soul.
 The `Rope` root is the BOTTOM of the cord and the cord runs 3 m **up** from it (scale the root in y to
 lengthen it: y 1.6 = a 4.8 m cord). A rope hung from the deck downwards is therefore the only way to put
 the cord where a weapon can hit it: **put the root on the floor under the deck's end and scale it up to
@@ -459,6 +469,21 @@ Make the wall around it at least `openOffset.y` + opening height tall (Room 10: 
 opening, `openOffset` (0,3.6,0)) so the open panel hides inside the wall instead of poking out of it.
 Because the gate does not latch, the far side needs its own way back: Room 10 uses a 4-step staircase
 (1.5 m risers) up the far face of the wall, and a sheer face on the near side, so the return is one-way.
+
+### A renderer you switch off in a room stays off
+`LabyrinthDirector` culls far rooms by switching their renderers off and on again. Since round 15 it leaves out
+any renderer that was already off when the tables were built and restores each renderer to the state it had
+when the room went away, instead of force-enabling everything (which painted the Porter Room grate's red slab
+over its bars the moment the room came into range). `Lattice()` now also REMOVES the panel's MeshRenderer and
+MeshFilter rather than disabling them, so nothing can ever draw the slab.
+
+### NavMeshData turns a scene binary
+`NavMeshSurface.BuildNavMesh()` from Editor code leaves its `NavMeshData` as a scene object. NavMeshData only
+serializes in binary, and Unity then writes the WHOLE scene file in binary even under Force Text (no diff, no
+merge; `git diff` shows `-  -`, the file starts with NUL bytes instead of `%YAML`). `RoomsV3Builder.BakeNavMesh`
+therefore saves the data as `Assets/Scenes/<scene>/NavMesh-<surface>.asset` (the Bake button's layout; that
+one file is binary and the scene stays text). If a `.unity` ever goes binary, look for an embedded NavMeshData
+first.
 
 ### Porter wiring recipe (Room 10)
 `GoblinPorter` instance: `authority`, `room` (its RoomVolume), `patrol` (a `PatrolRoute` whose points run
@@ -621,3 +646,25 @@ by the seed, so all four doorways carry one. Live, it shows a bright ring
 **exactly `exitGatherRadius` across, centred on the doorway**, and a second disc
 while a weapon stands in it. It decides nothing: the host wins the round by
 measuring that radius itself.
+
+## Rooms v3 additions (2026-10-02, built by the orchestrator through the MCP; implemented, untested)
+- **Souls pass OPEN magic doors** (owner). `MagicDoor` enables its `SoulBlock` collider only while the gate is
+  shut and watches free souls as travellers when the gate is open; `WorldAuthority.RequestMagicDoorTraverse(door,
+  soul)` accepts any free soul through an open gate. A shut or locked door still blocks souls and weapons alike.
+- **Hold plate**: `PressurePlate.latching = false` makes `Held` true only while enough mass rests on it; the host
+  broadcasts every change of Held as the plate's KIT_STATE (1 held / 0 released). `metalOnly` counts only
+  weapons whose `WeaponDef.metal` is set (circuit gaps). `DoorCondition.Mode.PlateHeld` reads it.
+- **Door that shuts again**: `Door.closesAgain` + `WorldAuthority.DoorClosed`: the host sends KIT_STATE 0 when a
+  closesAgain door's condition lapses (a portcullis on a hold plate). `openOffset (0, 3.6, 0)` lifts it.
+- **OR-ed door conditions**: `DoorCondition.orCondition` (a second `DoorCondition` component, e.g. on a child):
+  the door opens if either is satisfied (held plate OR pinned lever).
+- **PlatesHeld**: `DoorCondition.Mode.PlatesHeld` with `plates[]`: every plate Held at once (the Circuit Room).
+- **Lever-released ramp**: `DropRamp.lever` (an `ImpactLever`) releases the ramp instead of / as well as a rope;
+  `ImpactLever.clock` + `OnMs` record the LevelClock time it turned on so every peer animates the same fall.
+- **PorterGate.latchLever**: while that lever is on the gate stays open for good (opened from the inside).
+- **RoomsV3Builder** (`Pesky/Rooms/Build Five Rooms v3`): builds the five rooms of docs/level-design/rooms-v3.md
+  from primitives + kit as `Assets/Prefabs/Rooms/Labyrinth/RoomV3_*.prefab`, installs them as rooms 3-7, sets
+  Run.asset (5 rooms, ids 3-7, timer 480 s) and bakes the NavMesh. Numbers live at the top of each room method.
+  Not yet built from the design: porter max-mass / lure / flee / respawn, the braced-bat numbers, the glowing
+  wire (the circuit gaps tint instead), the 1 s circuit hold, the Door_Portcullis variant (bars are added to the
+  standard panel), and the decorative chains are not static (validator noise, harmless).

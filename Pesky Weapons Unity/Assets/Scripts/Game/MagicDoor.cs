@@ -62,6 +62,10 @@ namespace Pesky.Game
 
 
         readonly Dictionary<Rigidbody, Vector3> _previous = new Dictionary<Rigidbody, Vector3>();
+        // The SoulBarrier collider filling the opening. Since 2026-10-02 a free soul may pass an OPEN door, so
+        // the block is solid only while the gate is shut (a closed door still stops souls and weapons alike).
+        Collider _soulBlock;
+        bool _soulBlockOn = true;
         bool _planeShown = true;
 
         public int SceneId { get { return id; } }
@@ -115,6 +119,7 @@ namespace Pesky.Game
 
         void OnEnable()
         {
+            if (_soulBlock == null) { Transform sb = transform.Find("SoulBlock"); if (sb != null) _soulBlock = sb.GetComponent<Collider>(); }
             _previous.Clear();
             ShowPlane(GateOpen);
         }
@@ -184,6 +189,8 @@ namespace Pesky.Game
         void FixedUpdate()
         {
             if (authority == null) return;
+            bool shut = !GateOpen;
+            if (_soulBlock != null && shut != _soulBlockOn) { _soulBlock.enabled = shut; _soulBlockOn = shut; }
             float rangeSq = sensorRange * sensorRange;
             Vector3 here = transform.position;
             // Resolving the twin walks the grid table; it is only done once a body is actually near.
@@ -211,7 +218,9 @@ namespace Pesky.Game
                 PlayerSoul s = souls[i];
                 if (s == null || s.Body == null) continue;
                 if (sensorRange > 0f && (s.Body.position - here).sqrMagnitude > rangeSq) { _previous.Remove(s.Body); continue; }
-                if (s.IsGhost && !s.IsPossessing)
+                // A free soul is a traveller through an OPEN gate (owner, 2026-10-02: easy trips back to the rack); a
+                // ghost passes regardless. Through a shut gate a soul is still blocked and only gets the hint.
+                if (!s.IsPossessing && (s.IsGhost || GateOpen))
                 {
                     if (!passableKnown) { passable = IsPassable; passableKnown = true; }
                     if (Watch(s.Body, s.Body.position, passable)) authority.RequestMagicDoorTraverse(this, s);

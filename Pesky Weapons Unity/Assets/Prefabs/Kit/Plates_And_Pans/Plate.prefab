@@ -70,6 +70,9 @@ MonoBehaviour:
   id: 0
   authority: {fileID: 0}
   massThreshold: 10
+  latching: 1
+  metalOnly: 0
+  restSpeed: 1.5
   pad: {fileID: 7386004737824694453}
   pressDepth: 0.06
   padRenderer: {fileID: 3660579455989139703}

@@ -54,3 +54,6 @@ desktop.ini
 
 # Claude Code local state
 .claude/
+
+# Written by the Performance Testing package on every build; not ours
+Pesky Weapons Unity/Assets/Resources/PerformanceTestRun*

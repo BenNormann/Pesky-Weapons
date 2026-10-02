@@ -37,6 +37,15 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] Transform carrySocket;
         [Tooltip("The stand it carries weapons to. Scene transform, beyond its gate.")]
         [OptionalRef][SerializeField] Transform dropPoint;
+        [Tooltip("Porter: a NON-latching ImpactLever on the bars. Any flip of it is a bang, and a bang summons the porter to barsPoint.")]
+        [OptionalRef][SerializeField] ImpactLever bell;
+        [Tooltip("Porter: where it stands on its own side of the bars to look and reach through.")]
+        [OptionalRef][SerializeField] Transform barsPoint;
+        float _summonUntil = -999f;
+        bool _bellState;
+        WeaponBody _refused;
+        /// <summary>Where a summoned porter stands at its bars, or null for a porter that walks its route.</summary>
+        public Transform BarsPoint { get { return barsPoint; } }
 
         [Header("Shield boss")]
         [OptionalRef][SerializeField] Renderer shieldRenderer;
@@ -170,36 +179,78 @@ namespace Pesky.Game
         /// Called from Perceive when nothing animate is in sight. Returns true when the porter has taken
         /// charge of the state machine, so the ordinary Curious behaviour is skipped.
         /// </summary>
+/// <summary>
+        /// Called from Perceive when nothing animate is in sight. Returns true when the porter has taken
+        /// charge of the state machine, so the ordinary Curious behaviour is skipped. A SUMMONED porter (its
+        /// bell was banged) walks to the bars and looks at every still weapon near them, even in another room,
+        /// carries one that fits through (porterMaxMass) and tells a heavier one it will not fit.
+        /// </summary>
         bool PorterPerceive()
         {
-            if (_carried != null || _state == State.Place) return true;
-            if (def == null || room == null) return false;
+            if (_carried != null || _state == State.Place || _state == State.Refuse) return true;
+            if (def == null) return false;
+            if (bell != null && bell.IsOn != _bellState)
+            {
+                _bellState = bell.IsOn;
+                _summonUntil = Time.time + def.porterSummonSeconds;
+            }
+            bool summoned = Time.time < _summonUntil;
             if (Time.time < _porterCooldownUntil)
             {
                 if (_state == State.Fetch) { _fetch = null; HideMarker(); SetState(State.Idle); }
                 return false;
             }
 
+            Vector3 eye = summoned && barsPoint != null ? barsPoint.position : transform.position;
+            IReadOnlyList<WeaponBody> candidates = summoned && authority != null ? authority.Weapons : (room != null ? room.WeaponsInside : null);
+            if (candidates == null) return false;
             WeaponBody best = null;
+            WeaponBody tooHeavy = null;
             float bestDistance = def.porterNoticeRange;
-            IReadOnlyList<WeaponBody> inside = room.WeaponsInside;
-            for (int i = 0; i < inside.Count; i++)
+            float heavyDistance = def.porterReach + def.porterReachThrough + 1f;
+            for (int i = 0; i < candidates.Count; i++)
             {
-                WeaponBody w = inside[i];
+                WeaponBody w = candidates[i];
                 if (w == null || w.IsBroken || w.Body == null || w.IsCarried) continue;
                 if (w.IsAnimate || w.SecondsSinceAnimate < def.porterInanimateSeconds) continue;
                 // Anything already sitting on the stand has been delivered; do not fetch it again.
                 if (dropPoint != null &&
                     Vector3.Distance(w.Body.worldCenterOfMass, dropPoint.position) < def.porterReach) continue;
-                float d = Vector3.Distance(w.Body.worldCenterOfMass, transform.position);
+                float d = Vector3.Distance(w.Body.worldCenterOfMass, eye);
+                if (def.porterMaxMass > 0f && w.Body.mass > def.porterMaxMass)
+                {
+                    if (d <= heavyDistance) { tooHeavy = w; heavyDistance = d; }
+                    continue;
+                }
                 if (d > bestDistance) continue;
-                if (!CanSee(w)) continue;
+                if (!summoned && !CanSee(w)) continue;
                 bestDistance = d;
                 best = w;
             }
 
             if (best == null)
             {
+                if (summoned)
+                {
+                    if (tooHeavy != null && _refused != tooHeavy)
+                    {
+                        _refused = tooHeavy;
+                        Stop();
+                        SetState(State.Refuse);
+                        ShowMarker(def.porterRefuseLine, curiousColor);
+                        return true;
+                    }
+                    // Walk to the bars and wait there, looking.
+                    if (barsPoint != null && agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+                    {
+                        agent.speed = def.curiousSpeed;
+                        agent.SetDestination(barsPoint.position);
+                    }
+                    _wanderPauseUntil = Time.time + 0.5f;
+                    if (_state == State.Fetch) { _fetch = null; HideMarker(); }
+                    if (_state != State.Idle) SetState(State.Idle);
+                    return true;
+                }
                 if (_state == State.Fetch) { _fetch = null; HideMarker(); SetState(State.Idle); }
                 return false;
             }
@@ -211,15 +262,29 @@ namespace Pesky.Game
             return true;
         }
 
+        /// <summary>Porter: it told a weapon it will not fit; after a moment it goes back to its business.</summary>
+        void TickRefuse()
+        {
+            Stop();
+            if (_stateTime < (def != null ? def.porterRefuseSeconds : 3f)) return;
+            HideMarker();
+            _refused = null;
+            _summonUntil = -999f;
+            _hasWanderPoint = false;
+            SetState(State.Idle);
+        }
+
         /// <summary>Authority validation: may this porter pick this weapon up right now? Pure.</summary>
+/// <summary>Authority validation: may this porter pick this weapon up right now? Pure.</summary>
         public bool CanPickUp(WeaponBody weapon)
         {
             if (role != Role.Porter || _state == State.Dead || _carried != null || def == null) return false;
             if (weapon == null || weapon.IsBroken || weapon.Body == null || weapon.IsCarried) return false;
             if (weapon.IsAnimate || weapon.SecondsSinceAnimate < def.porterInanimateSeconds) return false;
+            if (def.porterMaxMass > 0f && weapon.Body.mass > def.porterMaxMass) return false;
             Vector3 to = weapon.Body.worldCenterOfMass - transform.position;
             to.y = 0f;
-            return to.magnitude <= def.porterReach + 0.5f;
+            return to.magnitude <= def.porterReach + def.porterReachThrough + 0.5f;
         }
 
         /// <summary>Authority only.</summary>
@@ -257,7 +322,7 @@ namespace Pesky.Game
             }
         }
 
-        void TickFetch()
+void TickFetch()
         {
             if (def == null || _fetch == null || _fetch.Body == null || _fetch.IsBroken
                 || _fetch.IsAnimate || _fetch.IsCarried)
@@ -270,7 +335,7 @@ namespace Pesky.Game
 
             Vector3 to = _fetch.Body.worldCenterOfMass - transform.position;
             to.y = 0f;
-            if (to.magnitude <= def.porterReach)
+            if (to.magnitude <= def.porterReach + def.porterReachThrough)
             {
                 Stop();
                 if (authority != null) authority.RequestPorterPickUp(this, _fetch);
@@ -279,7 +344,9 @@ namespace Pesky.Game
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
                 agent.speed = def.curiousSpeed;
-                agent.SetDestination(_fetch.Body.worldCenterOfMass);
+                // Summoned to the bars: stand at the bars and reach through, never try to path to the weapon.
+                bool atBars = barsPoint != null && Time.time < _summonUntil;
+                agent.SetDestination(atBars ? barsPoint.position : _fetch.Body.worldCenterOfMass);
             }
         }
 

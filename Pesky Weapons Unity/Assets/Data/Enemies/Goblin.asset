@@ -21,8 +21,22 @@ MonoBehaviour:
   acceleration: 20
   maxHp: 30
   aggroRange: 8
+  wanderSpeed: 1.1
+  wanderRadius: 4
+  wanderPauseMin: 1.5
+  wanderPauseMax: 3.5
+  curiousRange: 7
+  curiousStopDistance: 1.5
+  curiousSeconds: 4
+  curiousSpeed: 1.8
+  alarmedSeconds: 0.4
+  alertRadius: 6
+  calmSeconds: 5
   attackRange: 1.4
   windupSeconds: 0.5
+  strikeSeconds: 0.25
+  strikeHalfAngleDeg: 80
+  strikeReach: 1.7
   attackDamage: 15
   attackKnockback: 8
   attackCooldown: 1.2
@@ -31,3 +45,30 @@ MonoBehaviour:
   knockbackDamping: 6
   hitFlashSeconds: 0.12
   windupSwell: 1.25
+  eyeHeight: 1.1
+  sightBlockers:
+    serializedVersion: 2
+    m_Bits: 256
+  viewConeDeg: 110
+  closeSightRange: 1.5
+  patrolSpeed: 1.6
+  patrolArrive: 0.6
+  wakeAnimateRange: 4
+  wakeImpactRange: 8
+  wakeImpactSpeed: 4
+  wakeNeighbourRadius: 6
+  porterReach: 2
+  porterInanimateSeconds: 2
+  porterNoticeRange: 8
+  porterCarrySpeed: 2.2
+  porterPlaceSeconds: 0.6
+  porterCooldownSeconds: 5
+  porterMaxMass: 0
+  porterReachThrough: 0
+  porterSummonSeconds: 8
+  porterRefuseSeconds: 3
+  porterRefuseLine: a shame I can only fit a dagger through the bars
+  shieldMaxHp: 0
+  shieldMinMass: 8
+  bladedDamageBonus: 1
+  healthBarShowBelow: 0.999

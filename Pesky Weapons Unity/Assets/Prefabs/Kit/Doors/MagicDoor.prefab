@@ -897,6 +897,8 @@ MonoBehaviour:
   exitClearance: 0.6
   reentryCooldown: 0.5
   maxStep: 2
+  soulHintDistance: 1.2
+  sensorRange: 40
 --- !u!114 &4846620391004043640 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3091131393107749143, guid: e60a9cd5b7ee780499e96fd55535a135, type: 3}

@@ -387,6 +387,7 @@ MonoBehaviour:
     m_Bits: 512
   combatSeconds: 5
   popOutLift: 0.5
+  soulBarrierLayer: SoulBarrier
 --- !u!1 &3228234371638006143
 GameObject:
   m_ObjectHideFlags: 0
