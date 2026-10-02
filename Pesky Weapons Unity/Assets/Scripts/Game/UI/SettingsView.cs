@@ -104,12 +104,16 @@ namespace Pesky.Game
             _fullscreen = _root.Q<Button>("fullscreen-button");
             if (_fullscreen != null)
             {
-                _fullscreen.clicked += () =>
+                // On the pointer DOWN, not the click: on WebGL Unity fulfils a full-screen request on the browser's next
+                // user event, and the release of this very press is that event. A click handler runs after the release
+                // and the request would wait for the next key or click (closing the menu, say).
+                _fullscreen.RegisterCallback<PointerDownEvent>(e =>
                 {
                     bool want = !Screen.fullScreen;
                     Screen.fullScreen = want;
                     SetFullscreenText(want);
-                };
+                    e.StopPropagation();
+                });
             }
             SetFullscreenText(Screen.fullScreen);
 

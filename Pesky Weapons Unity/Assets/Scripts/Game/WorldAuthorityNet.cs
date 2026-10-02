@@ -88,6 +88,8 @@ namespace Pesky.Game
         public event Action<NudgeRefusal, byte, float> NudgeRefused;
         /// <summary>(curse, seconds) THIS peer's own player was cursed. Raised on the victim's machine only; nothing says by whom.</summary>
         public event Action<CurseKind, float> Cursed;
+        /// <summary>Every curse on anybody (slot, kind, seconds): a MAGNETIC one on another player bends everybody's launches toward them.</summary>
+        public event Action<byte, CurseKind, float> CurseSeen;
         /// <summary>(reason, targetSlot, secondsLeft) the host refused this peer's own CURSE_REQ. Only a Mage ever hears it.</summary>
         public event Action<CurseRefusal, byte, float> CurseRefused;
         /// <summary>(paused) the host froze or unfroze the game (PAUSE_BEGIN / PAUSE_END), on every peer (docs/VOTING.md).</summary>
@@ -634,6 +636,7 @@ namespace Pesky.Game
         void OnCurseEvent(CurseEventMsg msg)
         {
             float seconds = msg.durationTenths / 10f;
+            if (msg.targetSlot < Wire.MaxPlayers && CurseSeen != null) CurseSeen(msg.targetSlot, msg.curse, seconds);
             if (msg.targetSlot == LocalSlot)
             {
                 if (Cursed != null) Cursed(msg.curse, seconds);

@@ -7,7 +7,9 @@ namespace Pesky.Game
     /// <summary>
     /// The curse ON THIS PLAYER (docs/RUN.md), applied by the victim's own machine and nobody else's. One
     /// CurseState with an expiry on the LevelClock, and one small effect per curse:
-    ///   1 MAGNETIC  the launch direction bends toward the nearest other weapon within magneticRange
+    ///   1 MAGNETIC  the victim's launches bend toward the CLOSEST other player; everybody else's launches bend
+    ///              toward the victim (the magnet), within magneticRange. Never toward a loose weapon, and the
+    ///              Mage is only ever pulled at as 'the closest player', never named
     ///   2 NAUSEA    the camera rolls and yaws on a sine, and the launch heading wanders on a slower one
     ///   3 SLIPPERY  the weapon's colliders wear the zero-friction material, so it slides and cannot settle
     ///   4 BLINDNESS the RunHud darkens the screen to a small clear circle around the centre
@@ -47,6 +49,8 @@ namespace Pesky.Game
         PhysicsMaterial[] _savedMaterials;
         bool _swaying;
         bool _blinding;
+        // Other players' MAGNETIC curses by slot (level clock ms they end): the magnets my launches bend toward.
+        readonly long[] _magnetUntilMs = new long[Wire.MaxPlayers];
 
         /// <summary>The curse on this player right now (None when there is none).</summary>
         public CurseState State { get { return _state; } }
@@ -67,12 +71,12 @@ namespace Pesky.Game
 
         void OnEnable()
         {
-            if (authority != null) authority.Cursed += OnCursed;
+            if (authority != null) { authority.Cursed += OnCursed; authority.CurseSeen += OnCurseSeen; }
         }
 
         void OnDisable()
         {
-            if (authority != null) authority.Cursed -= OnCursed;
+            if (authority != null) { authority.Cursed -= OnCursed; authority.CurseSeen -= OnCurseSeen; }
             Clear();
         }
 
@@ -191,6 +195,15 @@ namespace Pesky.Game
             _slickWeapon = null;
         }
 
+        /// <summary>Every curse on anybody: a MAGNETIC one on another player makes MY launches bend toward them.</summary>
+        void OnCurseSeen(byte slot, CurseKind kind, float seconds)
+        {
+            if (slot >= Wire.MaxPlayers || kind != CurseKind.Magnetic) return;
+            byte local = authority != null ? authority.LocalSlot : Wire.NoSlot;
+            if (slot == local) return;
+            _magnetUntilMs[slot] = NowMs + (long)(seconds * 1000f);
+        }
+
         // ---------------------------------------------------------------- the launch hook (1 magnetic, 2 nausea, 5 heavy)
 
         public float SpeedScale
@@ -207,12 +220,19 @@ namespace Pesky.Game
         {
             CurseKind kind = Current;
             RunDef def = Def;
+            float range = def != null ? def.magneticRange : 20f;
+            float bend = def != null ? def.magneticBend : 0.5f;
+            Vector3 toTarget;
             if (kind == CurseKind.Magnetic)
             {
-                Vector3 toWeapon;
-                if (!NearestOtherWeapon(from, def != null ? def.magneticRange : 20f, out toWeapon)) return direction;
-                float bend = def != null ? def.magneticBend : 0.5f;
-                return Vector3.Slerp(direction.normalized, toWeapon.normalized, Mathf.Clamp01(bend));
+                // The magnet myself: pulled toward the CLOSEST other player, whoever that happens to be.
+                if (NearestPlayerWeapon(from, range, Wire.NoSlot, out toTarget))
+                    return Vector3.Slerp(direction.normalized, toTarget.normalized, Mathf.Clamp01(bend));
+            }
+            else if (NearestMagnet(from, range, out toTarget))
+            {
+                // Somebody else is the magnet: everybody's launches bend toward them.
+                return Vector3.Slerp(direction.normalized, toTarget.normalized, Mathf.Clamp01(bend));
             }
             if (kind == CurseKind.Nausea)
             {
@@ -224,8 +244,30 @@ namespace Pesky.Game
             return direction;
         }
 
-        /// <summary>The nearest OTHER weapon in the scene (loose, or another player's) within range of a point; false when none.</summary>
-        bool NearestOtherWeapon(Vector3 from, float range, out Vector3 toWeapon)
+        /// <summary>The nearest magnet: another player whose MAGNETIC curse is still running, within range; false when none.</summary>
+        bool NearestMagnet(Vector3 from, float range, out Vector3 toMagnet)
+        {
+            toMagnet = Vector3.zero;
+            long now = NowMs;
+            float bestSq = range * range;
+            bool found = false;
+            for (int slot = 0; slot < Wire.MaxPlayers; slot++)
+            {
+                if (_magnetUntilMs[slot] <= now) continue;
+                Vector3 to;
+                if (!NearestPlayerWeapon(from, range, (byte)slot, out to)) continue;
+                float sq = to.sqrMagnitude;
+                if (sq > bestSq) continue;
+                bestSq = sq;
+                toMagnet = to;
+                found = true;
+            }
+            return found;
+        }
+
+        /// <summary>The nearest weapon POSSESSED by another player within range of a point (onlySlot = Wire.NoSlot for any
+        /// player, else that player's); loose weapons never count. False when none.</summary>
+        bool NearestPlayerWeapon(Vector3 from, float range, byte onlySlot, out Vector3 toWeapon)
         {
             toWeapon = Vector3.zero;
             if (authority == null) return false;
@@ -238,6 +280,9 @@ namespace Pesky.Game
             {
                 WeaponBody w = weapons[i];
                 if (w == null || w == mine || w.Body == null || w.IsBroken) continue;
+                RemotePossessor holder = w.Possessor as RemotePossessor;
+                if (holder == null && !(w.Possessor is PlayerSoul)) continue;              // loose: not a player
+                if (onlySlot != Wire.NoSlot && (holder == null || holder.slot != onlySlot)) continue;
                 Vector3 to = w.Body.position - from;
                 float sq = to.sqrMagnitude;
                 if (sq < 0.01f || sq > bestSq) continue;
