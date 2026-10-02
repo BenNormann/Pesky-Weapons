@@ -60,3 +60,6 @@ Pesky Weapons Unity/Assets/Resources/PerformanceTestRun*
 
 # Scene / prefab copies the room builder writes before it replaces anything
 Backups/
+
+# Node modules for the relay (Railway installs its own)
+node_modules/

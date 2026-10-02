@@ -1,0 +1,15 @@
+{
+  "name": "pesky-weapons",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Repository root manifest so Railway can build the relay in relay/ without a Root Directory setting. The game itself is the Unity project; see relay/README.md.",
+  "scripts": {
+    "start": "node relay/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
