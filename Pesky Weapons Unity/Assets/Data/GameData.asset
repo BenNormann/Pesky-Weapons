@@ -37,5 +37,7 @@ MonoBehaviour:
   impactSpeedMax: 12
   hitCooldownSeconds: 0.35
   batMinSpeed: 4
-  batMaxSpeed: 18
+  batMaxSpeed: 20
   batRestitution: 0.5
+  batBraceSpeed: 19
+  batterStops: 1

@@ -100,6 +100,7 @@ namespace Pesky.Game
                 rot = rb.rotation;
                 vel = rb.isKinematic ? Vector3.zero : rb.linearVelocity;
                 if (weapon.IsAnimate) flags |= PoseFlags.Animate;
+                if (weapon.IsBraced) flags |= PoseFlags.Braced;
                 // Off the ground, not racked, not carried, not frozen: the host lets a Mage nudge / pull only this.
                 if (!rb.isKinematic && !weapon.IsGrounded && !weapon.IsHeldAtHome && !weapon.IsCarried)
                     flags |= PoseFlags.Airborne;

@@ -19,6 +19,10 @@ namespace Pesky.Game
         bool _netDriven;
         bool _remoteDriven;
         bool _remoteAnimate;
+        bool _remoteBraced;
+
+        /// <summary>Standing up for a bat (Shift held on the ground): my own stance, or the streamed flag of a remote body.</summary>
+        public bool IsBraced { get { return _remoteDriven ? _remoteBraced : _braced; } }
         Vector3 _remoteVelocity;
         Vector3 _preStepVelocity;
 
@@ -44,6 +48,7 @@ namespace Pesky.Game
         {
             if (_remoteDriven == on) return;
             _remoteAnimate = false;
+            _remoteBraced = false;
             _remoteVelocity = Vector3.zero;
             if (body == null || _broken)
             {
@@ -68,9 +73,10 @@ namespace Pesky.Game
         }
 
         /// <summary>The remote view feeds these from each POSE it takes.</summary>
-        public void SetRemoteState(bool animate, Vector3 velocity)
+        public void SetRemoteState(bool animate, bool braced, Vector3 velocity)
         {
             _remoteAnimate = animate;
+            _remoteBraced = braced;
             _remoteVelocity = velocity;
             if (animate) MarkAnimated();
         }

@@ -12,7 +12,8 @@ namespace Pesky.Protocol
     /// on a soul.
     /// </summary>
     [Flags]
-    public enum PoseFlags : byte { None = 0, Teleport = 1, Animate = 2, Soul = 4, Airborne = 8 }
+    /// <summary>Braced (round 17): the weapon is standing up on its point / handle for a bat; a heavier friend's launch into it sends it along their aim.</summary>
+    public enum PoseFlags : byte { None = 0, Teleport = 1, Animate = 2, Soul = 4, Airborne = 8, Braced = 16 }
 
     /// <summary>Which family of kit piece a KIT_STATE or KIT_REQ is about. Stable: append only.</summary>
     public enum KitKind : byte

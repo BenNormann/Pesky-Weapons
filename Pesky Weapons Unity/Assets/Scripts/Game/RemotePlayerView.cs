@@ -121,7 +121,7 @@ namespace Pesky.Game
             _ring.Add(s);
             while (_ring.Count > 2 && s.time - _ring[0].time > SampleKeepSeconds) _ring.RemoveAt(0);
 
-            if (_weapon != null && !soul) _weapon.SetRemoteState((row.poseFlags & PoseFlags.Animate) != 0, row.vel);
+            if (_weapon != null && !soul) _weapon.SetRemoteState((row.poseFlags & PoseFlags.Animate) != 0, (row.poseFlags & PoseFlags.Braced) != 0, row.vel);
         }
 
         void Update()

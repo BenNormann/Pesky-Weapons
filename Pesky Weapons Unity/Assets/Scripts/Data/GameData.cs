@@ -53,6 +53,10 @@ namespace Pesky.Data
         public float batMaxSpeed = 18f;
         [Tooltip("Bounciness of a bat: 0 = the target just takes the share of the momentum, 1 = fully elastic.")]
         [Range(0f, 1f)] public float batRestitution = 0.5f;
+        [Tooltip("A BRACED friend (standing up, Shift held) flies along the batter's aim at this speed times the batter's share of the two masses. 19: a Mace or Hammer sends a Dagger or Banana 14-17 m at 45 deg (the Bat Room's chasm is 14 m); a Sword sends a Dagger 11 m.")]
+        public float batBraceSpeed = 19f;
+        [Tooltip("The batter stops dead when it bats a braced friend (it gave its momentum away), so it does not follow them over the edge.")]
+        public bool batterStops = true;
 
         
 public WeaponDef Weapon(int id) => weapons != null && id >= 0 && id < weapons.Length ? weapons[id] : null;

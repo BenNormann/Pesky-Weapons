@@ -2640,3 +2640,36 @@ chasm. The game should end if there is only the arch mage left, except solo (dev
 - Safeguard, after the lost edits: `RoomsV3Builder.BuildAll` refuses to run while the open scene has unsaved
   changes and copies `Run.unity` plus the five room prefabs to `Backups/rooms-v3/<timestamp>/` (git-ignored)
   before it replaces anything. The builder still REPLACES the rooms: hand edits must go into the builder.
+
+## Round 17: BRACE, the bat that works (2026-10-02)
+Owner: batting a friend across the Bat Room chasm was "super hard", Sword on Dagger. Diagnosis: the chasm was
+impossible as built. A bat was the batter's contact velocity scaled by its mass share (Sword on Dagger about
+13 m/s, Mace or Hammer no better since they launch slower; the 14 m chasm needs about 17 m/s at 45 deg) and
+it went in whatever direction the batter happened to be travelling at contact, usually forward or down. The
+brace from the room design had never been built. Owner's design: "hold Shift to stand up (sword on point,
+others on handle), that gives a bigger braced target; to cross you need to hit the Dagger or Banana with
+the Mace or the Hammer (barely)".
+
+- `WeaponBody.SetBrace` / `TickBrace`: Left Shift while possessing (the soul's Descend action, free when a
+  weapon is held) stands the weapon up on the spot: a blade on its point, anything else on its handle
+  (local +Z down / up, 540 deg/s), rotation frozen, horizontal velocity zeroed, only while grounded, not
+  held, carried or stuck. A `Knockback` drops the stance for a second so the shove takes.
+- `PoseFlags.Braced` (16) streams the stance; `WeaponBodyNet.IsBraced` reads it for remote bodies;
+  `RemotePlayerView` passes it on. Protocol version 7 -> 8.
+- `WorldAuthority.RequestBat`: a braced target flies along the BATTER'S last launch direction
+  (`WeaponMotor.LastLaunchDirection`) at `GameData.batBraceSpeed` (19) times the batter's share of the two
+  masses; the batter stops dead (`batterStops`). Unbraced targets keep the old momentum shove. Host clamp
+  `batMaxSpeed` 18 -> 20. Numbers at 45 deg: Mace on Dagger 16.9 m/s = 14.3 m (barely), Hammer on Dagger
+  17.7 = 15.7 m, Mace on Banana 17.9 = 16 m, Hammer on Banana 18.3 = 16.7 m; Sword on Dagger 14.3 = 10 m
+  and Sword on Banana 16.3 = 13.3 m fall short. The chasm is 14 m.
+- Bat Room sign now says to hold Shift on the pad. Rooms rebuilt (backup taken first).
+Untested by me. To watch for: a Sword standing on its point popping up out of the floor as it rights itself
+(it rotates about its centre), the batter's stop feeling abrupt, and the braced flag arriving before the hit
+(a pose goes out when the flag changes, so it should).
+
+## Round 18: full-screen toggle (2026-10-02)
+Owner: "add a full screen toggle button in settings menu, top right of the entire screen, not in the settings
+menu itself". `Settings.uxml` gets a `fullscreen-button` as a child of `settings-root` beside the panel,
+`Settings.uss` pins it to the top-right corner (absolute, 16 px in); `SettingsView` toggles `Screen.fullScreen`
+on the click (a user gesture, which WebGL needs) and labels it FULL SCREEN / WINDOWED, refreshed each time the
+screen opens. The scrim's close-on-click ignores it (the click's target is the button, not the root).

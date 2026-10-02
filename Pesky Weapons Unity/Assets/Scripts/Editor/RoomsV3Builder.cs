@@ -375,7 +375,7 @@ namespace Pesky.Editor
             SignAt(room, new Vector3(0f, 0f, -7f), "FELL IN? THE WEST PASSAGE LEADS BACK TO THE STEPS. NOTHING CLIMBS OUT THE FAR SIDE.");
 
             GateSouth(room, DoorCondition.Mode.LeverOn, null, lBridge, null, null, bankY);
-            SignAt(room, new Vector3(-6f, 0f, L / 2f - 2f), "NO LAUNCH CROSSES THE CHASM. BRACE ON THE PAD AND LET THE HEAVY ONE BAT YOU OVER. THE LEVER DROPS THE BRIDGE.");
+            SignAt(room, new Vector3(-6f, 0f, L / 2f - 2f), "NO LAUNCH CROSSES THE CHASM. STAND ON THE PAD AND HOLD SHIFT TO BRACE. A MACE OR HAMMER LAUNCHED INTO YOU BATS YOU OVER. THE LEVER DROPS THE BRIDGE.");
             Profile(room, "bat_room", Names[4], "The heavy bats a braced friend across the chasm; the friend drops the drawbridge with the lever; everyone crosses to the Exit.", 4);
             SaveRoom(room, PrefabPath(4));
         }
