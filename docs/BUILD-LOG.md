@@ -2621,3 +2621,22 @@ Validator 0 problems, compile clean, WebGL rebuilt, committed and pushed on `roo
 always. To watch for: the BACK TO THE ROOM click (UI Toolkit buttons without an EventSystem, the same risk the
 vote CONFIRM carries), the reload path when the host restarts under a held screen, and the rope's cut range
 near the cleat for a non-host player.
+
+## Round 16: taller posts, deeper rope ledge, no climb out of the chasm, Mage-alone ending (2026-10-02)
+Owner, after losing hand edits to the Well Room (the builder had replaced the room instance; see the
+safeguard below): "Make the wood beams taller and expand the ledge that the rope ties to near the start door.
+NO WOOD BEAMS IN THE CHASM, you HAVE TO HIT YOUR FRIEND ACROSS, but there needs to be a way back up from the
+chasm. The game should end if there is only the arch mage left, except solo (dev mode)."
+
+- Well Room: guide frames 8 -> 11 m (`frameH = balconyY + 4`), the north (entry) balcony 8 -> 12 m deep, so the
+  platform's north edge is 1.7 m from it and the cleat has a wide ledge in front of it.
+- Bat Room: the chasm's climb frame is gone. The way back up was never a magnet: it is the west passage (the
+  3 m floor strip along the west wall from the chasm floor to the entry floor) and the four steps. A sign on the
+  chasm floor now says so.
+- `RunRule.CheckEndings`: with no non-Mage player left for ANY reason (banished, left the room, lost), the Mage
+  wins at once (WeaponsGone); before, only a banishment counted. A round that opened with one present player
+  (`_soloRound`) never ends this way, so the owner can walk the rooms alone without the end screen. End screen
+  reason text: "no weapon is left standing: the arch mage wins".
+- Safeguard, after the lost edits: `RoomsV3Builder.BuildAll` refuses to run while the open scene has unsaved
+  changes and copies `Run.unity` plus the five room prefabs to `Backups/rooms-v3/<timestamp>/` (git-ignored)
+  before it replaces anything. The builder still REPLACES the rooms: hand edits must go into the builder.

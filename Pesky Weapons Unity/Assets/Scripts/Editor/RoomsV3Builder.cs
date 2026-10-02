@@ -49,9 +49,41 @@ namespace Pesky.Editor
         static readonly string[] Names = { "Armory Gate", "Well Room", "Porter Room", "Circuit Room", "Bat Room" };
         static string PrefabPath(int i) { return "Assets/Prefabs/Rooms/Labyrinth/RoomV3_" + SafeName(Names[i]) + ".prefab"; }
 
+        /// <summary>
+        /// The builder REPLACES the five room prefabs and their instances in Run.unity, so any hand edit made to
+        /// them is lost. Before it touches anything it copies the scene and the prefabs to
+        /// &lt;repo&gt;/Backups/rooms-v3/&lt;timestamp&gt;/ (git-ignored), and it refuses to run while the open scene has
+        /// unsaved changes (OpenScene would discard them). Returns false when nothing may be built.
+        /// </summary>
+        static bool BackupBeforeBuild()
+        {
+            Scene open = SceneManager.GetActiveScene();
+            if (open.isDirty)
+            {
+                Debug.LogError("[RoomsV3] the open scene '" + open.name + "' has UNSAVED changes. Save or discard them first; nothing was built.");
+                return false;
+            }
+            string projectRoot = System.IO.Directory.GetParent(Application.dataPath).FullName;
+            string repoRoot = System.IO.Directory.GetParent(projectRoot).FullName;
+            string folder = System.IO.Path.Combine(repoRoot, "Backups", "rooms-v3", System.DateTime.Now.ToString("yyyyMMdd-HHmmss"));
+            System.IO.Directory.CreateDirectory(folder);
+            int copied = 0;
+            string[] sources = { RunScene, PrefabPath(0), PrefabPath(1), PrefabPath(2), PrefabPath(3), PrefabPath(4) };
+            foreach (string asset in sources)
+            {
+                string full = System.IO.Path.Combine(projectRoot, asset.Replace('/', System.IO.Path.DirectorySeparatorChar));
+                if (!System.IO.File.Exists(full)) continue;
+                System.IO.File.Copy(full, System.IO.Path.Combine(folder, System.IO.Path.GetFileName(full)), true);
+                copied++;
+            }
+            Debug.Log("[RoomsV3] backed up " + copied + " file(s) to " + folder + " before rebuilding. Hand edits to the five rooms are REPLACED by this build.");
+            return true;
+        }
+
         [MenuItem("Pesky/Rooms/Build Five Rooms v3")]
         public static void BuildAll()
         {
+            if (!BackupBeforeBuild()) return;
             CreateAllPrefabs();
             ConfigureData();
             Scene scene = EditorSceneManager.OpenScene(RunScene, OpenSceneMode.Single);
@@ -138,7 +170,7 @@ namespace Pesky.Editor
             Octagonise(geo, W, H);
 
             // Balconies: south (exit) 6 m deep, north (entry side, the rope) 8 m deep. The corner walls are their ends.
-            const float northDepth = 8f, southDepth = 6f;
+            const float northDepth = 12f, southDepth = 6f;   // the rope ledge by the entry is deep: room to land, aim and cut
             Block(geo, "Balcony_South", new Vector3(0f, balconyY - 0.25f, -L / 2f + southDepth / 2f), new Vector3(W, 0.5f, southDepth), MLedge);
             Block(geo, "Balcony_North", new Vector3(0f, balconyY - 0.25f, L / 2f - northDepth / 2f), new Vector3(W, 0.5f, northDepth), MLedge);
 
@@ -155,7 +187,7 @@ namespace Pesky.Editor
             Block(rampGo.transform, "Yoke_South", new Vector3(0f, 0.25f, 0.25f), new Vector3(platform, 0.5f, 0.5f), MWood, Quaternion.identity, false);
 
             // Guide frames on the platform's four edge midpoints (blades stick in the uprights and climb them).
-            float frameH = balconyY + 1f;
+            float frameH = balconyY + 4f;   // tall posts: a blade climbs well past the platform and the ledge
             float edgeN = hingeZ + platform + 0.7f, edgeS = hingeZ - 0.7f;
             Frame(play, "Frame_North", new Vector3(0f, 0f, edgeN), 0f, frameH);
             Frame(play, "Frame_South", new Vector3(0f, 0f, edgeS), 0f, frameH);
@@ -338,8 +370,9 @@ namespace Pesky.Editor
             SetRef(ramp, "lever", lBridge);
             ChainRun(geo, "Chain_Catch", new Vector3(-5f, bankY + 0.6f, -17.6f), new Vector3(-5f, bankY + 1.6f, -14.4f));
 
-            // A guide frame in the chasm's south-east corner for the one-player climb.
-            Frame(play, "Frame_Climb", new Vector3(7.2f, 0f, -13f), 0f, 7f);
+            // Nothing climbs out of the chasm on the far side: the only way across is a friend's bat. A body that falls
+            // in walks the west passage back to the entry floor and up the steps.
+            SignAt(room, new Vector3(0f, 0f, -7f), "FELL IN? THE WEST PASSAGE LEADS BACK TO THE STEPS. NOTHING CLIMBS OUT THE FAR SIDE.");
 
             GateSouth(room, DoorCondition.Mode.LeverOn, null, lBridge, null, null, bankY);
             SignAt(room, new Vector3(-6f, 0f, L / 2f - 2f), "NO LAUNCH CROSSES THE CHASM. BRACE ON THE PAD AND LET THE HEAVY ONE BAT YOU OVER. THE LEVER DROPS THE BRIDGE.");
