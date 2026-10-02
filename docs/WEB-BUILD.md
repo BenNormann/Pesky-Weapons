@@ -203,6 +203,29 @@ credentials are usually short-lived and rotated.
 
 ---
 
+### The relay (round 20): campus wifi without TURN
+
+TURN needs UDP or a fixed port, and the owner's spare Railway service offers neither (Railway's public
+edge is TCP only, its TCP proxy port is random). So the fallback is an application-level relay instead:
+`relay/server.js`, a 150-line Node WebSocket server (`ws`), deployed on Railway over its HTTPS domain
+(port 443, which passes wherever a browser can browse). Setup is in `relay/README.md`.
+
+How it plugs in (`net.js`, "the relay fallback" section): `start(code, isHost)` joins the WebRTC room as
+before and, when `window.PESKY_RELAY_URL` is set, also opens `wss://<relay>/room/<CODE>?id=<selfId>` for
+the same code and the same peer id. `sendTo` and `broadcast` send over WebRTC to every peer whose
+connection is up and over the relay to the rest, each packet once. Relay frames arrive as the same
+`OnNetMessage(peerId|payload)`, relay joins and leaves feed the same liveness table, so Unity never knows
+which way a packet went; the host-authority rules and the host/join-with-code screen are untouched. Voice
+stays WebRTC only (a relayed player has no mic path yet).
+
+Failure modes, by design: no URL on the page, or a relay that is down, stopped or unpaid, and the socket
+simply never opens (quiet retries with backoff): the game is the plain WebRTC game. With the relay up,
+the 12 s "no signaling relay" error and trystero join errors become log lines, because the room still
+forms through the relay even when the campus blocks the public Nostr relays.
+
+Testing: `?relay=force` on the page URL skips WebRTC entirely and sends everything through the relay, so
+the path can be proven at home (two browsers, host and join as usual) before a campus visit.
+
 ## 6. The Windows two-player test build
 
 **Pesky > Build Windows (two-player test)** produces a *development* Windows x64
