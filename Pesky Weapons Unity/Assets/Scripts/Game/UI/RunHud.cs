@@ -459,7 +459,7 @@ namespace Pesky.Game
                 _resultTitle.text = title;
             }
             if (_resultSub != null) _resultSub.text = MageNames(mageMask) + BanishedNames();
-            Show(_resultPanel, true);
+            // The one-line banner is kept filled in but no longer shown: RunEndScreen's sheet is the result now.
         }
 
         /// <summary>ROUND_RESULT is the one message that ever names the fragments, so this is the one place they can be said.</summary>

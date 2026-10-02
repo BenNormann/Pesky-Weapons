@@ -18,6 +18,8 @@ namespace Pesky.Game
         [Tooltip("Local offset the panel slides to when the door opens (into the wall beside the doorway).")]
         [SerializeField] Vector3 openOffset = new Vector3(3.1f, 0f, 0f);
         [SerializeField] float slideSeconds = 0.8f;
+        [Tooltip("A door that SHUTS AGAIN when its condition stops being satisfied (a portcullis held up by a hold plate). Off = the usual latching door that opens once for good.")]
+        [SerializeField] bool closesAgain;
 
         Vector3 _closedLocal;
         bool _open;
@@ -26,6 +28,8 @@ namespace Pesky.Game
         public int SceneId { get { return id; } }
         public DoorCondition Condition { get { return condition; } }
         public bool IsOpen { get { return _open; } }
+        /// <summary>True for a door that shuts again when its condition lapses (hold plates, portcullises).</summary>
+        public bool ClosesAgain { get { return closesAgain; } }
         /// <summary>1 = fully slid away.</summary>
         public float Openness { get { return _t; } }
 
@@ -34,14 +38,14 @@ namespace Pesky.Game
             if (panel != null) _closedLocal = panel.localPosition;
         }
 
-        void OnEnable()
+void OnEnable()
         {
-            if (authority != null) authority.DoorOpened += OnDoorOpened;
+            if (authority != null) { authority.DoorOpened += OnDoorOpened; authority.DoorClosed += OnDoorClosed; }
         }
 
-        void OnDisable()
+void OnDisable()
         {
-            if (authority != null) authority.DoorOpened -= OnDoorOpened;
+            if (authority != null) { authority.DoorOpened -= OnDoorOpened; authority.DoorClosed -= OnDoorClosed; }
         }
 
         public bool ConditionSatisfied(WorldAuthority asker)
@@ -50,9 +54,21 @@ namespace Pesky.Game
         }
 
         /// <summary>Authority only: flips the shared state. The slide happens on the DoorOpened event.</summary>
+/// <summary>Authority only: flips the shared state. The slide happens on the DoorOpened event.</summary>
         public void ApplyOpen()
         {
             _open = true;
+        }
+
+        /// <summary>Authority only: a closesAgain door shuts (its condition lapsed). The slide follows DoorClosed.</summary>
+        public void ApplyClose()
+        {
+            _open = false;
+        }
+
+        void OnDoorClosed(Door door)
+        {
+            if (door == this) _open = false;
         }
 
         void OnDoorOpened(Door door)

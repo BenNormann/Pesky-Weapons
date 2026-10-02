@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7603184fdf316ea4eaac676cf9954180, type: 3}
   m_Name: Run
   m_EditorClassIdentifier: Pesky.Data::Pesky.Data.RunDef
-  roomsPerRun: 4
-  guaranteedRoomIds: 03000000040000000500000006000000
-  timerSeconds: 300
+  roomsPerRun: 5
+  guaranteedRoomIds: 0300000004000000050000000600000007000000
+  timerSeconds: 480
   warningSeconds: 30
   curseRange: 15
   curseCooldown: 30

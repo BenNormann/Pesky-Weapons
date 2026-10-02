@@ -30,15 +30,18 @@ namespace Pesky.Game
         [Header("Winch variant")]
         [Tooltip("Switched on for good when this lever turns on. Leave empty for a plain lever.")]
         [OptionalRef][SerializeField] Lift lift;
+        [Tooltip("Optional. When set, the LevelClock time the lever turned on is recorded (OnMs) so a DropRamp or other clock-driven piece can animate from it.")]
+        [OptionalRef][SerializeField] LevelClock clock;
+        long _onMs;
 
         [Header("Look")]
         [Tooltip("Rotated about its local X between offAngle and onAngle.")]
-        [SerializeField] Transform handle;
+        [OptionalRef][SerializeField] Transform handle;
         [SerializeField] float offAngle = -35f;
         [SerializeField] float onAngle = 35f;
         [Tooltip("Seconds the handle takes to swing across.")]
         [SerializeField] float swingSeconds = 0.25f;
-        [SerializeField] Renderer handleRenderer;
+        [OptionalRef][SerializeField] Renderer handleRenderer;
         [SerializeField] Color offColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color onColor = new Color(0.24f, 0.63f, 0.27f, 1f);
 
@@ -53,6 +56,8 @@ namespace Pesky.Game
         public float MinSpeed { get { return minSpeed; } }
         /// <summary>The lift this lever is the winch for, or null.</summary>
         public Lift Lift { get { return lift; } }
+        /// <summary>LevelClock ms when the lever last turned on; 0 when unknown (treat as long ago).</summary>
+        public long OnMs { get { return _onMs; } }
         /// <summary>True while an impact would be ignored because the lever has only just flipped.</summary>
         public bool Rearming { get { return Time.time < _rearmAt; } }
 
@@ -84,8 +89,10 @@ namespace Pesky.Game
         }
 
         /// <summary>Authority only.</summary>
+/// <summary>Authority only.</summary>
         public void ApplySet(bool on)
         {
+            if (on && !_on && clock != null) _onMs = clock.Ms;
             _on = on;
             _rearmAt = Time.time + rearmSeconds;
         }

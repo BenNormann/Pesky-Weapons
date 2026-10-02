@@ -165,9 +165,15 @@ gathering:
   that never had a weapon (a solo Mage) runs on as before.
 - Nothing ends while the game is paused (`docs/VOTING.md`); a banishment's ending fires after the thaw.
 
-ROUND_RESULT is still the one message that ever names the Mages; `RunHud` shows the outcome
-("THE WEAPONS ESCAPED" / "TIME IS UP - THE ARCH MAGE WINS") and the fragments' names, then
-`SessionRunner` loads the menu as before.
+ROUND_RESULT is still the one message that ever names the Mages. Since round 15 it opens the END SCREEN
+(`RunEndScreen` on `_UI/RunHud`, the `end-root` sheet of `Run.uxml`): VICTORY or GAME OVER for THIS
+player's side (the slot's bit in `mageMask`, so a banished player sees its original side's result), the
+reason, the fragments' names, and BACK TO THE ROOM. While it is up `PauseGate` freezes this machine the way
+a vote pause does (not the shared pause state: SESSION_END resets it on the same tick), the cursor is free,
+and `SessionRunner.HoldReturnOnEnd` holds the menu load until the button (`ReturnAfterRun`). A new round the
+host starts while a peer still sits on the screen reloads the level for that peer. `RunHud`'s one-line
+result banner is filled in but no longer shown. A peer that lands with the sim already Ended (a late resync)
+reads the outcome from `LabyrinthState` instead of waiting for the event.
 
 ### 4.4 The seals and the doors
 
@@ -315,7 +321,8 @@ those sides are declared sealed (`SceneValidator.IsSealedDoorwaySlot`, new).
 | `curse-status` | `CURSED: <NAME>` and the seconds left, the victim only |
 | `ability-bar` | round 9: an empty row, bottom centre, 18 px up; `RunHud` fills it with one slot per `abilities` entry (section 6.5). Round 12: shown to everybody while the round runs; the `mageOnly` slots only for a Mage who is not banished |
 | `blind-overlay` | painted by `RunHud.OnDrawBlind` while blind |
-| `role-reveal`, `result-banner` | as the labyrinth's, with the run's words; the banner also lists the banished with their revealed roles (round 12) |
+| `role-reveal`, `result-banner` | as the labyrinth's, with the run's words; the banner also lists the banished with their revealed roles (round 12). Since round 15 the banner is filled in but not shown: `end-root` replaced it |
+| `end-root` | round 15: the end screen (`RunEndScreen`): `end-title` VICTORY / GAME OVER (`is-victory` class on the root turns it amber), `end-reason`, `end-mage`, `end-button` BACK TO THE ROOM |
 | `ghost-status` | round 12: the banished player's own line (`BANISHED - YOU WERE ...`) |
 | `vote-root` | round 12: the vote screen (`docs/VOTING.md` section 7), read by `VoteView` / `VoteScreen` |
 

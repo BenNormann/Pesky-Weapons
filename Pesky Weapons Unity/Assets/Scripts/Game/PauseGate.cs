@@ -24,6 +24,8 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] SettingsFlow settings;
         [Tooltip("The vote screen: while it is open the cursor is free for it, settings screen or not.")]
         [OptionalRef][SerializeField] VoteScreen voteScreen;
+        [Tooltip("The run's end screen (Run.unity only): while it is open the game is frozen on this machine exactly as in a pause, and the cursor is its.")]
+        [OptionalRef][SerializeField] RunEndScreen endScreen;
 
         bool _paused;
         float _pausedAt;
@@ -31,15 +33,20 @@ namespace Pesky.Game
         /// <summary>True from PAUSE_BEGIN to PAUSE_END, as this component has applied it.</summary>
         public bool IsPaused { get { return _paused; } }
 
-        /// <summary>The vote screen owns the cursor: a pointer freed for it stays free when the settings screen closes on top of it.</summary>
-        public bool PointerFree { get { return voteScreen != null && voteScreen.IsOpen; } }
+        /// <summary>The vote screen or the end screen owns the cursor: a pointer freed for it stays free when the settings screen closes on top of it.</summary>
+        public bool PointerFree
+        {
+            get { return (voteScreen != null && voteScreen.IsOpen) || (endScreen != null && endScreen.IsOpen); }
+        }
 
         /// <summary>(seconds) the pause just ended and took this long on Time.time; local cooldown guides shift by it.</summary>
         public event Action<float> Unpaused;
 
         void Update()
         {
-            bool paused = authority != null && authority.IsPaused;
+            // The host's pause (PAUSE_BEGIN to PAUSE_END), or the run's end screen: SESSION_END resets the shared pause
+            // state on the same tick as ROUND_RESULT, so the end is frozen here, on each machine, the same way.
+            bool paused = (authority != null && authority.IsPaused) || (endScreen != null && endScreen.IsOpen);
             PlayerSoul soul = spawner != null ? spawner.LocalSoul : null;
             if (paused != _paused)
             {

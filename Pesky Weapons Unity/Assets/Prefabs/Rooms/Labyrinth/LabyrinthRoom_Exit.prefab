@@ -70,6 +70,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.ExitZone
   id: 0
   doorway: {fileID: 4503148497099506432}
+  alwaysLive: 0
   liveVisual: {fileID: 4971475650102145491}
   occupiedVisual: {fileID: 676979302791209832}
   refreshInterval: 0.25
@@ -421,6 +422,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.ExitZone
   id: 0
   doorway: {fileID: 3389271182387044732}
+  alwaysLive: 0
   liveVisual: {fileID: 2331781742642238741}
   occupiedVisual: {fileID: 8378425531978738840}
   refreshInterval: 0.25
@@ -526,6 +528,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.ExitZone
   id: 0
   doorway: {fileID: 7801760206205710113}
+  alwaysLive: 0
   liveVisual: {fileID: 7693918145032229732}
   occupiedVisual: {fileID: 8000108457454291108}
   refreshInterval: 0.25
@@ -1117,6 +1120,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.ExitZone
   id: 0
   doorway: {fileID: 589514959732947824}
+  alwaysLive: 0
   liveVisual: {fileID: 276604742825153715}
   occupiedVisual: {fileID: 2681539344569645188}
   refreshInterval: 0.25

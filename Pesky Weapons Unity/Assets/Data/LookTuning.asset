@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Pesky.Data::Pesky.Data.LookTuning
   filterSpikes: 1
   spikeMode: 0
-  spikePixels: 300
-  scaleToPixels: 40
+  spikeDegrees: 36
+  scaleToDegrees: 5
   dropFirstDeltaAfterLock: 1
   logDrops: 1

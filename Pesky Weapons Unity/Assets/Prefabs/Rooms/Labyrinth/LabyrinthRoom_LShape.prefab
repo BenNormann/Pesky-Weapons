@@ -450,6 +450,7 @@ MonoBehaviour:
   reentryCooldown: 0.5
   maxStep: 2
   soulHintDistance: 1.2
+  sensorRange: 40
 --- !u!114 &3176670283017740308
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1371,6 +1372,7 @@ MonoBehaviour:
   reentryCooldown: 0.5
   maxStep: 2
   soulHintDistance: 1.2
+  sensorRange: 40
 --- !u!114 &1130340277073450649
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5996,6 +5998,7 @@ MonoBehaviour:
   reentryCooldown: 0.5
   maxStep: 2
   soulHintDistance: 1.2
+  sensorRange: 40
 --- !u!114 &6305571862023202973
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6430,6 +6433,7 @@ MonoBehaviour:
   reentryCooldown: 0.5
   maxStep: 2
   soulHintDistance: 1.2
+  sensorRange: 40
 --- !u!114 &5850919042650384339
 MonoBehaviour:
   m_ObjectHideFlags: 0

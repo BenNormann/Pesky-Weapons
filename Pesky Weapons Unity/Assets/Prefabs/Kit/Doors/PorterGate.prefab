@@ -162,6 +162,7 @@ MonoBehaviour:
   porters: []
   openRange: 4
   requireCarrying: 1
+  latchLever: {fileID: 0}
   panel: {fileID: 5161000493050412203}
   openOffset: {x: 0, y: 3.6, z: 0}
   slideSeconds: 0.6

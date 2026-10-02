@@ -190,3 +190,25 @@ experience simple. The game is now a friend-slop co-op puzzle dungeon escape wit
   to reach the Exit before the timer. A banished player becomes a ghost spectator (a soul that
   may pass teleport doors, cannot possess, interact, call or vote). The Exit rule counts only
   non-banished non-Mage players; if none remain, the Mage wins.
+
+## Owner decisions, 2026-10-02: THE FIVE ROOMS (v2 text approved with changes)
+Design in docs/level-design/rooms-v2.md, revised per these notes (v3 = text + floor plans):
+1. GATE ROOM -> "ARMORY GATE". Good as designed (park and hold).
+2. WELL ROOM: OCTAGON, like an elevator shaft. The lift is a BIG SQUARE PLATFORM, suspended on
+   ropes over pulleys, taking up most of the room; wooden beams are its GUIDE POSTS on four
+   sides (blades stick into them to climb). Solution: CUT ONE ROPE at the top so the platform
+   tilts into a RAMP; you do not switch the elevator on.
+3. PORTER ROOM: the goblin porter is the only thing that can pass the door to the CONTROL ROOM.
+   Make noise / move to lure it out, lie still so it picks you up and carries you through its
+   door, FIGHT the two goblins inside the control room, open the door from the inside.
+   (Players may kill goblins; the plot reason you need the porter is the door.)
+4. LIGHTNING ROOM -> "CIRCUIT ROOM": no lightning. Conduct power from a MAGICAL ELECTRICAL
+   SOURCE through a broken CIRCUIT to open the door; the two Swords (metal bodies) are the
+   missing wire segments. It must be overt: visible wiring with obvious gaps.
+5. BAT ROOM: just a CHASM with the steps up the side you enter from. The heavy weapon BATS a
+   light weapon across; the light one flicks a LEVER that drops a DRAWBRIDGE; everyone crosses
+   to the Exit.
+Global: grey-box must still be IDENTIFIABLE as what it is (functional design / art, no more:
+a portcullis reads as a portcullis, wires as wires). SOULS MAY PASS THROUGH OPEN DOORS again
+(closed / locked doors still block them) so going back to the rack for a weapon is easy.
+Open: the designer measured 5:45-7:00 for a pair over five rooms; timer 8:00 or trim rooms.

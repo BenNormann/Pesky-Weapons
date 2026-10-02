@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Run_Tutorial
   m_EditorClassIdentifier: Pesky.Data::Pesky.Data.RunDef
   roomsPerRun: 5
+  guaranteedRoomIds: 
   timerSeconds: 300
   warningSeconds: 30
   curseRange: 15
@@ -29,3 +30,8 @@ MonoBehaviour:
   blindnessClearRadius: 0.12
   blindnessOpacity: 0.96
   heavySpeedScale: 0.5
+  voteCallsPerPlayer: 1
+  voteGroupCooldown: 45
+  voteNoVoteBeforeSeconds: 30
+  voteMeetingSeconds: 25
+  voteResultSeconds: 4

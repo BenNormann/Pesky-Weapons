@@ -36,6 +36,15 @@ namespace Pesky.Game
         string _returnMessage;
 
         bool _returning;
+        bool _reloadQueued;
+        bool _endedHeld;
+
+        /// <summary>
+        /// Set by the run's end screen (RunEndScreen, Run.unity only): the Ended phase no longer loads the menu by
+        /// itself; the screen's button calls <see cref="ReturnAfterRun"/>. The tutorial has no end screen and
+        /// returns as before.
+        /// </summary>
+        public bool HoldReturnOnEnd { get; set; }
 
         /// <summary>
         /// The session that outlives a scene load. It lives in <see cref="GameLocator"/>; this is
@@ -118,13 +127,18 @@ namespace Pesky.Game
             TryStartGame();
         }
 
-        void Update()
+void Update()
         {
             if (Session == null) return;
             Session.Update();
             if (_returnQueued)
             {
                 ReturnToMenu();
+                return;
+            }
+            if (_reloadQueued)
+            {
+                ReloadLevel();
                 return;
             }
             TryStartGame();
@@ -166,9 +180,20 @@ namespace Pesky.Game
 
         /// <summary>The run ended: everybody goes back to the room page the menu left them on.</summary>
         /// <summary>The run ended: everybody goes back to the room page the menu left them on.</summary>
+/// <summary>
+        /// The run ended: everybody goes back to the room page the menu left them on, unless the run's end screen
+        /// holds the trip until its button. If the host then starts a new round (START in the room) while this peer
+        /// still sits on that screen, the level is loaded again, which is what the menu would have done on Playing.
+        /// </summary>
         void OnPhaseChanged(SessionPhase phase)
         {
-            if (phase == SessionPhase.Ended) QueueReturn("the run is over", false, false);
+            if (phase == SessionPhase.Ended)
+            {
+                if (HoldReturnOnEnd) _endedHeld = true;
+                else QueueReturn("the run is over", false, false);
+                return;
+            }
+            if (phase == SessionPhase.Playing && _endedHeld && GameLocator.FromMenu && !_returning) _reloadQueued = true;
         }
 
         /// <summary>
@@ -208,6 +233,40 @@ namespace Pesky.Game
             if (!MenuFlow.IsInBuild(menuScene))
             {
                 Debug.LogWarning("[net] " + _returnMessage + ", but the menu scene \"" + menuScene + "\" is not in the build settings.", this);
+                return;
+            }
+            _returning = true;
+            SceneManager.LoadScene(menuScene, LoadSceneMode.Single);
+        }
+
+        /// <summary>A new round started under a held end screen: the same scene again, adopting the live session in Awake.</summary>
+        void ReloadLevel()
+        {
+            _reloadQueued = false;
+            if (_returning) return;
+            _returning = true;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single);
+        }
+
+        /// <summary>
+        /// The end screen's BACK TO THE ROOM: the menu with the session alive, the same serialized menuScene and
+        /// GameLocator line a finished run used to take by itself (the host's ShowRoom takes the room to the lobby;
+        /// START plays again). A session the menu did not start (a level opened from the Editor) leaves instead.
+        /// Call it from a button, never from inside NetSession.Update.
+        /// </summary>
+        public void ReturnAfterRun()
+        {
+            if (_returning) return;
+            if (!GameLocator.FromMenu)
+            {
+                LeaveToMenu();
+                return;
+            }
+            _returnQueued = false;
+            GameLocator.SetMessage("the run is over", false);
+            if (!MenuFlow.IsInBuild(menuScene))
+            {
+                Debug.LogWarning("[net] the run is over, but the menu scene '" + menuScene + "' is not in the build settings.", this);
                 return;
             }
             _returning = true;

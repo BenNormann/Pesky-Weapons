@@ -1483,6 +1483,7 @@ MonoBehaviour:
   - {fileID: 3462169996318152581}
   footprint: {fileID: 4136734105392014094}
   anchor: {fileID: 2685672227311862044}
+  sealedSides: 00000000
 --- !u!1 &6205685231141198941
 GameObject:
   m_ObjectHideFlags: 0

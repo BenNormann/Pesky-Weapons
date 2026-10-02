@@ -78,6 +78,8 @@ namespace Pesky.Game
         public event Action<int, WeaponBody> PickupTaken;
         public event Action<PressurePlate> PlateLatched;
         public event Action<Door> DoorOpened;
+        /// <summary>A closesAgain door shut because its condition lapsed (a hold plate was left).</summary>
+        public event Action<Door> DoorClosed;
         /// <summary>(key id)</summary>
         public event Action<int> KeyGained;
         /// <summary>(weapon, modifier)</summary>

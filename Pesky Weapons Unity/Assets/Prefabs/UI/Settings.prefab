@@ -76,6 +76,7 @@ MonoBehaviour:
   pauseAction: Pause
   orbitCamera: {fileID: 0}
   sessionRunner: {fileID: 0}
+  pauseGate: {fileID: 0}
   lockArmSeconds: 0.5
   escapeGraceSeconds: 0.4
   hostExitText: 'YOU ARE THE HOST. LEAVING ENDS THE SESSION FOR EVERYBODY IN THIS

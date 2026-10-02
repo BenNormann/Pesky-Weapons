@@ -595,6 +595,17 @@ MonoBehaviour:
   curiousColor: {r: 0.98, g: 0.92, b: 0.4, a: 1}
   alarmColor: {r: 0.96, g: 0.35, b: 0.2, a: 1}
   startAwake: 0
+  role: 0
+  patrol: {fileID: 0}
+  startAsleep: 0
+  sleepColor: {r: 0.35, g: 0.72, b: 0.94, a: 1}
+  carrySocket: {fileID: 0}
+  dropPoint: {fileID: 0}
+  bell: {fileID: 0}
+  barsPoint: {fileID: 0}
+  shieldRenderer: {fileID: 0}
+  shieldBar: {fileID: 0}
+  shieldBarFill: {fileID: 0}
 --- !u!1 &4609217809023037111
 GameObject:
   m_ObjectHideFlags: 0

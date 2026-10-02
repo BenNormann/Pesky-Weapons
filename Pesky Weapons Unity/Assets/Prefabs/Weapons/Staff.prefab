@@ -81,6 +81,7 @@ MonoBehaviour:
   homeSlot: {fileID: 0}
   respawnDelay: 10
   maxAngularVelocity: 25
+  restAtHome: 1
   modifiers: []
 --- !u!114 &3971106591505446371
 MonoBehaviour:

@@ -833,6 +833,8 @@ MonoBehaviour:
   exitClearance: 0.6
   reentryCooldown: 0.5
   maxStep: 2
+  soulHintDistance: 1.2
+  sensorRange: 40
 --- !u!114 &8344598166738187992
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pesky Weapons: rooms v3 floor plans</title>
+<style>
+  body { margin: 0; padding: 16px; background: #fff; color: #222; font: 15px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 8px 0 4px; }
+  h2 { font-size: 20px; margin: 36px 0 6px; border-top: 2px solid #ddd; padding-top: 14px; }
+  h3 { font-size: 15px; margin: 18px 0 4px; color: #444; }
+  p { margin: 6px 0; }
+  figure { margin: 10px 0 18px; }
+  figcaption { font-size: 13px; color: #555; margin-top: 4px; }
+  svg { width: 100%; height: auto; display: block; background: #fff; border: 1px solid #e3e3e3; border-radius: 4px; }
+  table { border-collapse: collapse; font-size: 13px; margin: 8px 0; width: 100%; }
+  th, td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; vertical-align: top; }
+  th { background: #f4f4f4; }
+  .small { font-size: 13px; color: #555; }
+  /* shared SVG classes */
+  .room { fill: #fafafa; stroke: #333; stroke-width: 4; stroke-linejoin: round; }
+  .wall { stroke: #333; stroke-width: 4; fill: none; stroke-linecap: square; }
+  .thin { stroke: #333; stroke-width: 1.5; fill: none; }
+  .door { fill: #7b3fe4; }
+  .lock { fill: #c62828; }
+  .ledge { fill: #cfd8dc; stroke: #78909c; stroke-width: 1; }
+  .pit { fill: #8fa3ad; }
+  .pitfloor { fill: #6f8691; }
+  .plat { fill: #e8d5b5; stroke: #8d6e63; stroke-width: 1.5; }
+  .rope { stroke: #e65100; stroke-width: 2.5; fill: none; }
+  .chain { stroke: #546e7a; stroke-width: 2.5; stroke-dasharray: 5 3; fill: none; }
+  .pulley { fill: #fff; stroke: #e65100; stroke-width: 2.5; }
+  .pulleyc { fill: #fff; stroke: #546e7a; stroke-width: 2.5; }
+  .plate { fill: #43a047; stroke: #1b5e20; stroke-width: 1.5; }
+  .lever { fill: #1565c0; stroke: #0d47a1; stroke-width: 1; }
+  .leverstick { stroke: #1565c0; stroke-width: 3; stroke-linecap: round; }
+  .wire { stroke: #00acc1; stroke-width: 3.5; fill: none; stroke-linejoin: round; }
+  .wiredead { stroke: #90a4ae; stroke-width: 3.5; fill: none; stroke-linejoin: round; }
+  .pad { fill: #00838f; }
+  .source { fill: #00acc1; stroke: #006064; stroke-width: 1.5; }
+  .post { fill: #8d6e63; stroke: #5d4037; stroke-width: 1; }
+  .bridge { fill: url(#stripe); stroke: #5d4037; stroke-width: 1.5; }
+  .bars { stroke: #37474f; stroke-width: 1.5; }
+  .gate { fill: #eceff1; stroke: #37474f; stroke-width: 1.5; }
+  .gob { fill: #d32f2f; stroke: #7f0000; stroke-width: 1; }
+  .shield { fill: none; stroke: #7f0000; stroke-width: 1.5; }
+  .patrol { stroke: #d32f2f; stroke-width: 1.5; stroke-dasharray: 4 3; fill: none; }
+  .ctrl { fill: #f3e5f5; stroke: #6a1b9a; stroke-width: 2; stroke-dasharray: 6 3; }
+  .spawn { fill: #fff; stroke: #333; stroke-width: 1.5; }
+  .exit { fill: #f9a825; stroke: #f57f17; stroke-width: 1.5; }
+  .co { fill: #111; }
+  .cot { fill: #fff; font-weight: 700; font-size: 11px; text-anchor: middle; }
+  .t { font-size: 11px; fill: #222; }
+  .ts { font-size: 9.5px; fill: #444; }
+  .tb { font-weight: 700; }
+  .tc { text-anchor: middle; }
+  .dim { stroke: #555; stroke-width: 1; fill: none; }
+  .dimt { font-size: 10px; fill: #555; }
+  .dash { stroke: #555; stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+  .dropped { stroke: #8d6e63; stroke-width: 3; stroke-dasharray: 6 4; fill: none; }
+  .arc { stroke: #111; stroke-width: 1.5; stroke-dasharray: 3 3; fill: none; }
+  .ann { font-size: 9.5px; fill: #b71c1c; }
+  .zone { fill: none; stroke: #f57f17; stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .ground { stroke: #333; stroke-width: 3; fill: none; stroke-linejoin: round; }
+  .roof { stroke: #999; stroke-width: 2; stroke-dasharray: 8 4; fill: none; }
+</style>
+</head>
+<body>
+<main>
+<h1>Pesky Weapons: rooms v3, floor plans</h1>
+<p class="small">Companion to <code>rooms-v3.md</code> (2026-10-02 owner notes applied). Plans are to scale, 10 drawing units per metre, dimensions in metres. Long rooms (1, 3, 5) are drawn with NORTH TO THE LEFT and EAST UP; the Well Room and the Circuit Room have north at the top. Numbered callouts match the beats in the text. "y" is height above the room's floor. Every mandatory jump is annotated with the weakest weapon that must make it and its margin from the ballistics (g 20; Dagger 14, Banana 13, Sword 12, Staff 11, Mace 10, Hammer 9 m/s).</p>
+
+<h2>Legend</h2>
+<figure>
+<svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Legend">
+  <defs>
+    <pattern id="stripe" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="7" height="7" fill="#d7ccc8"/><line x1="0" y1="0" x2="0" y2="7" stroke="#5d4037" stroke-width="2.5"/>
+    </pattern>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#111"/></marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d32f2f"/></marker>
+    <marker id="ahw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#fff"/></marker>
+  </defs>
+  <!-- column 1 -->
+  <line x1="14" y1="20" x2="54" y2="20" class="wall"/><text x="62" y="24" class="t">wall (0.5 m)</text>
+  <rect x="14" y="48" width="40" height="12" class="door"/><text x="62" y="58" class="t">doorway / teleport door (open)</text>
+  <rect x="14" y="82" width="40" height="12" class="door"/><rect x="14" y="86" width="40" height="4" class="lock"/><text x="62" y="92" class="t">locked door (exit until solved)</text>
+  <rect x="14" y="112" width="40" height="22" class="ledge"/><text x="20" y="127" class="ts">+6 m</text><text x="62" y="126" class="t">ledge / raised floor with height</text>
+  <rect x="14" y="146" width="40" height="22" class="pit"/><line x1="20" y1="157" x2="46" y2="157" stroke="#fff" stroke-width="2" marker-end="url(#ahw)"/><text x="62" y="160" class="t">pit / trench / chasm, arrow = way out</text>
+  <rect x="14" y="180" width="40" height="22" class="plat"/><text x="62" y="194" class="t">hanging platform</text>
+  <line x1="14" y1="222" x2="40" y2="222" class="rope"/><circle cx="46" cy="222" r="6" class="pulley"/><text x="62" y="226" class="t">rope and pulley wheel</text>
+  <!-- column 2 -->
+  <line x1="270" y1="20" x2="300" y2="20" class="chain"/><circle cx="306" cy="20" r="6" class="pulleyc"/><text x="318" y="24" class="t">chain (not cuttable) and wheel</text>
+  <rect x="272" y="42" width="26" height="26" class="plate"/><text x="285" y="59" class="cot">P</text><text x="318" y="58" class="t">pressure plate (kg in label)</text>
+  <circle cx="282" cy="88" r="6" class="lever"/><line x1="282" y1="88" x2="298" y2="78" class="leverstick"/><text x="318" y="92" class="t">impact lever</text>
+  <line x1="270" y1="122" x2="286" y2="122" class="wire"/><rect x="286" y="118" width="6" height="8" class="pad"/><rect x="298" y="118" width="6" height="8" class="pad"/><line x1="304" y1="122" x2="312" y2="122" class="wiredead"/><text x="318" y="126" class="t">wiring: live, gap (two pads), dead</text>
+  <polygon points="282,146 292,156 282,166 272,156" class="source"/><text x="318" y="160" class="t">magical power source</text>
+  <rect x="276" y="184" width="12" height="12" class="post"/><rect x="294" y="184" width="12" height="12" class="post"/><text x="318" y="194" class="t">wooden posts (blades stick, climb)</text>
+  <rect x="270" y="214" width="40" height="16" class="bridge"/><text x="318" y="226" class="t">drawbridge (hinged slab)</text>
+  <!-- column 3 -->
+  <rect x="540" y="12" width="12" height="18" class="gate"/><line x1="543" y1="12" x2="543" y2="30" class="bars"/><line x1="546" y1="12" x2="546" y2="30" class="bars"/><line x1="549" y1="12" x2="549" y2="30" class="bars"/><text x="560" y="24" class="t">portcullis / barred gate</text>
+  <circle cx="546" cy="56" r="6" class="gob"/><path d="M558,50 L582,50 L582,62" class="patrol" marker-end="url(#ahr)"/><text x="590" y="60" class="t">goblin and patrol loop</text>
+  <circle cx="546" cy="90" r="6" class="gob"/><rect x="552" y="84" width="8" height="12" class="shield"/><text x="568" y="94" class="t">shield guard (needs 8 kg)</text>
+  <rect x="538" y="112" width="40" height="22" class="ctrl"/><text x="590" y="126" class="t">control room (goblin side)</text>
+  <circle cx="546" cy="158" r="7" class="spawn"/><text x="546" y="162" class="cot" style="fill:#333">S</text><text x="560" y="162" class="t">spawn (soul start, entry side)</text>
+  <rect x="538" y="180" width="40" height="18" class="exit"/><text x="558" y="193" class="cot" style="fill:#222">EXIT</text><text x="590" y="193" class="t">run exit volume</text>
+  <circle cx="546" cy="222" r="8" class="co"/><text x="546" y="226" class="cot">1</text><text x="560" y="226" class="t">beat callout</text>
+  <line x1="610" y1="236" x2="710" y2="236" class="dim"/><line x1="610" y1="231" x2="610" y2="241" class="dim"/><line x1="710" y1="231" x2="710" y2="241" class="dim"/><text x="660" y="247" class="dimt tc">scale bar: 10 m</text>
+</svg>
+<figcaption>Colours and symbols are the same on every plan. Dashed brown = a mover's second pose (ramp down, bridge down). Red notes are jump checks.</figcaption>
+</figure>
+
+<h2>Room 1: ARMORY GATE</h2>
+<p class="small">Long gallery 56 x 18 m, 9 m high. Beats: 1 HOLD (Mace parks on P1, portcullis G1 lifts while held), 2 PIN (Sword hits L1 beyond the gate, G1 latches), 3 WEIGH IN (both bodies on P2 in the trench, 11 kg against 10). North is left.</p>
+<figure>
+<svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Armory Gate plan">
+  <text x="70" y="30" class="t tb">ARMORY GATE: plan</text>
+  <!-- compass -->
+  <line x1="720" y1="30" x2="690" y2="30" class="thin" marker-end="url(#ah)"/><text x="676" y="34" class="t tb">N</text>
+  <line x1="720" y1="30" x2="720" y2="8" class="thin" marker-end="url(#ah)"/><text x="726" y="14" class="t tb">E</text>
+  <!-- room -->
+  <rect x="70" y="60" width="560" height="180" class="room"/>
+  <!-- trench -->
+  <rect x="290" y="62" width="90" height="176" class="pit"/>
+  <rect x="380" y="62" width="60" height="176" class="pitfloor"/>
+  <rect x="440" y="62" width="90" height="176" class="pit"/>
+  <text x="335" y="80" class="ts tc" style="fill:#fff">ramp down 18.4 deg</text>
+  <text x="410" y="80" class="ts tc" style="fill:#fff">floor y -3</text>
+  <text x="485" y="80" class="ts tc" style="fill:#fff">ramp up 18.4 deg</text>
+  <line x1="375" y1="215" x2="300" y2="215" stroke="#fff" stroke-width="2" marker-end="url(#ahw)"/>
+  <line x1="445" y1="215" x2="520" y2="215" stroke="#fff" stroke-width="2" marker-end="url(#ahw)"/>
+  <text x="410" y="219" class="ts tc" style="fill:#fff">out</text>
+  <!-- cross wall with portcullis -->
+  <line x1="190" y1="60" x2="190" y2="135" class="wall"/>
+  <line x1="190" y1="165" x2="190" y2="240" class="wall"/>
+  <rect x="186" y="135" width="8" height="30" class="gate"/>
+  <line x1="186" y1="140" x2="194" y2="140" class="bars"/><line x1="186" y1="146" x2="194" y2="146" class="bars"/><line x1="186" y1="152" x2="194" y2="152" class="bars"/><line x1="186" y1="158" x2="194" y2="158" class="bars"/>
+  <text x="190" y="128" class="ts tc">G1</text>
+  <!-- entry, spawn -->
+  <rect x="64" y="135" width="12" height="30" class="door"/>
+  <text x="54" y="182" class="ts">entry</text>
+  <circle cx="100" cy="150" r="7" class="spawn"/><text x="100" y="154" class="cot" style="fill:#333">S</text>
+  <!-- P1 and its chain -->
+  <rect x="140" y="170" width="30" height="30" class="plate"/><text x="155" y="189" class="cot">P1</text>
+  <text x="155" y="214" class="ts tc">hold, 8 kg</text>
+  <path d="M170,185 L184,185 L184,166" class="chain"/><circle cx="182" cy="163" r="4" class="pulleyc"/>
+  <text x="112" y="229" class="ts">chain: plate to gate</text>
+  <!-- L1 and its chain -->
+  <path d="M194,152 L199,152 L199,116" class="chain"/>
+  <circle cx="204" cy="110" r="5" class="lever"/><line x1="204" y1="110" x2="215" y2="100" class="leverstick"/>
+  <text x="222" y="114" class="ts">L1 (on the wall, 1.5 m up)</text>
+  <text x="206" y="94" class="ts">chain: gate to L1</text>
+  <!-- P2 -->
+  <rect x="395" y="135" width="30" height="30" class="plate"/><text x="410" y="154" class="cot">P2</text>
+  <text x="410" y="182" class="ts tc" style="fill:#fff">latch, 10 kg</text>
+  <!-- exit -->
+  <rect x="624" y="135" width="12" height="30" class="door"/><rect x="624" y="147" width="12" height="6" class="lock"/>
+  <text x="596" y="128" class="ts">exit</text>
+  <!-- callouts -->
+  <circle cx="122" cy="185" r="8" class="co"/><text x="122" y="189" class="cot">1</text>
+  <circle cx="228" cy="134" r="8" class="co"/><text x="228" y="138" class="cot">2</text>
+  <circle cx="410" cy="118" r="8" class="co"/><text x="410" y="122" class="cot">3</text>
+  <!-- dimensions -->
+  <line x1="70" y1="254" x2="630" y2="254" class="dim"/>
+  <line x1="70" y1="249" x2="70" y2="259" class="dim"/><line x1="190" y1="249" x2="190" y2="259" class="dim"/><line x1="290" y1="249" x2="290" y2="259" class="dim"/><line x1="380" y1="249" x2="380" y2="259" class="dim"/><line x1="440" y1="249" x2="440" y2="259" class="dim"/><line x1="530" y1="249" x2="530" y2="259" class="dim"/><line x1="630" y1="249" x2="630" y2="259" class="dim"/>
+  <text x="130" y="268" class="dimt tc">12</text><text x="240" y="268" class="dimt tc">10</text><text x="335" y="268" class="dimt tc">9</text><text x="410" y="268" class="dimt tc">6</text><text x="485" y="268" class="dimt tc">9</text><text x="580" y="268" class="dimt tc">10</text>
+  <line x1="70" y1="282" x2="630" y2="282" class="dim"/><line x1="70" y1="277" x2="70" y2="287" class="dim"/><line x1="630" y1="277" x2="630" y2="287" class="dim"/>
+  <text x="350" y="297" class="dimt tc">56 m</text>
+  <line x1="50" y1="60" x2="50" y2="240" class="dim"/><line x1="45" y1="60" x2="55" y2="60" class="dim"/><line x1="45" y1="240" x2="55" y2="240" class="dim"/>
+  <text x="40" y="154" class="dimt" transform="rotate(-90 40 154)" text-anchor="middle">18 m</text>
+  <!-- scale bar -->
+  <line x1="640" y1="300" x2="740" y2="300" class="dim"/><line x1="640" y1="295" x2="640" y2="305" class="dim"/><line x1="740" y1="295" x2="740" y2="305" class="dim"/><text x="690" y="316" class="dimt tc">10 m</text>
+</svg>
+<figcaption>Plan. The cross wall at z 12 is full height; its only opening is the portcullis. The trench is the full width of the hall, so there is nothing to walk round.</figcaption>
+</figure>
+<figure>
+<svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Armory Gate elevation">
+  <text x="70" y="22" class="t tb">ARMORY GATE: side elevation (section on the centre line, north left)</text>
+  <!-- height ticks -->
+  <line x1="52" y1="60" x2="52" y2="150" class="dim"/>
+  <text x="48" y="153" class="dimt" text-anchor="end">0</text><text x="48" y="123" class="dimt" text-anchor="end">3</text><text x="48" y="93" class="dimt" text-anchor="end">6</text><text x="48" y="63" class="dimt" text-anchor="end">9 m</text>
+  <!-- roof and floor -->
+  <line x1="70" y1="60" x2="630" y2="60" class="roof"/>
+  <path d="M70,150 L290,150 L380,180 L440,180 L530,150 L630,150" class="ground"/>
+  <!-- entry and exit -->
+  <rect x="66" y="115" width="8" height="35" class="door"/>
+  <rect x="626" y="115" width="8" height="35" class="door"/><rect x="626" y="130" width="8" height="6" class="lock"/>
+  <!-- cross wall, portcullis -->
+  <rect x="186" y="60" width="8" height="55" fill="#333"/>
+  <rect x="186" y="115" width="8" height="35" class="gate"/>
+  <line x1="188" y1="115" x2="188" y2="150" class="bars"/><line x1="190.5" y1="115" x2="190.5" y2="150" class="bars"/><line x1="193" y1="115" x2="193" y2="150" class="bars"/>
+  <rect x="186" y="79" width="8" height="36" class="dash"/>
+  <text x="200" y="74" class="ts">G1 lifts 3.6 m while P1 is held, latches when L1 is on</text>
+  <!-- P1 and chain -->
+  <rect x="140" y="146" width="30" height="4" class="plate"/>
+  <text x="155" y="166" class="ts tc">P1 hold 8 kg</text>
+  <path d="M170,146 L183,146 L183,109" class="chain"/><circle cx="189" cy="106" r="5" class="pulleyc"/><path d="M194,108 L194,115" class="chain"/>
+  <!-- L1 -->
+  <path d="M196,112 L206,112 L206,130" class="chain"/>
+  <circle cx="206" cy="135" r="5" class="lever"/><line x1="206" y1="135" x2="216" y2="127" class="leverstick"/>
+  <text x="214" y="146" class="ts">L1, 1.5 m up</text>
+  <!-- trench -->
+  <rect x="395" y="177" width="30" height="4" class="plate"/>
+  <text x="410" y="196" class="ts tc">P2 latch 10 kg (3 + 8 = 11)</text>
+  <text x="335" y="172" class="ts tc">18.4 deg</text><text x="485" y="172" class="ts tc">18.4 deg</text>
+  <text x="410" y="172" class="ts tc">y -3</text>
+  <!-- annotations -->
+  <text x="290" y="112" class="ann">Jump check: nothing to jump. Everyone walks the 18.4 deg ramps: Mace 3.7 m a hop, Hammer 3.0,</text>
+  <text x="290" y="124" class="ann">Heavy-cursed Mace 0.95 m. The portcullis opening is 3.5 m: every weapon passes.</text>
+</svg>
+<figcaption>Elevation. The portcullis is a bar lattice on one box collider; it slides up into the wall. The trench floor leaves by its own ramps.</figcaption>
+</figure>
+
+<h2>Room 2: WELL ROOM</h2>
+<p class="small">Octagon 40 m flat to flat, 14 m high: an elevator shaft. A 26 x 26 m platform hangs level at +9 m on a rope (north edge) and a chain (south edge) over two wheels. Beats: 1 CLIMB (a blade zigzags up the north guide frame to the north balcony), 2 CUT (the rope at its cleat; the platform swings down about its chained south edge into a 20.3 deg ramp), 3 RAMP AND WEIGH (the heavy hops up the ramp onto the south balcony and sits on P, 8 kg, by the exit). North is up.</p>
+<figure>
+<svg viewBox="0 0 620 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Well Room plan">
+  <text x="20" y="30" class="t tb">WELL ROOM: plan</text>
+  <line x1="580" y1="50" x2="580" y2="20" class="thin" marker-end="url(#ah)"/><text x="588" y="30" class="t tb">N</text>
+  <!-- octagon -->
+  <polygon points="382.8,80 500,197.2 500,362.8 382.8,480 217.2,480 100,362.8 100,197.2 217.2,80" class="room"/>
+  <!-- platform -->
+  <rect x="170" y="150" width="260" height="260" class="plat"/>
+  <text x="300" y="266" class="t tb tc">PLATFORM 26 x 26</text>
+  <text x="300" y="281" class="ts tc">hangs level at +9 m; wooden guide frames on four sides</text>
+  <text x="300" y="296" class="ts tc">after the cut: a 20.3 deg ramp climbing south</text>
+  <text x="228" y="162" class="ts tc">rope side: this edge drops</text>
+  <line x1="170" y1="166" x2="430" y2="166" class="dropped"/>
+  <text x="300" y="186" class="ts tc">foot of the ramp after the cut (y 0), 8.6 m from the entry</text>
+  <text x="300" y="400" class="ts tc">chain side: the hinge, stays at +9 m</text>
+  <line x1="170" y1="330" x2="430" y2="330" class="dim"/><line x1="170" y1="325" x2="170" y2="335" class="dim"/><line x1="430" y1="325" x2="430" y2="335" class="dim"/><text x="300" y="344" class="dimt tc">26 m</text>
+  <!-- frames -->
+  <line x1="282" y1="144" x2="318" y2="144" stroke="#8d6e63" stroke-width="3"/>
+  <rect x="277.5" y="139.5" width="9" height="9" class="post"/><rect x="313.5" y="139.5" width="9" height="9" class="post"/>
+  <text x="328" y="148" class="ts">N frame</text>
+  <line x1="282" y1="416" x2="318" y2="416" stroke="#8d6e63" stroke-width="3"/>
+  <rect x="277.5" y="411.5" width="9" height="9" class="post"/><rect x="313.5" y="411.5" width="9" height="9" class="post"/>
+  <text x="262" y="434" class="ts tc">S frame</text>
+  <line x1="416" y1="262" x2="416" y2="298" stroke="#8d6e63" stroke-width="3"/>
+  <rect x="411.5" y="257.5" width="9" height="9" class="post"/><rect x="411.5" y="293.5" width="9" height="9" class="post"/>
+  <text x="416" y="250" class="ts tc">E frame</text>
+  <line x1="144" y1="262" x2="144" y2="298" stroke="#8d6e63" stroke-width="3"/>
+  <rect x="139.5" y="257.5" width="9" height="9" class="post"/><rect x="139.5" y="293.5" width="9" height="9" class="post"/>
+  <text x="144" y="250" class="ts tc">W frame</text>
+  <!-- balconies -->
+  <rect x="217" y="80" width="166" height="40" class="ledge"/>
+  <line x1="217" y1="80" x2="217" y2="120" class="wall"/><line x1="383" y1="80" x2="383" y2="120" class="wall"/>
+  <text x="258" y="96" class="ts tb tc">N BALCONY +9 m</text>
+  <text x="222" y="110" class="ts">entry y 0</text>
+  <rect x="217" y="418" width="166" height="62" class="ledge"/>
+  <line x1="217" y1="418" x2="217" y2="480" class="wall"/><line x1="383" y1="418" x2="383" y2="480" class="wall"/>
+  <text x="258" y="452" class="ts tb tc">S BALCONY +9 m</text>
+  <text x="222" y="468" class="ts">chain end (ring)</text>
+  <!-- wheels, rope, chain -->
+  <circle cx="300" cy="150" r="6" class="pulley"/>
+  <line x1="300" y1="150" x2="330" y2="84" class="rope"/>
+  <line x1="322" y1="84" x2="338" y2="84" stroke="#333" stroke-width="3"/>
+  <text x="342" y="88" class="ts">cleat</text>
+  <circle cx="300" cy="410" r="6" class="pulleyc"/>
+  <line x1="300" y1="410" x2="270" y2="476" class="chain"/><circle cx="270" cy="477" r="4" class="pulleyc"/>
+  <!-- doors, spawn, plate -->
+  <rect x="285" y="74" width="30" height="12" class="door"/>
+  <circle cx="300" cy="108" r="7" class="spawn"/><text x="300" y="112" class="cot" style="fill:#333">S</text>
+  <rect x="285" y="474" width="30" height="12" class="door"/><rect x="285" y="478" width="30" height="5" class="lock"/>
+  <text x="300" y="500" class="ts tc">exit, +9 m</text>
+  <rect x="325" y="440" width="30" height="30" class="plate"/><text x="340" y="459" class="cot">P</text>
+  <text x="340" y="434" class="ts tc">8 kg latch</text>
+  <!-- callouts -->
+  <circle cx="258" cy="132" r="8" class="co"/><text x="258" y="136" class="cot">1</text>
+  <circle cx="360" cy="108" r="8" class="co"/><text x="360" y="112" class="cot">2</text>
+  <circle cx="310" cy="455" r="8" class="co"/><text x="310" y="459" class="cot">3</text>
+  <!-- dimensions and scale -->
+  <line x1="100" y1="502" x2="500" y2="502" class="dim"/><line x1="100" y1="497" x2="100" y2="507" class="dim"/><line x1="500" y1="497" x2="500" y2="507" class="dim"/>
+  <text x="300" y="518" class="dimt tc">40 m flat to flat (14 m high)</text>
+  <line x1="480" y1="542" x2="580" y2="542" class="dim"/><line x1="480" y1="537" x2="480" y2="547" class="dim"/><line x1="580" y1="537" x2="580" y2="547" class="dim"/><text x="530" y="556" class="dimt tc">10 m</text>
+</svg>
+<figcaption>Plan. Each guide frame is two 0.9 m wooden uprights 3.6 m apart with a crossbar at 10 m, standing against the platform's edge. The rope's cleat is on the north wall 1 m above the north balcony; the chain ends in a ring on the south wall. The balconies have 2 m parapets at their ends (thick lines).</figcaption>
+</figure>
+<figure>
+<svg viewBox="0 0 760 296" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Well Room elevation">
+  <text x="150" y="22" class="t tb">WELL ROOM: N-S elevation (section on the centre line, north left)</text>
+  <line x1="132" y1="80" x2="132" y2="220" class="dim"/>
+  <text x="128" y="223" class="dimt" text-anchor="end">0</text><text x="128" y="133" class="dimt" text-anchor="end">9</text><text x="128" y="83" class="dimt" text-anchor="end">14 m</text>
+  <!-- shell -->
+  <line x1="150" y1="80" x2="550" y2="80" class="roof"/>
+  <line x1="150" y1="80" x2="150" y2="220" class="wall"/><line x1="550" y1="80" x2="550" y2="220" class="wall"/>
+  <line x1="150" y1="220" x2="550" y2="220" class="ground"/>
+  <!-- beam and wheels -->
+  <rect x="220" y="85" width="260" height="5" fill="#8d6e63"/>
+  <text x="350" y="100" class="ts tc">ceiling beam, wheels at y 13</text>
+  <circle cx="220" cy="90" r="6" class="pulley"/><circle cx="480" cy="90" r="6" class="pulleyc"/>
+  <!-- balconies, doors -->
+  <rect x="150" y="128" width="40" height="5" class="ledge"/><text x="170" y="146" class="ts tc">N balcony</text>
+  <rect x="488" y="128" width="62" height="5" class="ledge"/><text x="519" y="146" class="ts tc">S balcony</text>
+  <rect x="150" y="185" width="8" height="35" class="door"/><text x="162" y="214" class="ts">entry y 0</text>
+  <rect x="542" y="95" width="8" height="35" class="door"/><rect x="542" y="110" width="8" height="6" class="lock"/><text x="538" y="90" class="ts" text-anchor="end">exit at +9</text>
+  <rect x="150" y="118" width="8" height="4" fill="#333"/><text x="160" y="114" class="ts">cleat (y 10)</text>
+  <rect x="505" y="124" width="30" height="4" class="plate"/><text x="520" y="120" class="ts tc">P 8 kg</text>
+  <!-- platform held and dropped -->
+  <rect x="220" y="128" width="260" height="4" class="plat"/>
+  <text x="350" y="124" class="ts tc">platform held at y 9 (26 m long)</text>
+  <line x1="480" y1="130" x2="236" y2="220" class="dropped"/>
+  <text x="300" y="204" class="ts">after the cut: 20.3 deg ramp</text>
+  <!-- frames -->
+  <rect x="205" y="116" width="18" height="4" class="post"/><rect x="209.5" y="120" width="9" height="100" class="post"/>
+  <rect x="477" y="116" width="18" height="4" class="post"/><rect x="481.5" y="120" width="9" height="100" class="post"/>
+  <text x="214" y="232" class="ts tc">N frame</text><text x="486" y="232" class="ts tc">S frame</text>
+  <!-- rope and chain -->
+  <path d="M220,128 L220,96" class="rope"/><path d="M214,90 L156,118" class="rope"/>
+  <path d="M480,128 L480,96" class="chain"/><path d="M486,90 L544,118" class="chain"/><circle cx="545" cy="119" r="3" class="pulleyc"/>
+  <!-- climb marks -->
+  <line x1="202" y1="200" x2="210" y2="200" stroke="#111" stroke-width="2.5"/><line x1="218" y1="180" x2="226" y2="180" stroke="#111" stroke-width="2.5"/><line x1="202" y1="160" x2="210" y2="160" stroke="#111" stroke-width="2.5"/><line x1="218" y1="140" x2="226" y2="140" stroke="#111" stroke-width="2.5"/>
+  <path d="M222,140 Q205,116 190,130" class="arc"/>
+  <text x="166" y="170" class="ts" text-anchor="end">+2, +4, +6, +8:</text><text x="166" y="182" class="ts" text-anchor="end">stuck in the</text><text x="166" y="194" class="ts" text-anchor="end">two uprights</text>
+  <!-- callouts -->
+  <circle cx="240" cy="190" r="8" class="co"/><text x="240" y="194" class="cot">1</text>
+  <circle cx="236" cy="110" r="8" class="co"/><text x="236" y="114" class="cot">2</text>
+  <circle cx="500" cy="110" r="8" class="co"/><text x="500" y="114" class="cot">3</text>
+  <!-- jump checks -->
+  <text x="20" y="248" class="ann">Jump checks. CLIMB: 3.6 m across, +2 m per hop. Sword reach at +2 m = 4.8 m (1.33x); arrives at 8 m/s against the 6 needed to stick (1.33x),</text>
+  <text x="20" y="260" class="ann">near its apex so point-first. Dagger 7.5 m. Last hop from +8 to the balcony at +9: 2.4 m across, +1 m: Sword 6.1 m (2.5x).</text>
+  <text x="20" y="272" class="ann">CUT: the rope is 1-2.7 m over the balcony; the Sword hits it at 12 m/s against 5 (2.4x). RAMP 20.3 deg: Mace 3.7 m a hop (7 hops), Hammer 3.0 (9).</text>
+  <text x="20" y="284" class="ann">Gap to the S balcony 0.8 m (Heavy-cursed Mace 1.25 m, 1.56x). Balcony 9 m + 2 m end parapets beats the Dagger's 9.2 m wall-jump ceiling.</text>
+</svg>
+<figcaption>Elevation. The platform is the kit's DropRamp: hinge along its south edge, 26 m deck, 20.3 deg swing, released by the Rope. The frame's two uprights are side by side across the section (3.6 m apart into the page).</figcaption>
+</figure>
+
+<h2>Room 3: PORTER ROOM</h2>
+<p class="small">Hall 40 x 16 m ending in a 9.5 m partition (1.5 m slot under an 11 m roof), control room 12 x 10 m beyond. Beats: 1 SNEAK AND READ (past the patrol; the chains' ends are in the hall), 2 LURE AND RIDE (a landing near the control door brings the porter out; the light body lies still and is carried in; the heavy is too heavy to lift), 3 LEVER (the rider hits L_DOOR, told which by the reader; L_PEN frees the pen into the hall), 4 FIGHT (the heavy comes in and kills the two shield guards; the exit opens when the control room is cleared). North is left.</p>
+<figure>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Porter Room plan">
+  <text x="70" y="22" class="t tb">PORTER ROOM: plan</text>
+  <line x1="720" y1="30" x2="690" y2="30" class="thin" marker-end="url(#ah)"/><text x="676" y="34" class="t tb">N</text>
+  <line x1="720" y1="30" x2="720" y2="8" class="thin" marker-end="url(#ah)"/><text x="726" y="14" class="t tb">E</text>
+  <!-- hall and control room -->
+  <rect x="70" y="70" width="400" height="160" class="room"/>
+  <rect x="470" y="90" width="100" height="120" class="ctrl"/>
+  <path d="M470,90 L570,90 L570,135 M570,165 L570,210 L470,210" class="wall"/>
+  <text x="520" y="84" class="ts tb tc">CONTROL ROOM 12 x 10</text>
+  <!-- pen alcove -->
+  <rect x="310" y="30" width="40" height="40" class="room"/>
+  <rect x="310" y="66" width="40" height="8" class="gate"/>
+  <line x1="316" y1="66" x2="316" y2="74" class="bars"/><line x1="322" y1="66" x2="322" y2="74" class="bars"/><line x1="328" y1="66" x2="328" y2="74" class="bars"/><line x1="334" y1="66" x2="334" y2="74" class="bars"/><line x1="340" y1="66" x2="340" y2="74" class="bars"/><line x1="346" y1="66" x2="346" y2="74" class="bars"/>
+  <circle cx="322" cy="50" r="6" class="gob"/><circle cx="338" cy="50" r="6" class="gob"/><text x="330" y="53" class="cot">z z</text>
+  <text x="330" y="22" class="ts tc">PEN: 2 sleepers, barred gate</text>
+  <!-- control door -->
+  <rect x="466" y="135" width="8" height="30" class="gate"/>
+  <line x1="466" y1="140" x2="474" y2="140" class="bars"/><line x1="466" y1="146" x2="474" y2="146" class="bars"/><line x1="466" y1="152" x2="474" y2="152" class="bars"/><line x1="466" y1="158" x2="474" y2="158" class="bars"/>
+  <text x="470" y="62" class="ts tc">control door in the 9.5 m partition</text>
+  <!-- entry, spawn, exit -->
+  <rect x="64" y="135" width="12" height="30" class="door"/><text x="54" y="182" class="ts">entry</text>
+  <circle cx="100" cy="150" r="7" class="spawn"/><text x="100" y="154" class="cot" style="fill:#333">S</text>
+  <rect x="564" y="135" width="12" height="30" class="door"/><rect x="564" y="147" width="12" height="6" class="lock"/>
+  <text x="520" y="228" class="ts tc">exit: opens when the control room is cleared</text>
+  <!-- patrol -->
+  <path d="M170,200 L170,100 L370,100 L370,200 Z" class="patrol" marker-end="url(#ahr)"/>
+  <circle cx="170" cy="200" r="6" class="gob"/>
+  <text x="270" y="216" class="ts tc">patrol loop, pause 1 s at each corner, 110 deg cone</text>
+  <!-- noticing ground -->
+  <circle cx="410" cy="150" r="15" class="dash"/>
+  <text x="410" y="178" class="ts tc">noticing ground</text>
+  <text x="410" y="190" class="ts tc">(lure: a landing within 15 m)</text>
+  <!-- inside: porter, stand, guards, levers -->
+  <circle cx="545" cy="150" r="6" class="gob"/><text x="545" y="140" class="ts tc">porter</text>
+  <rect x="526" y="176" width="8" height="8" class="post"/><text x="530" y="170" class="ts tc">stand</text>
+  <circle cx="500" cy="195" r="6" class="gob"/><rect x="506" y="189" width="7" height="12" class="shield"/>
+  <circle cx="500" cy="115" r="6" class="gob"/><rect x="506" y="109" width="7" height="12" class="shield"/>
+  <text x="514" y="118" class="ts">guard</text><text x="514" y="200" class="ts">guard</text>
+  <circle cx="478" cy="172" r="5" class="lever"/><line x1="478" y1="172" x2="488" y2="180" class="leverstick"/><text x="484" y="170" class="ts">L_DOOR</text>
+  <circle cx="478" cy="128" r="5" class="lever"/><line x1="478" y1="128" x2="488" y2="120" class="leverstick"/><text x="484" y="134" class="ts">L_PEN</text>
+  <!-- chains -->
+  <path d="M478,172 L464,172 L464,166" class="chain"/><circle cx="461" cy="163" r="3" class="pulleyc"/>
+  <text x="458" y="202" class="ts" text-anchor="end">door chain, over the wall to the door</text>
+  <path d="M478,128 L464,128 L464,77 L352,77" class="chain"/>
+  <text x="410" y="90" class="ts tc">pen chain (east wall)</text>
+  <!-- callouts -->
+  <circle cx="270" cy="150" r="8" class="co"/><text x="270" y="154" class="cot">1</text>
+  <circle cx="434" cy="130" r="8" class="co"/><text x="434" y="134" class="cot">2</text>
+  <circle cx="494" cy="150" r="8" class="co"/><text x="494" y="154" class="cot">3</text>
+  <circle cx="540" cy="212" r="8" class="co"/><text x="540" y="216" class="cot">4</text>
+  <!-- dimensions -->
+  <line x1="70" y1="250" x2="470" y2="250" class="dim"/><line x1="70" y1="245" x2="70" y2="255" class="dim"/><line x1="470" y1="245" x2="470" y2="255" class="dim"/><text x="270" y="264" class="dimt tc">40 m</text>
+  <line x1="470" y1="250" x2="570" y2="250" class="dim"/><line x1="570" y1="245" x2="570" y2="255" class="dim"/><text x="520" y="264" class="dimt tc">10 m</text>
+  <line x1="50" y1="70" x2="50" y2="230" class="dim"/><line x1="45" y1="70" x2="55" y2="70" class="dim"/><line x1="45" y1="230" x2="55" y2="230" class="dim"/>
+  <text x="40" y="154" class="dimt" transform="rotate(-90 40 154)" text-anchor="middle">16 m</text>
+  <line x1="592" y1="90" x2="592" y2="210" class="dim"/><line x1="587" y1="90" x2="597" y2="90" class="dim"/><line x1="587" y1="210" x2="597" y2="210" class="dim"/>
+  <text x="604" y="154" class="dimt" transform="rotate(-90 604 154)" text-anchor="middle">12 m</text>
+  <line x1="640" y1="280" x2="740" y2="280" class="dim"/><line x1="640" y1="275" x2="640" y2="285" class="dim"/><line x1="740" y1="275" x2="740" y2="285" class="dim"/><text x="690" y="294" class="dimt tc">10 m</text>
+</svg>
+<figcaption>Plan. From the hall the left chain visibly drops to the control door and the right chain runs along the east wall to the pen; from inside, two identical levers. The porter's home spot faces the door; the stand is 6 m inside.</figcaption>
+</figure>
+<figure>
+<svg viewBox="0 0 760 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Porter Room partition elevation">
+  <text x="70" y="22" class="t tb">PORTER ROOM: N-S elevation through the control door (north left)</text>
+  <line x1="52" y1="40" x2="52" y2="150" class="dim"/>
+  <text x="48" y="153" class="dimt" text-anchor="end">0</text><text x="48" y="58" class="dimt" text-anchor="end">9.5</text><text x="48" y="43" class="dimt" text-anchor="end">11 m</text>
+  <line x1="70" y1="40" x2="570" y2="40" class="roof"/>
+  <line x1="70" y1="150" x2="570" y2="150" class="ground"/>
+  <line x1="70" y1="40" x2="70" y2="150" class="wall"/><line x1="570" y1="40" x2="570" y2="150" class="wall"/>
+  <rect x="64" y="115" width="8" height="35" class="door"/>
+  <rect x="566" y="115" width="8" height="35" class="door"/><rect x="566" y="130" width="8" height="6" class="lock"/>
+  <!-- partition and door -->
+  <rect x="466" y="55" width="8" height="60" fill="#333"/>
+  <rect x="466" y="115" width="8" height="35" class="gate"/>
+  <line x1="468" y1="115" x2="468" y2="150" class="bars"/><line x1="470.5" y1="115" x2="470.5" y2="150" class="bars"/><line x1="473" y1="115" x2="473" y2="150" class="bars"/>
+  <rect x="466" y="79" width="8" height="36" class="dash"/>
+  <text x="480" y="50" class="ts">1.5 m slot: chains and souls pass, no weapon</text>
+  <text x="458" y="100" class="ts" text-anchor="end">partition 9.5 m</text>
+  <!-- chains -->
+  <path d="M480,135 L480,58 L461,58 L461,110" class="chain"/><circle cx="461" cy="113" r="3" class="pulleyc"/>
+  <path d="M484,135 L484,53 L456,53 L456,84 L350,84 L350,112" class="chain"/>
+  <rect x="310" y="115" width="40" height="35" class="dash"/><text x="330" y="164" class="ts tc">pen gate (in the east wall)</text>
+  <circle cx="482" cy="137" r="4" class="lever"/><line x1="484" y1="133" x2="492" y2="104" class="thin"/><text x="490" y="100" class="ts">L_DOOR / L_PEN flank the door inside</text>
+  <!-- goblins -->
+  <circle cx="270" cy="143" r="6" class="gob"/><text x="270" y="132" class="ts tc">patrol</text>
+  <circle cx="520" cy="143" r="6" class="gob"/><rect x="526" y="137" width="7" height="12" class="shield"/>
+  <circle cx="548" cy="143" r="6" class="gob"/>
+  <text x="534" y="164" class="ts tc">guards, porter</text>
+  <text x="70" y="176" class="ann">Jump check: nothing mandatory. Partition 9.5 m beats the Dagger's 9.2 m wall-jump ceiling; only the porter's arms and the inside lever pass it.</text>
+</svg>
+<figcaption>Elevation. The control door is one PorterGate slab: it lifts for a carrying porter and stays up once L_DOOR is on.</figcaption>
+</figure>
+
+<h2>Room 4: CIRCUIT ROOM</h2>
+<p class="small">Rectangle 24 x 30 m, 8 m high, no enemies, no pits. A source, a glowing wire with two gaps, a 2.5 m ledge. Beats: 1 LOW GAP (a metal body lies across gap 1 on the floor), 2 HIGH GAP (a blade hops onto the ledge and lies across gap 2; both closed together for 1 s latches the exit). The Staff and the Banana do nothing on a gap. North is up.</p>
+<figure>
+<svg viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Circuit Room plan">
+  <text x="80" y="24" class="t tb">CIRCUIT ROOM: plan</text>
+  <line x1="380" y1="50" x2="380" y2="20" class="thin" marker-end="url(#ah)"/><text x="388" y="30" class="t tb">N</text>
+  <rect x="80" y="40" width="240" height="300" class="room"/>
+  <!-- ledge -->
+  <rect x="80" y="260" width="100" height="80" class="ledge"/>
+  <text x="130" y="278" class="ts tb tc">LEDGE +2.5 m</text>
+  <text x="130" y="290" class="ts tc">wire climbs its north face</text>
+  <!-- source -->
+  <polygon points="120,90 130,100 120,110 110,100" class="source"/>
+  <text x="120" y="124" class="ts tc">SOURCE</text>
+  <!-- wire live -->
+  <path d="M110,100 L88,100 L88,174" class="wire"/>
+  <rect x="84" y="174" width="8" height="6" class="pad"/><rect x="84" y="185" width="8" height="6" class="pad"/>
+  <!-- wire dead -->
+  <path d="M88,191 L88,300 L120,300" class="wiredead"/>
+  <rect x="120" y="296" width="6" height="8" class="pad"/><rect x="131" y="296" width="6" height="8" class="pad"/>
+  <path d="M137,300 L180,300 L180,330 L216,330" class="wiredead"/>
+  <rect x="216" y="324" width="8" height="12" fill="#546e7a"/>
+  <text x="228" y="322" class="ts">terminal (dark)</text>
+  <!-- labels -->
+  <text x="98" y="204" class="ts">gap 1: floor, pads 0.5 m apart</text>
+  <text x="150" y="318" class="ts tc">gap 2: on the ledge</text>
+  <text x="205" y="150" class="ts tc">the wire glows from the source</text>
+  <text x="205" y="162" class="ts tc">as far as the first open gap</text>
+  <!-- doors -->
+  <rect x="185" y="34" width="30" height="12" class="door"/>
+  <circle cx="200" cy="62" r="7" class="spawn"/><text x="200" y="66" class="cot" style="fill:#333">S</text>
+  <rect x="225" y="334" width="30" height="12" class="door"/><rect x="225" y="338" width="30" height="5" class="lock"/>
+  <text x="262" y="356" class="ts">exit (CIRCUIT CLOSED)</text>
+  <!-- callouts -->
+  <circle cx="106" cy="184" r="8" class="co"/><text x="106" y="188" class="cot">1</text>
+  <circle cx="150" cy="300" r="8" class="co"/><text x="150" y="304" class="cot">2</text>
+  <!-- dims -->
+  <line x1="80" y1="352" x2="320" y2="352" class="dim"/><line x1="80" y1="347" x2="80" y2="357" class="dim"/><line x1="320" y1="347" x2="320" y2="357" class="dim"/><text x="150" y="366" class="dimt tc">24 m</text>
+  <line x1="60" y1="40" x2="60" y2="340" class="dim"/><line x1="55" y1="40" x2="65" y2="40" class="dim"/><line x1="55" y1="340" x2="65" y2="340" class="dim"/>
+  <text x="50" y="190" class="dimt" transform="rotate(-90 50 190)" text-anchor="middle">30 m</text>
+  <text x="80" y="384" class="ann">Jump check. LEDGE 2.5 m: Sword apex 3.49 (1.4x), Dagger 4.75;</text>
+  <text x="80" y="396" class="ann">Mace 2.42 and Hammer 1.96 cannot: the roles are fixed.</text>
+  <line x1="300" y1="402" x2="400" y2="402" class="dim"/><line x1="300" y1="397" x2="300" y2="407" class="dim"/><line x1="400" y1="397" x2="400" y2="407" class="dim"/><text x="350" y="416" class="dimt tc">10 m</text>
+</svg>
+<figcaption>Plan. Cyan = live wire, grey = dead. From the entry: the source, the lit wire to gap 1, both gaps, the ledge, the dark terminal by the exit. A gap is two pads 0.5 m apart; any metal body at rest touching both closes it.</figcaption>
+</figure>
+<figure>
+<svg viewBox="0 0 420 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Circuit Room ledge elevation">
+  <text x="80" y="20" class="t tb">CIRCUIT ROOM: E-W section through gap 2 (looking north)</text>
+  <line x1="80" y1="30" x2="320" y2="30" class="roof"/>
+  <line x1="80" y1="30" x2="80" y2="110" class="wall"/><line x1="320" y1="30" x2="320" y2="110" class="wall"/>
+  <line x1="80" y1="110" x2="320" y2="110" class="ground"/>
+  <rect x="80" y="85" width="100" height="25" class="ledge"/>
+  <text x="130" y="102" class="ts tc">ledge +2.5 m</text>
+  <path d="M80,86 L124,86" class="wiredead"/><rect x="124" y="81" width="4" height="5" class="pad"/><rect x="133" y="81" width="4" height="5" class="pad"/><path d="M137,86 L180,86 L180,110" class="wiredead"/>
+  <text x="130" y="76" class="ts tc">gap 2</text>
+  <path d="M235,110 Q205,56 176,85" class="arc"/>
+  <text x="240" y="68" class="ts">Sword hop onto the ledge</text>
+  <text x="80" y="132" class="ann">Ledge 2.5 m: Sword apex 3.49 (1.4x); Mace 2.42 cannot.</text>
+</svg>
+<figcaption>Section. The ledge is the only height in the room and it is what assigns the roles.</figcaption>
+</figure>
+
+<h2>Room 5: BAT ROOM (finale, holds the EXIT)</h2>
+<p class="small">Rectangle 24 x 52 m, 24 m high. Entry at floor level, steps up to a 6 m dais, a 14 m chasm, the south bank at 6 m with the exit. Beats: 1 STEPS, 2 BAT (the heavy bats the braced light across, 20 m/s), 3 LEVER (the light hits L_BRIDGE; the drawbridge swings down, the exit opens), 4 CROSS. North is left.</p>
+<figure>
+<svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bat Room plan">
+  <text x="70" y="22" class="t tb">BAT ROOM: plan</text>
+  <line x1="720" y1="30" x2="690" y2="30" class="thin" marker-end="url(#ah)"/><text x="676" y="34" class="t tb">N</text>
+  <line x1="720" y1="30" x2="720" y2="8" class="thin" marker-end="url(#ah)"/><text x="726" y="14" class="t tb">E</text>
+  <rect x="70" y="30" width="520" height="240" class="room"/>
+  <!-- chasm -->
+  <rect x="330" y="32" width="140" height="236" class="pit"/>
+  <text x="400" y="56" class="ts tb tc" style="fill:#fff">CHASM 14 m, floor y 0</text>
+  <text x="400" y="124" class="ts tc" style="fill:#fff">bat: 20 m (needs 14)</text>
+  <!-- corridor -->
+  <rect x="150" y="240" width="180" height="30" fill="#f0f0f0" class="dash"/>
+  <text x="240" y="259" class="ts tc">corridor y 0: the way out of the chasm</text>
+  <line x1="360" y1="255" x2="336" y2="255" stroke="#fff" stroke-width="2" marker-end="url(#ahw)"/>
+  <!-- steps and dais -->
+  <rect x="150" y="32" width="120" height="208" class="ledge"/>
+  <line x1="180" y1="32" x2="180" y2="240" class="thin"/><line x1="210" y1="32" x2="210" y2="240" class="thin"/><line x1="240" y1="32" x2="240" y2="240" class="thin"/>
+  <text x="165" y="140" class="ts tc">+1.5</text><text x="195" y="140" class="ts tc">+3</text><text x="225" y="140" class="ts tc">+4.5</text><text x="255" y="140" class="ts tc">+6</text>
+  <text x="210" y="46" class="ts tc">STEPS (1.5 m risers)</text>
+  <rect x="270" y="32" width="60" height="208" class="ledge"/>
+  <text x="300" y="150" class="ts tb tc">DAIS</text><text x="300" y="162" class="ts tc">+6 m</text>
+  <!-- brace pad and batter -->
+  <rect x="300" y="75" width="30" height="30" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <line x1="306" y1="90" x2="326" y2="90" class="thin" marker-end="url(#ah)"/>
+  <text x="315" y="66" class="ts tc">brace pad (Sword)</text>
+  <circle cx="286" cy="90" r="5" fill="#546e7a"/>
+  <text x="280" y="120" class="ts tc">batter (Mace) 1.5 m behind</text>
+  <line x1="332" y1="90" x2="528" y2="90" class="arc" marker-end="url(#ah)"/>
+  <!-- south bank -->
+  <rect x="470" y="32" width="118" height="236" class="ledge"/>
+  <text x="530" y="252" class="ts tb tc">SOUTH BANK +6 m</text>
+  <rect x="470" y="32" width="118" height="118" class="zone"/>
+  <text x="530" y="46" class="ts tc">landing zone (14-26 m)</text>
+  <!-- drawbridge -->
+  <rect x="330" y="170" width="145" height="60" class="dropped"/>
+  <text x="400" y="204" class="ts tc" style="fill:#fff">drawbridge, down (dashed)</text>
+  <rect x="466" y="170" width="8" height="60" class="bridge"/>
+  <text x="470" y="262" class="ts tc">bridge, upright</text>
+  <!-- lever -->
+  <circle cx="510" cy="150" r="5" class="lever"/><line x1="510" y1="150" x2="520" y2="140" class="leverstick"/>
+  <text x="526" y="154" class="ts">L_BRIDGE</text>
+  <!-- guide frame -->
+  <rect x="455.5" y="50.5" width="9" height="9" class="post"/><rect x="455.5" y="86.5" width="9" height="9" class="post"/>
+  <text x="448" y="100" class="ts" style="fill:#fff" text-anchor="end">guide frame (solo climb)</text>
+  <!-- entry, exit -->
+  <rect x="64" y="135" width="12" height="30" class="door"/><text x="54" y="182" class="ts">entry</text>
+  <circle cx="100" cy="150" r="7" class="spawn"/><text x="100" y="154" class="cot" style="fill:#333">S</text>
+  <rect x="584" y="135" width="12" height="30" class="door"/><rect x="584" y="147" width="12" height="6" class="lock"/>
+  <rect x="596" y="110" width="60" height="80" class="exit"/><text x="626" y="146" class="cot tc" style="fill:#222">EXIT</text><text x="626" y="160" class="ts tc">8 x 8 alcove</text>
+  <!-- callouts -->
+  <circle cx="210" cy="222" r="8" class="co"/><text x="210" y="226" class="cot">1</text>
+  <circle cx="340" cy="132" r="8" class="co"/><text x="340" y="136" class="cot">2</text>
+  <circle cx="494" cy="168" r="8" class="co"/><text x="494" y="172" class="cot">3</text>
+  <circle cx="420" cy="160" r="8" class="co"/><text x="420" y="164" class="cot">4</text>
+  <!-- dims -->
+  <line x1="70" y1="290" x2="590" y2="290" class="dim"/>
+  <line x1="70" y1="285" x2="70" y2="295" class="dim"/><line x1="150" y1="285" x2="150" y2="295" class="dim"/><line x1="270" y1="285" x2="270" y2="295" class="dim"/><line x1="330" y1="285" x2="330" y2="295" class="dim"/><line x1="470" y1="285" x2="470" y2="295" class="dim"/><line x1="590" y1="285" x2="590" y2="295" class="dim"/>
+  <text x="110" y="304" class="dimt tc">8</text><text x="210" y="304" class="dimt tc">12</text><text x="300" y="304" class="dimt tc">6</text><text x="400" y="304" class="dimt tc">14</text><text x="530" y="304" class="dimt tc">12</text>
+  <line x1="70" y1="314" x2="590" y2="314" class="dim"/><line x1="70" y1="309" x2="70" y2="319" class="dim"/><line x1="590" y1="309" x2="590" y2="319" class="dim"/><text x="330" y="330" class="dimt tc">52 m</text>
+  <line x1="50" y1="30" x2="50" y2="270" class="dim"/><line x1="45" y1="30" x2="55" y2="30" class="dim"/><line x1="45" y1="270" x2="55" y2="270" class="dim"/>
+  <text x="40" y="150" class="dimt" transform="rotate(-90 40 150)" text-anchor="middle">24 m</text>
+  <line x1="640" y1="300" x2="740" y2="300" class="dim"/><line x1="640" y1="295" x2="640" y2="305" class="dim"/><line x1="740" y1="295" x2="740" y2="305" class="dim"/><text x="690" y="316" class="dimt tc">10 m</text>
+</svg>
+<figcaption>Plan. The bridge stands on the west half of the south lip and lands on the dais's west half; the bat goes over the east half. The corridor along the west wall is level the whole way, so the chasm floor is never a trap.</figcaption>
+</figure>
+<figure>
+<svg viewBox="0 0 760 322" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bat Room elevation">
+  <text x="70" y="22" class="t tb">BAT ROOM: N-S elevation (section at x +6 through the brace pad, north left)</text>
+  <line x1="52" y1="10" x2="52" y2="250" class="dim"/>
+  <text x="48" y="253" class="dimt" text-anchor="end">0</text><text x="48" y="193" class="dimt" text-anchor="end">6</text><text x="48" y="133" class="dimt" text-anchor="end">12</text><text x="48" y="14" class="dimt" text-anchor="end">24 m</text>
+  <line x1="70" y1="10" x2="590" y2="10" class="roof"/>
+  <line x1="70" y1="10" x2="70" y2="250" class="wall"/><line x1="590" y1="10" x2="590" y2="190" class="wall"/>
+  <!-- solids -->
+  <path d="M150,250 L150,235 L180,235 L180,220 L210,220 L210,205 L240,205 L240,190 L330,190 L330,250 Z" class="ledge"/>
+  <rect x="470" y="190" width="120" height="60" class="ledge"/>
+  <path d="M70,250 L150,250 L150,235 L180,235 L180,220 L210,220 L210,205 L240,205 L240,190 L330,190 L330,250 L470,250 L470,190 L590,190" class="ground"/>
+  <text x="210" y="244" class="ts tc">steps</text><text x="300" y="232" class="ts tc">dais +6</text><text x="530" y="232" class="ts tc">south bank +6</text>
+  <text x="400" y="244" class="ts tc">chasm floor y 0 (corridor behind)</text>
+  <!-- doors -->
+  <rect x="66" y="215" width="8" height="35" class="door"/>
+  <rect x="586" y="155" width="8" height="35" class="door"/><rect x="586" y="170" width="8" height="6" class="lock"/>
+  <rect x="594" y="150" width="56" height="40" class="exit"/><text x="622" y="174" class="cot tc" style="fill:#222">EXIT</text>
+  <!-- pad, batter -->
+  <rect x="300" y="187" width="30" height="3" fill="#fff" stroke="#333"/><text x="315" y="180" class="ts tc">brace pad</text>
+  <circle cx="286" cy="186" r="4" fill="#546e7a"/>
+  <!-- bat arc -->
+  <path d="M320,190 Q420,90 520,190" class="arc" marker-end="url(#ah)"/>
+  <text x="385" y="134" class="ts tc">bat: 20 m/s at 45 deg, apex 5 m</text>
+  <!-- bridge -->
+  <rect x="468" y="45" width="8" height="145" class="bridge"/><circle cx="472" cy="190" r="3" fill="#333"/>
+  <text x="482" y="60" class="ts">drawbridge upright, 14.5 m (top at 20.5)</text>
+  <text x="482" y="72" class="ts">hinge on the lip; lever releases the catch</text>
+  <line x1="330" y1="188" x2="475" y2="188" class="dropped"/>
+  <text x="400" y="180" class="ts tc">down: lip to lip, 2 s</text>
+  <!-- lever -->
+  <circle cx="510" cy="183" r="5" class="lever"/><line x1="510" y1="183" x2="520" y2="175" class="leverstick"/><text x="526" y="186" class="ts">L_BRIDGE</text>
+  <!-- guide frame -->
+  <rect x="456" y="180" width="8" height="70" class="post"/>
+  <line x1="449" y1="230" x2="456" y2="230" stroke="#111" stroke-width="2.5"/><line x1="464" y1="210" x2="471" y2="210" stroke="#111" stroke-width="2.5"/>
+  <path d="M468,210 Q478,160 486,190" class="arc"/>
+  <text x="446" y="266" class="ts" text-anchor="end">guide frame: 7 m, two posts 3.6 m apart (into the page), 1 m off the face</text>
+  <!-- callouts -->
+  <circle cx="195" cy="200" r="8" class="co"/><text x="195" y="204" class="cot">1</text>
+  <circle cx="290" cy="164" r="8" class="co"/><text x="290" y="168" class="cot">2</text>
+  <circle cx="540" cy="170" r="8" class="co"/><text x="540" y="174" class="cot">3</text>
+  <circle cx="400" cy="206" r="8" class="co"/><text x="400" y="210" class="cot">4</text>
+  <!-- jump checks -->
+  <text x="20" y="278" class="ann">Jump checks. STEPS: 1.5 m risers, Hammer apex 1.96 (1.31x); a Heavy-cursed Hammer (0.49) waits out its 20 s on a tread.</text>
+  <text x="20" y="290" class="ann">BAT: the braced friend leaves at 20 m/s along the Mace's 45 deg launch: 20 m (18.8 at 35 or 55) against 14 (1.43x); the Mace stops dead at the hit.</text>
+  <text x="20" y="302" class="ann">The chasm beats every own launch (Dagger 9.8 m). SOLO: a blade sticks at +2 and +4 (3.6 m across, Sword reach 4.8, 1.33x), then +2 m over the lip</text>
+  <text x="20" y="314" class="ann">1 m away (Sword apex 3.49, 1.7x). The 6 m face is sheer: a wall jump must rebound, so nothing lands on top of the wall it jumped from.</text>
+</svg>
+<figcaption>Elevation. The bridge is the kit's DropRamp released by a lever: authored upright, 90 deg swing, lands flat on the dais. The exit door opens with the same lever.</figcaption>
+</figure>
+
+<h2>Jump check summary</h2>
+<p class="small">Every mandatory jump in the run, the weakest weapon that must make it, and its margin. Formulas: range v^2 sin(2a)/g, apex (v sin a)^2/2g, reach at rise h = (v/g) sqrt(v^2 - 2gh), slope hop 2 v^2 cos(a) sin(a - t) / (g cos^2 t) at a = 45 + t/2, g = 20.</p>
+<table>
+<tr><th>Room</th><th>Jump</th><th>Weakest weapon that must make it</th><th>Need</th><th>Have</th><th>Margin</th></tr>
+<tr><td>1</td><td>trench ramps, 18.4 deg</td><td>Mace (Hammer)</td><td>progress uphill</td><td>3.7 m a hop (Hammer 3.0; Heavy-cursed Mace 0.95)</td><td>no jump, a walk</td></tr>
+<tr><td>2</td><td>frame hop, upright to upright</td><td>Sword</td><td>3.6 m across, +2 m; 6 m/s on arrival to stick</td><td>reach 4.8 m; 8 m/s on arrival, near apex (point-first)</td><td>1.33x / 1.33x</td></tr>
+<tr><td>2</td><td>last hop onto the north balcony</td><td>Sword</td><td>2.4 m across, +1 m</td><td>6.1 m</td><td>2.5x</td></tr>
+<tr><td>2</td><td>rope cut</td><td>Sword</td><td>5 m/s at 1-2.7 m above the balcony</td><td>12 m/s at low lift</td><td>2.4x</td></tr>
+<tr><td>2</td><td>ramp, 20.3 deg, 26 m</td><td>Hammer</td><td>progress uphill</td><td>3.0 m a hop, 9 hops (Mace 3.7, 7 hops)</td><td>a walk; Heavy-cursed Mace 0.93 m a hop</td></tr>
+<tr><td>2</td><td>platform edge to the south balcony</td><td>Heavy-cursed Mace</td><td>0.8 m level</td><td>1.25 m</td><td>1.56x</td></tr>
+<tr><td>2</td><td>bypass check</td><td>Dagger (strongest)</td><td>must NOT reach the balconies</td><td>9.2 m wall-jump ceiling vs 9 m + 2 m parapets</td><td>held, with a 1.8 m margin</td></tr>
+<tr><td>3</td><td>none</td><td>-</td><td>-</td><td>partition 9.5 m vs Dagger 9.2</td><td>held</td></tr>
+<tr><td>4</td><td>ledge</td><td>Sword</td><td>+2.5 m</td><td>apex 3.49 (Dagger 4.75)</td><td>1.4x; Mace 2.42 and Hammer 1.96 fail by design</td></tr>
+<tr><td>5</td><td>step risers</td><td>Hammer</td><td>+1.5 m</td><td>apex 1.96</td><td>1.31x</td></tr>
+<tr><td>5</td><td>the bat across the chasm</td><td>any braced light (Sword, Dagger, Banana)</td><td>14 m level</td><td>20 m at 45 deg, 18.8 m at 35 or 55</td><td>1.43x / 1.34x</td></tr>
+<tr><td>5</td><td>solo frame climb</td><td>Sword</td><td>3.6 m across +2 m; then +2 m over 1 m</td><td>reach 4.8 m; apex 3.49</td><td>1.33x / 1.7x</td></tr>
+<tr><td>5</td><td>bridge crossing</td><td>Hammer</td><td>14.5 m level deck</td><td>4.05 m a hop, 4 hops</td><td>a walk</td></tr>
+</table>
+<p class="small">Sizes: Armory Gate 56 x 18, Well Room octagon 40 (14 high), Porter Room 40 x 16 plus 12 x 10, Circuit Room 24 x 30, Bat Room 24 x 52 (24 high). Bigness only where the design wants it (the shaft, the finale); the Circuit Room is deliberately small.</p>
+</main>
+</body>
+</html>

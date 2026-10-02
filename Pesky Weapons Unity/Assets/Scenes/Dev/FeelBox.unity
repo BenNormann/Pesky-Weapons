@@ -561,6 +561,11 @@ MonoBehaviour:
   - {fileID: 2149922331588708911}
   sessionRunner: {fileID: 790094385}
   labyrinth: {fileID: 0}
+  run: {fileID: 0}
+  practiceDummy: {fileID: 0}
+  sightMask:
+    serializedVersion: 2
+    m_Bits: 256
   ropes:
   - {fileID: 1763570710}
   pots:
@@ -1516,6 +1521,8 @@ MonoBehaviour:
   authority: {fileID: 267765539}
   viewPrefab: {fileID: 5442623511255715562, guid: 517b67c8f951c4043ab485a66e199a91, type: 3}
   viewRoot: {fileID: 879032211}
+  banishedMageTag: BANISHED - THE ARCH MAGE
+  banishedWeaponTag: BANISHED - A WEAPON
 --- !u!1001 &929328442
 PrefabInstance:
   m_ObjectHideFlags: 0

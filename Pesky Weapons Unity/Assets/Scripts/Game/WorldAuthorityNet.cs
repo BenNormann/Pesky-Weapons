@@ -980,7 +980,8 @@ void OnNetReply(byte id, byte[] payload)
                 case KitKind.Rope:
                 {
                     Rope rope = GetRope(id);
-                    if (rope == null || !Near(actor, rope) || !rope.CanCut(actor, speed)) return false;
+                    // A rope can run far from its root (the Well Room's slant): the range is to its nearest part, not its root.
+                        if (rope == null || actor == null || actor.Body == null || !rope.CanCut(actor, speed) || !rope.IsNear(actor.Body.position, KitClaimRange)) return false;
                     proposal.state = 1;
                     break;
                 }
@@ -1045,17 +1046,37 @@ void OnNetReply(byte id, byte[] payload)
                 case KitKind.Door:
                 {
                     Door door = GetDoor(id);
-                    if (door == null || door.IsOpen) return;
-                    door.ApplyOpen();
-                    if (DoorOpened != null) DoorOpened(door);
+                    if (door == null) return;
+                    if (on)
+                    {
+                        if (door.IsOpen) return;
+                        door.ApplyOpen();
+                        if (DoorOpened != null) DoorOpened(door);
+                    }
+                    else
+                    {
+                        if (!door.IsOpen) return;
+                        door.ApplyClose();
+                        if (DoorClosed != null) DoorClosed(door);
+                    }
                     return;
                 }
                 case KitKind.Plate:
                 {
                     PressurePlate plate;
-                    if (!_plateById.TryGetValue(id, out plate) || plate.Latched) return;
-                    plate.ApplyMass(Mathf.Max(plate.Mass, plate.MassThreshold));
-                    if (PlateLatched != null) PlateLatched(plate);
+                    if (!_plateById.TryGetValue(id, out plate)) return;
+                    if (plate.IsLatching)
+                    {
+                        if (plate.Latched) return;
+                        plate.ApplyMass(Mathf.Max(plate.Mass, plate.MassThreshold));
+                        if (PlateLatched != null) PlateLatched(plate);
+                    }
+                    else
+                    {
+                        if (plate.Held == on) return;
+                        plate.ApplyMass(on ? Mathf.Max(plate.Mass, plate.MassThreshold) : 0f);
+                        if (on && PlateLatched != null) PlateLatched(plate);
+                    }
                     EvaluateDoors();
                     return;
                 }
@@ -1217,12 +1238,20 @@ void OnNetReply(byte id, byte[] payload)
             return false;
         }
 
-        void NetPlateMass(int plateId, float mass)
+void NetPlateMass(int plateId, float mass)
         {
             PressurePlate plate;
             if (!_plateById.TryGetValue(plateId, out plate) || !IsHostPeer) return;
-            if (plate.Latched || mass < plate.MassThreshold) return;
-            SubmitKit(KitKind.Plate, plateId, 1, null, 0f);
+            if (plate.IsLatching)
+            {
+                if (plate.Latched || mass < plate.MassThreshold) return;
+                SubmitKit(KitKind.Plate, plateId, 1, null, 0f);
+                return;
+            }
+            // A HOLD plate: broadcast every change of Held (1 = enough mass rests on it, 0 = released).
+            bool held = mass >= plate.MassThreshold;
+            if (held == plate.Held) return;
+            SubmitKit(KitKind.Plate, plateId, (byte)(held ? 1 : 0), null, 0f);
         }
 
         bool NetAnvil(int anvilId, WeaponBody weapon)
@@ -1237,11 +1266,14 @@ void OnNetReply(byte id, byte[] payload)
             return SubmitKit(KitKind.Anvil, anvilId, 1, weapon, 0f);
         }
 
-        bool NetDoorCheck(Door door)
+bool NetDoorCheck(Door door)
         {
-            if (door == null || door.IsOpen || !IsHostPeer) return false;
-            if (!door.ConditionSatisfied(this)) return false;
-            return SubmitKit(KitKind.Door, door.SceneId, 1, null, 0f);
+            if (door == null || !IsHostPeer) return false;
+            bool satisfied = door.ConditionSatisfied(this);
+            if (!door.IsOpen) return satisfied && SubmitKit(KitKind.Door, door.SceneId, 1, null, 0f);
+            // A closesAgain door (portcullis on a hold plate) shuts once its condition lapses.
+            if (door.ClosesAgain && !satisfied) return SubmitKit(KitKind.Door, door.SceneId, 0, null, 0f);
+            return false;
         }
 
         /// <summary>Host decided on/off pieces (magnet, lift, porter gate, lever set by script).</summary>

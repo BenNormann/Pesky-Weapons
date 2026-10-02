@@ -86,6 +86,8 @@ MonoBehaviour:
   riderMask:
     serializedVersion: 2
     m_Bits: 2560
+  riderBrake: 18
+  brakeLaunchGrace: 0.75
 --- !u!1 &5824994815581334671
 GameObject:
   m_ObjectHideFlags: 0

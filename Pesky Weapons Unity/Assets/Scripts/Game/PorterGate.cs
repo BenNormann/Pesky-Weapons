@@ -9,8 +9,10 @@ namespace Pesky.Game
     ///
     /// It does NOT latch - it shuts again behind the porter. The open flag is host-owned
     /// (WorldAuthority.RequestSetPorterGate); the panel slide is a view.
-    /// Goblins walk with a NavMeshAgent and are not stopped by the panel, so other goblins can pass a
-    /// shut gate. Keep a porter gate on the porter's route and nowhere a fight can reach.
+    /// Goblins walk with a NavMeshAgent and the panel alone does not stop them: either keep the gate on the
+    /// porter's route and away from fights, or give the panel a carving NavMeshObstacle (the v3 Porter Room
+    /// grate does) so a shut gate blocks every goblin. With latchLever set and no porters it is simply a
+    /// gate that opens for good from the inside.
     /// The panel must NOT be marked static.
     /// </summary>
     [DisallowMultipleComponent]
@@ -27,6 +29,8 @@ namespace Pesky.Game
         [SerializeField] float openRange = 4f;
         [Tooltip("Open only for a porter that is CARRYING something. An empty-handed porter walks around.")]
         [SerializeField] bool requireCarrying = true;
+        [Tooltip("Optional: while this lever is ON the gate stays open for good (opened from the inside).")]
+        [OptionalRef][SerializeField] ImpactLever latchLever;
 
         [Header("Panel")]
         [Tooltip("The solid panel. Slides by openOffset while the gate is open.")]
@@ -42,6 +46,8 @@ namespace Pesky.Game
         public bool IsOpen { get { return _open; } }
         public float OpenRange { get { return openRange; } }
         public int PorterCount { get { return porters != null ? porters.Length : 0; } }
+        /// <summary>True when a lever inside can open it for good (a gate with no porters still opens).</summary>
+        public bool HasLatchLever { get { return latchLever != null; } }
         void Awake()
         {
             if (panel != null) _shutLocalPosition = panel.localPosition;
@@ -50,6 +56,7 @@ namespace Pesky.Game
         /// <summary>Pure: should the gate be open right now?</summary>
         public bool WantsOpen()
         {
+            if (latchLever != null && latchLever.IsOn) return true;
             float r2 = openRange * openRange;
             for (int i = 0; i < porters.Length; i++)
             {

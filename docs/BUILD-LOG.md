@@ -2524,3 +2524,100 @@ Full write-up: **`docs/VOTING.md`**; the wire in `docs/NETCODE-STATUS.md` round 
 
 **Left open.** Untested (VOTING.md section 10). Loose weapons and broken-weapon respawns are not frozen by
 the pause; the gameplay scenes still have no EventSystem; voice chat is still dormant.
+
+## Round 13: five rooms v3 (2026-10-02, orchestrator, expedited)
+Owner: "done in the next hour, no more sub-agents, you do it yourself". Built through the MCP: the global
+changes (souls through open doors, hold plates, closesAgain doors, OR conditions, PlatesHeld, metalOnly,
+lever-released DropRamp with ImpactLever.OnMs, PorterGate.latchLever) and `RoomsV3Builder.cs`, which authored
+Armory Gate, Well Room, Porter Room, Circuit Room and Bat Room as prefabs and installed them as rooms 3-7 of
+Run.unity (217 scene ids, NavMesh baked). Trimmed to make the hour: no porter max-mass / lure / flee / respawn
+(the existing porter carries any still weapon it notices on its route), no braced-bat tuning (the existing bat
+impulse decides whether the 14 m chasm is crossable; the guide-frame climb is the fallback), no glowing wire,
+no Door_Portcullis prefab. Validator: 261 cosmetic items (decorative links / cords / wheels not static, Default
+layer). Compile clean. Implemented, untested: the owner tests on the local build.
+
+## Round 14: porter room rework, well room fix (2026-10-02)
+Owner, after playing: "guard room seems a bit bugged" plus a new version of it, and "shrink the well elevator
+by .25, it shouldn't clip into the octagon walls, no gaps in the walls".
+
+**The guard room bug.** Three causes, all in the build, none in play: (1) the porter's `room` was the control
+room's volume, and `PorterPerceive` only looked at `room.WeaponsInside`, so it could never notice a weapon
+lying in the hall; (2) goblins path through a shut `PorterGate` (the panel is `ignoreFromBuild` so the porter
+can use its own door, and nothing else stopped the bosses); (3) the pen / sleepers / shield bosses were the
+hour-cut MVP, not what the owner wanted.
+
+**Porter Room as rebuilt** (`RoomsV3Builder.PorterRoom`): open hall, two `Goblin`s, the partition with a
+grate door (`PorterGate`, `Lattice` bars on the hall side, `porters` empty, `latchLever` = L_DOOR inside).
+The grate's `Panel` carries three added components: `NavMeshModifier` (ignore from build), `NavMeshObstacle`
+(box, carving: shut it blocks every goblin, open it rises clear) and a NON-latching `ImpactLever` that is the
+BELL. `GoblinBrain` porter additions (`GoblinBrainRoles.cs`): `bell`, `barsPoint`, `State.Refuse` (12),
+`EnemyDef.porterMaxMass` / `porterReachThrough` / `porterSummonSeconds` / `porterRefuseSeconds` /
+`porterRefuseLine`. A bang (any flip of the bell) summons the porter: it walks to `barsPoint` and scans
+`authority.Weapons` (the world, not its room) within reach + reach-through of the bars; a still weapon of
+`porterMaxMass` or less is fetched through the bars (`CanPickUp` / `TickFetch` reach extended, and a summoned
+porter stands at the bars instead of pathing to the weapon); a heavier one within reach gets the refuse line
+over its head (`GoblinBrainNet` shows it on puppets). `GoblinPorter.asset`: max mass 1 (Dagger, Banana), reach
+through 1.5. Exit = RoomCleared of the hall volume. Validator taught two things: a gate with a `latchLever`
+needs no porters, a porter with a `barsPoint` needs no route; `ImpactLever.handle` / `handleRenderer` are
+`[OptionalRef]` (the bell has no handle).
+
+**Well Room:** platform 26 -> 19.5 m, balconies 9 -> 7 m, `swingDegrees` computed as asin(balconyY /
+platform) = 21.0, north balcony 8 m deep, frames 8 m, parapets gone. `Octagonise` was wrong (corner walls
+centred at W/2 - c/sqrt2 instead of W/(2 sqrt2): 2.4 m too close, hence the clipping and the gaps); now a
+regular octagon with the corner walls buried 0.7 m into the straight walls. The owner's hand edit of the
+scene's walls is superseded by the regenerated room.
+
+**Found on the way: the scene had gone binary.** `Run.unity` started with NUL bytes, `git diff` said
+`-  -`, and `EditorSceneManager.SaveScene` kept writing binary under Force Text (a fresh scene saved as
+text). Cause: `BuildNavMesh()` from the builder leaves the `NavMeshData` embedded in the scene, and
+NavMeshData is binary-only, which flips the whole file. `BakeNavMesh` now saves it as
+`Assets/Scenes/Run/NavMesh-Environment.asset` (one 129 KB binary asset, as the Tutorial scene already had) and
+the scene is text again (11.4k lines). Recorded in KIT.md.
+
+Validator: 0 problems. Compile clean. WebGL rebuilt. Untested, as always: the owner tests on the local
+build (`localhost:8080`). To watch for: the porter pulling the Dagger through the bars (reach 3.5 m from
+`barsPoint`, which is 1.3 m inside the grate: the Dagger must lie within about 2 m of the hall face), the
+refuse line timing (3 s, once per weapon until it leaves), and whether the summoned porter's walk to the bars
+(1.8 m/s) finishes inside the 8 s window from the back of a 10 m room.
+
+## Round 15: end screen, the whole rope, the grate's red slab (2026-10-02)
+Owner: "We need a simple game over and victory screen. THE ENTIRE rope needs to be cut able on the well.
+There should be no red door overlayed over the bars on the porter room, just the bars door, but same
+functionality. After that commit and push." Three read-only scouts (one workflow, in parallel) traced each
+one; the orchestrator implemented through the MCP.
+
+**End screen.** Nothing was wrong with the ending itself: the host's `RunRule.Finish` already emits
+ROUND_RESULT then SESSION_END on one tick, and `RunHud` showed a one-line banner, but `SessionRunner` loaded
+the menu on the very next frame, so nobody ever saw it. New `Game/UI/RunEndScreen.cs` on `_UI/RunHud` (same
+UIDocument as RunHud and VoteScreen), an `end-root` sheet appended to `Run.uxml` with its classes in
+`Run.uss` (the vote sheet's ground and panel, amber title for a win, the settings red for a loss, the vote
+CONFIRM button). VICTORY / GAME OVER is decided per player from the local slot's bit in `mageMask`, so a
+banished Mage or weapon sees its own side's result. `PauseGate` now treats "end screen open" like a host
+pause on this machine (input off, body frozen, cursor free and owned by the screen, Escape still opens
+Settings on top), because the shared vote pause cannot be used: SESSION_END resets it on the same tick.
+`SessionRunner.HoldReturnOnEnd` holds the menu load until BACK TO THE ROOM (`ReturnAfterRun`: the menu with
+the session alive, the host's room page takes it to the lobby, START plays again); a host that starts a new
+round while a peer still sits on the screen makes that peer reload the level. `RunHud` no longer shows its
+banner. No wire change (protocol 7). The tutorial keeps its auto-return (no end screen there).
+
+**The whole rope.** `Rope` only ever heard collisions on its own capsule, and the Well Room's visible rope
+was two decorative cylinders. Now the kit Rope stands on the platform's yoke scaled up to the wheel (5.3 m,
+capsule radius 0.35), and the slant from the wheel to the cleat is a `RopeSegment` (new 30-line relay: its own
+capsule, forwards `OnCollisionEnter` to `Rope.ReportHit`) listed in `Rope.segments`; the cut hides every
+segment, so host and clients see the whole rope go. The host's claim-range check for a client's cut used to
+measure to the rope's root, 13 m from the cleat end: `Rope.IsNear` now measures to the nearest point of any
+run (`WorldAuthorityNet` KitKind.Rope case). Both capsules exclude the Soul layer. Validator: `RopeSegment`
+must be non-static with a solid collider.
+
+**The red slab.** The grate's panel renderer WAS disabled in the prefab (the override is there). The red
+appeared at runtime: `LabyrinthDirector` culls far rooms by switching every renderer off and, when the room
+comes within 150 m, force-enabling every renderer it collected, including the ones that were off by design
+(the Porter Room sits 200 m out, so it was culled at start and lit up on approach with the M_DoorLocked slab
+back on). The culler now skips renderers that were already off and restores each one's remembered state on
+redraw (a cut rope's cord stays cut, too). Belt and braces: `Lattice()` removes the panel's MeshRenderer and
+MeshFilter instead of disabling them. The Armory Gate's portcullis had the same bug waiting.
+
+Validator 0 problems, compile clean, WebGL rebuilt, committed and pushed on `rooms-v3`. Untested by me, as
+always. To watch for: the BACK TO THE ROOM click (UI Toolkit buttons without an EventSystem, the same risk the
+vote CONFIRM carries), the reload path when the host restarts under a held screen, and the rope's cut range
+near the cleat for a non-host player.
