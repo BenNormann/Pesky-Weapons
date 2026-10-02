@@ -73,6 +73,6 @@ MonoBehaviour:
   spawner: {fileID: 0}
   style: {fileID: 7433441132597879392, guid: f303546aee5a5d14da9aec97a21477e3, type: 3}
   freeHint: WASD  fly     SPACE  up     SHIFT  down     E  possess
-  possessedHint: SPACE  launch     Q  release     (no WASD)
+  possessedHint: SPACE  launch     SHIFT  hold to brace     Q  release     (no WASD)
   soulDoorHint: A SOUL CANNOT USE A DOORWAY  -  POSSESS A WEAPON  (E)  FIRST
   magicFlashSeconds: 0.15

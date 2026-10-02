@@ -2673,3 +2673,26 @@ menu itself". `Settings.uxml` gets a `fullscreen-button` as a child of `settings
 `Settings.uss` pins it to the top-right corner (absolute, 16 px in); `SettingsView` toggles `Screen.fullScreen`
 on the click (a user gesture, which WebGL needs) and labels it FULL SCREEN / WINDOWED, refreshed each time the
 screen opens. The scrim's close-on-click ignores it (the click's target is the button, not the root).
+
+## Round 19: hints, full-screen click, slow wobbly brace, magnetism, three racks (2026-10-02)
+Owner's list after playing round 17/18.
+- HUD: the one `hint` label now has `margin-left: auto`, so it sits bottom-right whether the weapon panel is
+  beside it (possessed) or not (soul); the possessed line reads `SPACE launch   SHIFT hold to brace   Q release`
+  (HUD.prefab value and the C# default).
+- Full screen: the toggle fires on the pointer DOWN, not the click. On WebGL Unity grants a full-screen request
+  on the browser's next user event; the release of the same press is that event, so it no longer waits for the
+  next key (closing the menu).
+- Brace: stand-up speed halved (270 deg/s) and a wobble once nearly upright: tilt = 12 deg * e^(-2.5 s) *
+  sin(8 s) about the sideways axis, so it tips past vertical and settles back.
+- MAGNETIC rewritten (`CurseEffects`): the victim's launches bend toward the CLOSEST other player (possessed
+  weapons only, never a loose one, never 'the Mage' by name); everybody else's launches bend toward the victim.
+  New `WorldAuthority.CurseSeen` (slot, kind, seconds) tells every peer about every curse; each `CurseEffects`
+  keeps the other players' magnetic expiries by slot on the level clock. No wire change.
+- Rack: the start room now has THREE racks (north as before, plus east and west walls at x = +-10.5, rotated
+  +-90), each with ONE of each type (Sword, Dagger, Mace, Staff, Hammer, Orb, Banana): 21 weapons, ids 1-21,
+  enough for the round's Mages (max 2) + 1 of each. Done in `LabyrinthRoom_Start.prefab` through the Editor,
+  registries and scene ids rebuilt by the room builder. All three racks are turned 180 degrees from the kit's
+  default so the weapons face the room (the owner saw them facing the wall).
+- Spawn facing: the eight soul spawn points now look at the north rack (yaw 310-355) instead of straight at
+  the sealed north wall with the rack off to the left.
+Untested by me.

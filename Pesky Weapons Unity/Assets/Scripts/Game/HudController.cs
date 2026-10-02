@@ -22,7 +22,7 @@ namespace Pesky.Game
 
         [Header("Hints")]
         [SerializeField] string freeHint = "WASD  fly     SPACE  up     SHIFT  down     E  possess";
-        [SerializeField] string possessedHint = "SPACE  launch     Q  release     (no WASD)";        [Tooltip("Shown when a free soul pushes at a magic doorway: doorways are solid to souls, only weapons travel.")]
+        [SerializeField] string possessedHint = "SPACE  launch     SHIFT  hold to brace     Q  release     (no WASD)";        [Tooltip("Shown when a free soul pushes at a magic doorway: doorways are solid to souls, only weapons travel.")]
         [SerializeField] string soulDoorHint = "A SOUL CANNOT USE A DOORWAY  -  POSSESS A WEAPON  (E)  FIRST";
 
 

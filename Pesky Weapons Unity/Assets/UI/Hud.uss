@@ -135,6 +135,7 @@
 }
 
 .hint {
+    margin-left: auto;   /* always the bottom-right corner, with or without the weapon panel beside it */
     font-size: 16px;
     letter-spacing: 1px;
     color: rgb(196, 200, 206);

@@ -62,7 +62,9 @@ namespace Pesky.Game
         bool _carried;
         bool _braceWanted, _braced;
         float _braceHoldOff = -999f;
-        const float BraceTurnDegreesPerSecond = 540f;
+        const float BraceTurnDegreesPerSecond = 270f;   // slow: a weapon has weight
+        const float BraceWobbleDegrees = 12f;            // it overshoots upright and settles back
+        float _braceStandStart = -1f;
         float _lastImpactTime = -999f;
         float _lastImpactSpeed;
         public event Action<WeaponBody> Broken;
@@ -403,7 +405,7 @@ public void Teleport(Vector3 position, Quaternion rotation)
             {
                 _braced = want;
                 body.constraints = want ? RigidbodyConstraints.FreezeRotation : RigidbodyConstraints.None;
-                if (want) body.angularVelocity = Vector3.zero;
+                if (want) { body.angularVelocity = Vector3.zero; _braceStandStart = -1f; }
             }
             if (!_braced) return;
             // Stand: local +Z (the point / the head) down for a blade, up for the rest; keep the facing.
@@ -412,6 +414,16 @@ public void Teleport(Vector3 position, Quaternion rotation)
             if (flat.sqrMagnitude < 1e-4f) flat = Vector3.forward;
             Vector3 along = def != null && def.bladed ? Vector3.down : Vector3.up;
             Quaternion target = Quaternion.LookRotation(along, flat.normalized);
+            // Up, then a wobble: once nearly upright it tips past vertical and settles back, a thing with weight finding its feet.
+            float off = Quaternion.Angle(body.rotation, target);
+            if (_braceStandStart < 0f && off < 6f) _braceStandStart = Time.fixedTime;
+            if (_braceStandStart >= 0f)
+            {
+                float s = Time.fixedTime - _braceStandStart;
+                float tilt = BraceWobbleDegrees * Mathf.Exp(-2.5f * s) * Mathf.Sin(8f * s);
+                Vector3 side = Vector3.Cross(Vector3.up, flat.normalized);
+                target = Quaternion.AngleAxis(tilt, side) * target;
+            }
             body.MoveRotation(Quaternion.RotateTowards(body.rotation, target, BraceTurnDegreesPerSecond * Time.fixedDeltaTime));
             Vector3 v = body.linearVelocity;
             body.linearVelocity = new Vector3(0f, Mathf.Min(v.y, 0f), 0f);

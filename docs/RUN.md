@@ -284,7 +284,7 @@ copy of the labyrinth scene; validator **0 problems**.
 | `Environment/Rooms` | the same 25 room instances on the same 200 m lattice |
 
 `WorldAuthority` arrays: `magicDoors` **50**, `rooms` **25**, `doors` **24**, `levers` **23**,
-`weapons` 7. Scene ids were reassigned by kind (`RunSceneBuilder.AssignSceneIds`): weapons
+`weapons` 21 (three racks since round 19). Scene ids were reassigned by kind (`RunSceneBuilder.AssignSceneIds`): weapons
 101+, home slots 201+, volumes 301+, doors 401+, signs 1101+, spawn points 1201+, magic doors
 1301+ (two per room), levers 1801+, exit zones 2401+.
 
