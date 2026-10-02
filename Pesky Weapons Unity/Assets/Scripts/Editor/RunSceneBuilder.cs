@@ -277,6 +277,11 @@ namespace Pesky.Editor
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
 
+            // Reinstall the authored platform rooms after rebuilding Run.unity so the automation remains
+            // safe to rerun instead of silently replacing them with disposable pool placeholders.
+            RunPuzzleRoomsBuilder.CreateAllPrefabs();
+            RunPuzzleRoomsBuilder.InstallIntoOpenRunScene(scene);
+
             EditorBuildSettings.scenes = new[]
             {
                 new EditorBuildSettingsScene("Assets/Scenes/Boot.unity", true),
@@ -407,6 +412,7 @@ namespace Pesky.Editor
             List<RoomVolume> volumes = new List<RoomVolume>();
             List<Door> doors = new List<Door>();
             List<ImpactLever> levers = new List<ImpactLever>();
+            List<ScalesLock> scales = new List<ScalesLock>();
             List<LabyrinthRoom> rooms = new List<LabyrinthRoom>();
             foreach (GameObject root in scene.GetRootGameObjects())
             {
@@ -414,6 +420,7 @@ namespace Pesky.Editor
                 volumes.AddRange(root.GetComponentsInChildren<RoomVolume>(true));
                 doors.AddRange(root.GetComponentsInChildren<Door>(true));
                 levers.AddRange(root.GetComponentsInChildren<ImpactLever>(true));
+                scales.AddRange(root.GetComponentsInChildren<ScalesLock>(true));
                 rooms.AddRange(root.GetComponentsInChildren<LabyrinthRoom>(true));
             }
             if (authority != null)
@@ -422,9 +429,10 @@ namespace Pesky.Editor
                 SetArray(authority, "rooms", volumes);
                 SetArray(authority, "doors", doors);
                 SetArray(authority, "levers", levers);
+                SetArray(authority, "scales", scales);
             }
             if (director != null) SetArray(director, "rooms", rooms);
-            Debug.Log("[RunSceneBuilder] registries: " + magicDoors.Count + " magic doors, " + volumes.Count + " volumes, " + doors.Count + " doors, " + levers.Count + " levers, " + rooms.Count + " rooms");
+            Debug.Log("[RunSceneBuilder] registries: " + magicDoors.Count + " magic doors, " + volumes.Count + " volumes, " + doors.Count + " doors, " + levers.Count + " levers, " + scales.Count + " scales, " + rooms.Count + " rooms");
         }
 
         // ------------------------------------------------------------------ scene ids

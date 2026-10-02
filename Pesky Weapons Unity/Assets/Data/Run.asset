@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7603184fdf316ea4eaac676cf9954180, type: 3}
   m_Name: Run
   m_EditorClassIdentifier: Pesky.Data::Pesky.Data.RunDef
-  roomsPerRun: 5
+  roomsPerRun: 4
+  guaranteedRoomIds: 03000000040000000500000006000000
   timerSeconds: 300
   warningSeconds: 30
   curseRange: 15
@@ -29,3 +30,8 @@ MonoBehaviour:
   blindnessClearRadius: 0.12
   blindnessOpacity: 0.96
   heavySpeedScale: 0.5
+  voteCallsPerPlayer: 1
+  voteGroupCooldown: 45
+  voteNoVoteBeforeSeconds: 30
+  voteMeetingSeconds: 25
+  voteResultSeconds: 4

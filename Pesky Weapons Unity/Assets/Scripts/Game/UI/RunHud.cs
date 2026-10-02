@@ -45,10 +45,10 @@ namespace Pesky.Game
 
         [Header("Text")]
         [SerializeField] string weaponTitle = "YOU ARE A WEAPON";
-        [SerializeField] string weaponSub = "five rooms, one exit, five minutes. one of you is not helping. V calls a vote.";
+        [SerializeField] string weaponSub = "four rooms, one exit, five minutes. one of you is not helping. V calls a vote.";
         [SerializeField] string mageTitle = "YOU ARE A FRAGMENT OF THE ARCH MAGE";
         [SerializeField] string mageSub = "1-5 curse whoever you look at. click nudges them in the air. do not get caught: a vote banishes you.";
-        [SerializeField] string escapedTitle = "THE WEAPONS ESCAPED";
+        [SerializeField] string escapedTitle = "THE WEAPONS ESCAPED (SOMEHOW)";
         [SerializeField] string timedOutTitle = "TIME IS UP - THE ARCH MAGE WINS";
         [SerializeField] string resurrectedTitle = "THE ARCH MAGE WINS";
         [SerializeField] string weaponsGoneTitle = "EVERY WEAPON WAS BANISHED - THE ARCH MAGE WINS";

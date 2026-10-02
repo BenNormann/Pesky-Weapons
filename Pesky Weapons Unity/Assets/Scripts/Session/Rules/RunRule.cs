@@ -109,29 +109,18 @@ namespace Pesky.Session.Rules
         }
 
         /// <summary>
-        /// roomsPerRun distinct rooms out of the pool, drawn from the world seed (deterministic per round,
-        /// but clients never derive it: RUN_LAYOUT carries the sequence, and the snapshot carries it to a
-        /// late joiner).
+        /// The configured guaranteed rooms first, in authored order, followed by enough distinct random
+        /// pool rooms to reach roomsPerRun. Clients never derive it: RUN_LAYOUT carries the sequence, and
+        /// the snapshot carries it to a late joiner.
         /// </summary>
         void SendLayout(WorldSim sim, RunDef def, EventSink events)
         {
             int want = def != null ? def.roomsPerRun : 5;
-            if (want > RunState.MaxRooms) want = RunState.MaxRooms;
-            if (want > _pool.Count) want = _pool.Count;
-            if (want < 1) want = 1;
-
-            Rng rng = new Rng(unchecked(sim.WorldSeed ^ (sim.PhaseStartTick * 2654435761u) ^ 0x52554Eu));
-            // A partial Fisher-Yates: the first `want` entries are the draw.
-            for (int i = 0; i < want; i++)
-            {
-                int j = i + rng.Range(0, _pool.Count - i);
-                ushort t = _pool[i];
-                _pool[i] = _pool[j];
-                _pool[j] = t;
-            }
+            uint seed = unchecked(sim.WorldSeed ^ (sim.PhaseStartTick * 2654435761u) ^ 0x52554Eu);
+            ushort[] roomIds = RunLayoutPicker.Pick(_pool, def != null ? def.guaranteedRoomIds : null, want, seed);
+            if (roomIds.Length == 0) return;
             RunLayoutMsg msg = new RunLayoutMsg();
-            msg.roomIds = new ushort[want];
-            for (int i = 0; i < want; i++) msg.roomIds[i] = _pool[i];
+            msg.roomIds = roomIds;
             events.Emit(msg.Encode());
             _layoutSent = true;
             NetDebug.Log("host: run layout " + Join(msg.roomIds) + " (pool of " + _pool.Count + ")");
@@ -155,7 +144,6 @@ namespace Pesky.Session.Rules
             return false;
         }
 
-        /// <summary>The first player left the start room: everybody's clock starts from the same tick.</summary>
         /// <summary>The first player left the start room: everybody's clock starts from the same tick. GAME ticks (docs/VOTING.md): the deadline stands still through a pause.</summary>
         void StartTimer(WorldSim sim, RunDef def, uint tick, EventSink events)
         {
@@ -167,11 +155,6 @@ namespace Pesky.Session.Rules
             NetDebug.Log("host: run timer started at game tick " + msg.startTick + ", deadline " + msg.deadlineTick);
         }
 
-        /// <summary>
-        /// The deadline first: the Mage wins the instant it passes, and it beats a simultaneous gathering.
-        /// Then the crew: every present NON-Mage player inside the Exit room's volume at once (the Mage may
-        /// be anywhere). A non-Mage with no pose yet counts as not there.
-        /// </summary>
         /// <summary>
         /// Nothing ends while the game is paused. Then the deadline first (game ticks): the Mage wins the instant
         /// it passes, and it beats a simultaneous gathering. Then the crew: every present NON-Mage, NON-banished

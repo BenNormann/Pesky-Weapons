@@ -24,17 +24,17 @@ MonoBehaviour:
   - label: Gate Hall
     glyph: G
     role: 3
-  - label: Room 3
-    glyph: 3
+  - label: Resonance Forge
+    glyph: F
     role: 0
-  - label: Room 4
-    glyph: 4
+  - label: Clockwork Canteen
+    glyph: C
     role: 0
-  - label: Room 5
-    glyph: 5
+  - label: Magnet Mayhem
+    glyph: M
     role: 0
-  - label: Room 6
-    glyph: 6
+  - label: Counterweight Comedy
+    glyph: W
     role: 0
   - label: Room 7
     glyph: 7
