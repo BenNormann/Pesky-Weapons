@@ -35,6 +35,8 @@ namespace Pesky.Session.Rules
         bool _layoutSent;
         bool _finished;
         uint _nextScanTick;
+        // A round that opened with one player (the owner playing solo, dev mode) never ends for want of weapons.
+        bool _soloRound;
 
         public RunRule(LabyrinthRule roles)
         {
@@ -92,6 +94,13 @@ namespace Pesky.Session.Rules
             _roundOpen = true;
             _layoutSent = false;
             _finished = false;
+            int present = 0;
+            for (int i = 0; i < Wire.MaxPlayers; i++)
+            {
+                PlayerState p = sim.Players[i];
+                if (p != null && p.present) present++;
+            }
+            _soloRound = present <= 1;
             for (int i = 0; i < Wire.MaxPlayers; i++)
             {
                 _lastCurseTick[i] = 0;
@@ -159,7 +168,8 @@ namespace Pesky.Session.Rules
         /// Nothing ends while the game is paused. Then the deadline first (game ticks): the Mage wins the instant
         /// it passes, and it beats a simultaneous gathering. Then the crew: every present NON-Mage, NON-banished
         /// player inside the Exit room's volume at once (the Mage may be anywhere). A non-Mage with no pose yet
-        /// counts as not there. If a banishment left no non-Mage standing, the Mage wins at once (WeaponsGone).
+        /// counts as not there. If no non-Mage is left at all (banished, left the room, lost), the Mage wins at once
+        /// (WeaponsGone), except in a round that opened solo: one player alone just plays through (dev mode).
         /// </summary>
         void CheckEndings(WorldSim sim, uint tick, EventSink events)
         {
@@ -188,8 +198,9 @@ namespace Pesky.Session.Rules
             }
             if (nonMage <= 0)
             {
-                // Only when a vote emptied the crew: a round with no weapon at all (a solo Mage) just runs on.
-                if (banishedNonMage > 0) Finish(sim, events, RoundOutcome.WeaponsGone, 0, mageMask, SessionEndReason.CrewLost);
+                // Only the arch mage is left (a vote, a leaver, a lost connection): it wins. A round that opened with one
+                // player alone just runs on, so the owner can walk the rooms solo without an end screen.
+                if (!_soloRound) Finish(sim, events, RoundOutcome.WeaponsGone, 0, mageMask, SessionEndReason.CrewLost);
                 return;
             }
             if (inExit < nonMage) return;

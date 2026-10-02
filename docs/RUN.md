@@ -160,9 +160,11 @@ gathering:
   pose yet counts as not there; the Mage may be anywhere; a banished weapon is neither needed nor
   counted) -> `ROUND_RESULT(Escaped, escapedMask, mages)` and `SESSION_END(Escaped)`. **The weapons
   win.**
-- **Every weapon banished** (round 12) - a vote left no non-Mage, non-banished player standing ->
+- **Only the Mage left** (round 12, widened in round 16) - no non-Mage, non-banished player is present any
+  more, whatever took them (a vote, leaving the room, a lost connection) ->
   `ROUND_RESULT(WeaponsGone, 0, mages)` and `SESSION_END(CrewLost)`. **Instant Mage win.** A round
-  that never had a weapon (a solo Mage) runs on as before.
+  that OPENED with one present player (`RunRule._soloRound`, the owner walking the rooms alone) never ends
+  this way: dev mode.
 - Nothing ends while the game is paused (`docs/VOTING.md`); a banishment's ending fires after the thaw.
 
 ROUND_RESULT is still the one message that ever names the Mages. Since round 15 it opens the END SCREEN

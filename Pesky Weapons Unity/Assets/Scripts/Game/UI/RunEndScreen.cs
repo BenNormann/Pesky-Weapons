@@ -37,7 +37,7 @@ namespace Pesky.Game
         [SerializeField] string defeatTitle = "GAME OVER";
         [SerializeField] string escapedReason = "the weapons escaped";
         [SerializeField] string timedOutReason = "the timer ran out: the arch mage wins";
-        [SerializeField] string weaponsGoneReason = "every weapon was banished: the arch mage wins";
+        [SerializeField] string weaponsGoneReason = "no weapon is left standing: the arch mage wins";
         [SerializeField] string otherMageReason = "the arch mage wins";
         [SerializeField] string magePrefix = "the arch mage was:   ";
         [SerializeField] string noMage = "no fragment was drawn";

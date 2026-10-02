@@ -57,3 +57,6 @@ desktop.ini
 
 # Written by the Performance Testing package on every build; not ours
 Pesky Weapons Unity/Assets/Resources/PerformanceTestRun*
+
+# Scene / prefab copies the room builder writes before it replaces anything
+Backups/
