@@ -2714,3 +2714,13 @@ application-level relay instead of TURN:
   relay is up. Unity, the protocol and the menu are untouched. Voice stays WebRTC only.
 - Not yet wired: the URL stays empty until the owner's Railway domain exists; then one line in the template
   and a publish. Untested by me; the owner tests at home with `?relay=force`, then on campus.
+
+## Round 21: full screen on the first click (2026-10-02)
+Owner: the toggle still needed a second click. Cause: Unity's `Screen.fullScreen` on the web goes through
+Emscripten, which only makes the browser request when it is inside a DOM input handler and otherwise defers
+it to the NEXT input event; a UI Toolkit press is handled in Unity's frame, so the request waited for the
+next key or click. ATCK's answer, already in the template: keys.js has `Pesky_Keys.enterFullscreen` /
+`exitFullscreen`, which call the browser's Fullscreen API directly (and take the Keyboard Lock). New
+`Pesky_ToggleFullscreen` / `Pesky_IsFullscreen` in `Plugins/WebGL/PeskyPlatform.jslib` call those; the
+settings button's pointer-down calls the plugin, which is still inside the press's user activation, so the
+browser grants it at once. Editor and desktop keep `Screen.fullScreen`. A jslib change needs a full rebuild.

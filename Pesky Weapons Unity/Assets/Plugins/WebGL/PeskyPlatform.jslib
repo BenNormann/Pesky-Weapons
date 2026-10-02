@@ -28,5 +28,36 @@ mergeInto(LibraryManager.library, {
     } catch (e) {
       return 0;
     }
+  },
+
+  Pesky_IsFullscreen: function () {
+    try {
+      return (document.fullscreenElement || document.webkitFullscreenElement) ? 1 : 0;
+    } catch (e) {
+      return 0;
+    }
+  },
+
+  Pesky_ToggleFullscreen: function () {
+    // The settings screen's FULL SCREEN button. Called from Unity's frame right after the pointer went
+    // down on it, which is still inside the browser's user activation, so a request made here through
+    // keys.js (Pesky_Keys.enterFullscreen, which also takes the Keyboard Lock) is granted at once. Unity's
+    // own Screen.fullScreen goes through Emscripten, which defers the request to the NEXT input event:
+    // that is why it used to take a second click. Returns 1 when full screen was asked for, 0 when left.
+    try {
+      var keys = window.Pesky_Keys;
+      var now = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (now) {
+        if (keys && keys.exitFullscreen) keys.exitFullscreen();
+        else if (document.exitFullscreen) document.exitFullscreen();
+        return 0;
+      }
+      if (keys && keys.enterFullscreen) return keys.enterFullscreen() ? 1 : 0;
+      var el = document.documentElement;
+      if (el && el.requestFullscreen) el.requestFullscreen();
+      return 1;
+    } catch (e) {
+      return 0;
+    }
   }
 });
