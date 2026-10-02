@@ -109,13 +109,11 @@ namespace Pesky.Game
                 // and the request would wait for the next key or click (closing the menu, say).
                 _fullscreen.RegisterCallback<PointerDownEvent>(e =>
                 {
-                    bool want = !Screen.fullScreen;
-                    Screen.fullScreen = want;
-                    SetFullscreenText(want);
+                    SetFullscreenText(ToggleFullscreen());
                     e.StopPropagation();
                 });
             }
-            SetFullscreenText(Screen.fullScreen);
+            SetFullscreenText(IsFullscreenNow());
 
             // ClickEvent arrives on the release, so the press that started it already went by with the game's
             // input off: closing on it cannot also fire a nudge on the left button.
@@ -132,6 +130,34 @@ namespace Pesky.Game
         void SetFullscreenText(bool fullscreen)
         {
             if (_fullscreen != null) _fullscreen.text = fullscreen ? "WINDOWED" : "FULL SCREEN";
+        }
+
+        #if UNITY_WEBGL && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern int Pesky_ToggleFullscreen();
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern int Pesky_IsFullscreen();
+#endif
+
+        /// <summary>Flip full screen and return the state asked for. On the web the page's own keys.js makes the
+        /// browser request directly, still inside the press's user activation, because Unity's Screen.fullScreen
+        /// goes through Emscripten, which defers the request to the NEXT input event (the old second click).</summary>
+        static bool ToggleFullscreen()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return Pesky_ToggleFullscreen() != 0;
+#else
+            bool want = !Screen.fullScreen;
+            Screen.fullScreen = want;
+            return want;
+#endif
+        }
+
+        static bool IsFullscreenNow()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return Pesky_IsFullscreen() != 0;
+#else
+            return Screen.fullScreen;
+#endif
         }
 
         void Hook(string buttonName, Func<Action> handler)
@@ -161,7 +187,7 @@ namespace Pesky.Game
 
         public void SetVisible(bool on)
         {
-            if (on) SetFullscreenText(Screen.fullScreen);
+            if (on) SetFullscreenText(IsFullscreenNow());
             if (_root == null) return;
             _root.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
             // A hidden button must not keep the focus: Space or Enter would "click" it in the middle of a run.
