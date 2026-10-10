@@ -501,17 +501,19 @@ namespace Pesky.Session.Rules
             if (!NudgeReqMsg.TryDecode(payload, out req)) return;
             PlayerState from = sim.Players[fromSlot];
             if (from == null || !from.present) return;
-            // A banished player has no powers, and nothing moves while the game is paused (docs/VOTING.md).
-            if (sim.Vote.IsBanished(fromSlot) || sim.Pause.Paused)
+            // Nothing moves while the game is paused (docs/VOTING.md).
+            if (sim.Pause.Paused)
             {
-                NetDebug.Log("host: nudge from slot " + fromSlot + " refused: banished or paused");
+                NetDebug.Log("host: nudge from slot " + fromSlot + " refused: paused");
                 return;
             }
+            // A banished Mage is a poltergeist: the same nudge on weaker numbers. His role is public by now.
+            bool ghost = sim.Vote.IsBanished(fromSlot);
             uint game = sim.Pause.GameTick(tick);
             bool practice = req.targetSlot == NudgeReqMsg.PracticeTarget;
-            string what = "nudge " + req.mode + " on " + (practice ? "the practice dummy" : "slot " + req.targetSlot) + " from slot " + fromSlot;
+            string what = (ghost ? "ghost nudge " : "nudge ") + req.mode + " on " + (practice ? "the practice dummy" : "slot " + req.targetSlot) + " from slot " + fromSlot;
 
-            uint cooldown = Ticks(def != null ? def.nudgeCooldown : 8f);
+            uint cooldown = Ticks(ghost ? (def != null ? def.ghostNudgeCooldown : 16f) : (def != null ? def.nudgeCooldown : 8f));
             if (_nudgeUsed[fromSlot] && game < _lastNudgeTick[fromSlot] + cooldown)
             {
                 RefuseNudge(events, fromSlot, req.targetSlot, NudgeRefusal.Cooldown, _lastNudgeTick[fromSlot] + cooldown - game, what);
@@ -553,7 +555,7 @@ namespace Pesky.Session.Rules
                 return;
             }
 
-            float range = def != null ? def.nudgeRange : 12f;
+            float range = ghost ? (def != null ? def.ghostNudgeRange : 6f) : (def != null ? def.nudgeRange : 12f);
             Vector3 toTarget = targetPos - from.pos;
             if (from.poseCount == 0 || toTarget.sqrMagnitude > range * range)
             {
@@ -595,6 +597,7 @@ namespace Pesky.Session.Rules
                 if (_mage[i] && p != null && p.present) mages++;
             }
             float scale = 1f;
+            float ghostScale = ghost ? (def != null ? def.ghostNudgeScale : 0.5f) : 1f;
             bool coSigned = false;
             if (mages >= 2)
             {
@@ -616,7 +619,7 @@ namespace Pesky.Session.Rules
             msg.targetSlot = req.targetSlot;
             msg.mode = req.mode;
             // No author on it, anywhere: the one thing it must never say is who did it.
-            msg.velocityChange = dir * (strength * scale);
+            msg.velocityChange = dir * (strength * scale * ghostScale);
             events.Emit(msg.Encode());
             NetDebug.Log("host: " + what + " accepted: NUDGE_EVENT dv=" + msg.velocityChange.magnitude.ToString("0.0") + " m/s"
                 + (mages >= 2 ? (coSigned ? " (co-signed, full strength)" : " (one fragment, x" + scale.ToString("0.00") + ")") : ""));

@@ -826,8 +826,11 @@ Design, rules and risks: `docs/VOTING.md`. Everything below is untested.
 - [ ] The ghost flies **through a teleport door** (the soul passes the opening and comes out of the
       twin, the camera turns with it) but not through a locked exit door; E on a weapon does nothing; it
       cannot call or vote in the next meeting (the screen says it is watching).
-- [ ] Banish the MAGE: `they were THE ARCH MAGE`; the run does NOT end; the Mage's bar loses its powers;
-      1-5 and clicks do nothing; the weapon(s) still have to reach the Exit before the timer; the result
+- [ ] Banish the MAGE: `they were THE ARCH MAGE`; the run does NOT end; the Mage's bar keeps the
+      nudge, Nausea (2) and Blindness (4) beside a greyed Vote slot, and his HUD line says HAUNT THEM AS
+      A GHOST; 1, 3 and 5 do nothing; 2 and 4 land only within 6 m, last 10 s on the victim's screen and
+      recharge in 60 s; a click on a weapon in the air within 6 m nudges it at half strength (16 s
+      cooldown); the weapon(s) still have to reach the Exit before the timer; the result
       banner at the end lists `banished: <name> (the mage)`.
 - [ ] Exit rule: with three players, banish one weapon; the remaining weapon alone in the Exit room wins.
 - [ ] Goblins: start a meeting with a hostile goblin mid-chase; it stops dead (host and client), its

@@ -41,6 +41,23 @@ namespace Pesky.Data
         [Tooltip("Half-angle of the cone around the centre of the Mage's screen in which a body is picked as the target, degrees. Client side only.")]
         [Range(1f, 45f)] public float curseAimCone = 8f;
 
+        [Header("Poltergeist (a banished Mage's curses; docs/VOTING.md 5)")]
+        [Tooltip("Metres from the ghost to the target. Short on purpose: everybody sees the ghost coming.")]
+        [Min(0f)] public float ghostCurseRange = 6f;
+
+        [Tooltip("Seconds between a banished Mage's curses. Shared by all five keys, like curseCooldown.")]
+        [Min(0f)] public float ghostCurseCooldown = 60f;
+
+        [Tooltip("Seconds a banished Mage's curse lasts on its victim.")]
+        [Min(0f)] public float ghostCurseDuration = 10f;
+
+        [Tooltip("Which of the five curses a banished Mage keeps. The rest are refused by the host and leave his bar.")]
+        public bool ghostMagnetic = false;
+        public bool ghostNausea = true;
+        public bool ghostSlippery = false;
+        public bool ghostBlindness = true;
+        public bool ghostHeavy = false;
+
         [Header("1 Magnetic")]
         [Tooltip("The nearest OTHER weapon within this many metres pulls the victim's launch direction.")]
         [Min(0f)] public float magneticRange = 20f;
@@ -91,6 +108,20 @@ namespace Pesky.Data
 
         [Tooltip("Seconds the result stays on screen (the game stays paused) before PAUSE_END.")]
         [Min(0f)] public float voteResultSeconds = 4f;
+
+        /// <summary>Whether a banished Mage may still cast this curse, by CurseKind value (1..5).</summary>
+        public bool GhostCurseAllowed(int curse)
+        {
+            switch (curse)
+            {
+                case 1: return ghostMagnetic;
+                case 2: return ghostNausea;
+                case 3: return ghostSlippery;
+                case 4: return ghostBlindness;
+                case 5: return ghostHeavy;
+                default: return false;
+            }
+        }
 
         /// <summary>The five curses' names, by CurseKind value (1..5). Empty for anything else.</summary>
         public static string CurseName(int curse)

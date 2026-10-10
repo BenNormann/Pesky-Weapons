@@ -50,13 +50,34 @@ namespace Pesky.Game
             }
         }
 
-        float Cooldown { get { RunDef d = Def; return d != null ? d.curseCooldown : 30f; } }
+        /// <summary>A banished Mage: a poltergeist, casting on the ghost numbers (docs/VOTING.md 5).</summary>
+        bool IsGhost { get { return authority != null && authority.LocalIsGhost; } }
+
+        float Cooldown
+        {
+            get
+            {
+                RunDef d = Def;
+                if (IsGhost) return d != null ? d.ghostCurseCooldown : 60f;
+                return d != null ? d.curseCooldown : 30f;
+            }
+        }
+
+        float Range
+        {
+            get
+            {
+                RunDef d = Def;
+                if (IsGhost) return d != null ? d.ghostCurseRange : 6f;
+                return d != null ? d.curseRange : 15f;
+            }
+        }
 
         bool IsMage
         {
             get
             {
-                return authority != null && authority.LocalRole == LabyrinthRole.Mage && !authority.LocalIsGhost
+                return authority != null && authority.LocalRole == LabyrinthRole.Mage
                     && (runHud == null || runHud.IsAwake);
             }
         }
@@ -116,6 +137,8 @@ namespace Pesky.Game
             byte slot;
             Vector3 at;
             RunDef def = Def;
+            // A curse the poltergeist lost: its slot is off his bar, and the key does nothing and sends nothing.
+            if (IsGhost && def != null && !def.GhostCurseAllowed((int)kind)) return;
             float cone = def != null ? def.curseAimCone : 8f;
             // Nothing in the cone: nothing happens and nothing is sent, as for anybody else's key.
             if (!MageAim.FindTarget(authority, orbitCamera != null ? orbitCamera.transform : null, cone, out slot, out at)) return;
@@ -128,7 +151,7 @@ namespace Pesky.Game
                 return;
             }
             Vector3 body;
-            float range = def != null ? def.curseRange : 15f;
+            float range = Range;
             if (MageAim.TryBody(spawner, out body) && (at - body).sqrMagnitude > range * range)
             {
                 Note(Text(CurseRefusal.OutOfRange, 0f));

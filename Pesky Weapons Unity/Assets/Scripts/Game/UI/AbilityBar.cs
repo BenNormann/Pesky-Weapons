@@ -51,7 +51,7 @@ namespace Pesky.Game
         [Tooltip("A wider gap before this slot, to set a group apart (the five curses after the nudge).")]
         public bool gapBefore;
 
-        [Tooltip("Shown to a Mage alone (the nudge, the curses). Off: everybody's slot (the vote). A banished Mage keeps only the latter.")]
+        [Tooltip("Shown to a Mage alone (the nudge, the curses). Off: everybody's slot (the vote). A banished Mage keeps both; a banished weapon only the latter.")]
         public bool mageOnly = true;
     }
 
@@ -89,6 +89,7 @@ namespace Pesky.Game
         readonly List<Slot> _slots = new List<Slot>();
         readonly string[] _lock = new string[SourceCount];
         bool _mageSlots = true;
+        int _hiddenCurses;
 
         /// <summary>Clears the container and builds one slot per entry, left to right. A null container builds nothing.</summary>
         public AbilityBar(VisualElement container, IList<AbilitySlotDef> defs)
@@ -206,15 +207,18 @@ namespace Pesky.Game
             return slot;
         }
 
-        /// <summary>Shows or hides every mageOnly slot (a weapon, or a banished Mage, keeps the rest).</summary>
-        public void SetMageSlots(bool on)
+        /// <summary>Shows or hides every mageOnly slot (a weapon keeps the rest). hiddenCurses: one bit per CurseKind value whose slot stays hidden even then (the curses a banished Mage lost).</summary>
+        public void SetMageSlots(bool on, int hiddenCurses = 0)
         {
-            if (_mageSlots == on) return;
+            if (_mageSlots == on && _hiddenCurses == hiddenCurses) return;
             _mageSlots = on;
+            _hiddenCurses = hiddenCurses;
             for (int i = 0; i < _slots.Count; i++)
             {
                 Slot s = _slots[i];
-                if (s.def.mageOnly) s.root.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
+                if (!s.def.mageOnly) continue;
+                bool show = on && (hiddenCurses & (1 << (int)s.def.curse)) == 0;
+                s.root.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
             }
         }
 

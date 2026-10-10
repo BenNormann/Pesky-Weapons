@@ -237,8 +237,9 @@ namespace Pesky.Session.Rules
         /// Refused: CURSE_REFUSED to him alone.
         /// </summary>
         /// <summary>
-        /// CURSE_REQ. Silent unless the asker is a Mage in an open round (like every Mage intent), not banished
-        /// and not paused. Then, in order: a real curse id, his shared cooldown (game ticks), a target that is
+        /// CURSE_REQ. Silent unless the asker is a Mage in an open round (like every Mage intent) and the game
+        /// is not paused. A banished Mage still casts, as a poltergeist, on the ghost numbers (shorter range,
+        /// longer cooldown, shorter curse). Then, in order: a real curse id, his shared cooldown (game ticks), a target that is
         /// another player holding a weapon (not a soul, not himself; or the tutorial dummy), within curseRange
         /// of his own streamed body. Accepted: CURSE_EVENT to everybody with the target, the curse and the
         /// duration, and NO author. Refused: CURSE_REFUSED to him alone.
@@ -255,12 +256,14 @@ namespace Pesky.Session.Rules
                 NetDebug.Log("host: curse from slot " + fromSlot + " refused: not a Mage");
                 return;
             }
-            // A banished Mage has no powers; nothing is cast while the game is paused (docs/VOTING.md).
-            if (sim.Vote.IsBanished(fromSlot) || sim.Pause.Paused)
+            // Nothing is cast while the game is paused (docs/VOTING.md).
+            if (sim.Pause.Paused)
             {
-                NetDebug.Log("host: curse from slot " + fromSlot + " refused: banished or paused");
+                NetDebug.Log("host: curse from slot " + fromSlot + " refused: paused");
                 return;
             }
+            // A banished Mage is a poltergeist: the same curses on weaker numbers. His role is public by now.
+            bool ghost = sim.Vote.IsBanished(fromSlot);
             CurseReqMsg req;
             if (!CurseReqMsg.TryDecode(payload, out req)) return;
             PlayerState from = sim.Players[fromSlot];
@@ -268,7 +271,7 @@ namespace Pesky.Session.Rules
             RunDef def = sim.Data != null ? sim.Data.run : null;
             uint game = sim.Pause.GameTick(tick);
             bool practice = req.targetSlot == NudgeReqMsg.PracticeTarget;
-            string what = "curse " + req.curse + " on " + (practice ? "the practice dummy" : "slot " + req.targetSlot) + " from slot " + fromSlot;
+            string what = (ghost ? "ghost curse " : "curse ") + req.curse + " on " + (practice ? "the practice dummy" : "slot " + req.targetSlot) + " from slot " + fromSlot;
 
             if (req.curse < CurseKind.Magnetic || req.curse > CurseKind.Heavy)
             {
@@ -276,7 +279,14 @@ namespace Pesky.Session.Rules
                 return;
             }
 
-            uint cooldown = LabyrinthRule.Ticks(def != null ? def.curseCooldown : 30f);
+            // The poltergeist's kit is trimmed (RunDef.ghost*): the curses he lost are not curses of his any more.
+            if (ghost && !(def != null ? def.GhostCurseAllowed((int)req.curse) : (req.curse == CurseKind.Nausea || req.curse == CurseKind.Blindness)))
+            {
+                Refuse(events, fromSlot, req.targetSlot, CurseRefusal.NoSuchCurse, 0, what);
+                return;
+            }
+
+            uint cooldown = LabyrinthRule.Ticks(ghost ? (def != null ? def.ghostCurseCooldown : 60f) : (def != null ? def.curseCooldown : 30f));
             if (_curseUsed[fromSlot] && game < _lastCurseTick[fromSlot] + cooldown)
             {
                 Refuse(events, fromSlot, req.targetSlot, CurseRefusal.Cooldown, _lastCurseTick[fromSlot] + cooldown - game, what);
@@ -307,7 +317,7 @@ namespace Pesky.Session.Rules
                 targetPos = target.pos;
             }
 
-            float range = def != null ? def.curseRange : 15f;
+            float range = ghost ? (def != null ? def.ghostCurseRange : 6f) : (def != null ? def.curseRange : 15f);
             if (from.poseCount == 0 || (targetPos - from.pos).sqrMagnitude > range * range)
             {
                 Refuse(events, fromSlot, req.targetSlot, CurseRefusal.OutOfRange, 0, what);
@@ -317,7 +327,7 @@ namespace Pesky.Session.Rules
             _curseUsed[fromSlot] = true;
             _lastCurseTick[fromSlot] = game;
 
-            float seconds = def != null ? def.curseDuration : 20f;
+            float seconds = ghost ? (def != null ? def.ghostCurseDuration : 10f) : (def != null ? def.curseDuration : 20f);
             uint tenths = (uint)Mathf.RoundToInt(seconds * 10f);
             CurseEventMsg msg = new CurseEventMsg();
             msg.header = events.Header();
