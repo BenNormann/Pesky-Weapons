@@ -60,3 +60,7 @@ Pesky Weapons Unity/Assets/Resources/PerformanceTestRun*
 
 # Scene / prefab copies the room builder writes before it replaces anything
 Backups/
+
+# Unity crash-recovery scenes
+**/Assets/_Recovery/
+**/Assets/_Recovery.meta
