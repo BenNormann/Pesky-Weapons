@@ -201,8 +201,9 @@ another present player holding a weapon - not a soul, not himself, with at least
 or the tutorial dummy via `IHostWorld.TryGetPracticeTarget`; within `curseRange` of the
 asker's own streamed pose. Any state of the target but a free soul is fine (in the air, on
 the floor, stuck in wood). No line-of-sight check. Accepted: **CURSE_EVENT** to everybody
-with the target, the curse and `curseDuration`, and **no author**. Round 12: a banished Mage, or
-any Mage while the game is paused, is refused in silence; the shared cooldown is kept in game
+with the target, the curse and `curseDuration`, and **no author**. Round 12: any Mage while the game
+is paused is refused in silence. A banished Mage is a poltergeist (docs/VOTING.md 5): only Nausea and
+Blindness, on `ghostCurseRange`, `ghostCurseCooldown` and `ghostCurseDuration`; the shared cooldown is kept in game
 ticks, so a pause does not run it down.
 
 **Who applies it.** Only the victim. `WorldAuthority.OnCurseEvent` raises `Cursed(kind,
@@ -336,8 +337,9 @@ tiny `N` / `C` rings right of the screen centre) were removed in round 9.
 
 An MMO-style row of square slots centred at the bottom of the screen, shown to **everybody** while
 the round runs (round 12; it used to be a Mage's alone), hidden with the result banner. The
-`mageOnly` slots (the nudge and the curses) are displayed for a Mage who is not banished
-(`AbilityBar.SetMageSlots`); a weapon, or a banished Mage, sees the VOTE slot alone. Default slots,
+`mageOnly` slots (the nudge and the curses) are displayed for a Mage
+(`AbilityBar.SetMageSlots`); a banished Mage keeps the nudge, Nausea and Blindness, and a weapon sees
+the VOTE slot alone. Default slots,
 left to right:
 
 | Key | Name | Glyph | Cooldown source | Pulses on |

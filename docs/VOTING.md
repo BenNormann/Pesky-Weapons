@@ -27,9 +27,10 @@ sees the voter's chip land beside the candidate. At the deadline, or as soon as 
 the host resolves: the plurality is banished; a tie, or SKIP on top, banishes nobody (**VOTE_END**,
 which also reveals the banished player's role). The result stays on screen for 4 s, then the game
 runs again (**PAUSE_END**): the timer, the goblins, the movers and the cooldowns resume exactly where
-they stopped. A banished player's body breaks and they spectate as a **ghost**: a soul that may pass
-teleport doors and touch nothing. Banishing the Mage does **not** end the run; banishing the last
-weapon does (the Mage wins).
+they stopped. A banished player's body breaks and they become a **ghost**: a soul that may pass
+teleport doors. A banished weapon spectates and touches nothing; a banished Mage is a **poltergeist**
+who keeps a weakened nudge and two curses (section 5). Banishing the Mage does **not** end the run;
+banishing the last weapon does (the Mage wins).
 
 ---
 
@@ -183,14 +184,17 @@ when the slot empties and at round start. Everything else follows it:
   Goblins ignore souls already; it reports no contacts (it holds no weapon).
 - **What others see**: the remote chip reads `NAME` / `BANISHED - THE ARCH MAGE` or `A WEAPON`
   (`RemotePlayerSpawner`). The ghost's own HUD shows a line at the top (`RunHud` `ghost-status`):
-  "BANISHED - YOU WERE ... SPECTATE AS A GHOST".
+  a banished weapon reads "BANISHED - YOU WERE A WEAPON. SPECTATE AS A GHOST ...", a banished Mage
+  "BANISHED - YOU WERE THE ARCH MAGE. HAUNT THEM AS A GHOST ...".
 - **The Exit rule** (`RunRule.CheckEndings`) counts only non-Mage, **non-banished** present players; a
   banished weapon is neither needed nor counted. If a banishment leaves no non-Mage standing the round
   ends at once (after the thaw) with `RoundOutcome.WeaponsGone` (SESSION_END CrewLost): "EVERY WEAPON
   WAS BANISHED - THE ARCH MAGE WINS". A round that never had a weapon (a solo Mage) runs on as before.
   A banished player cannot start the run timer by leaving the start room.
-- **A banished Mage** is a POLTERGEIST (2026-10-10, implemented, untested: nothing was compiled or
-  run): the run goes on and he keeps the nudge and TWO curses, Nausea and Blindness (the `RunDef.ghost<Curse>`
+- **A banished Mage** is a POLTERGEIST (2026-10-10, implemented; tested solo in the tutorial on the
+  practice dummy through a temporary debug banish - range, cooldowns, duration, nudge strength, the bar
+  and the ghost line; **not** tested in multiplayer: no real vote into the ghost state, no real victim):
+  the run goes on and he keeps the nudge and TWO curses, Nausea and Blindness (the `RunDef.ghost<Curse>`
   toggles; the host refuses the others with `NoSuchCurse` and `RunHud.RefreshBar` takes their slots off
   his bar), on weaker numbers, read by the host
   when the asker is banished (`RunRule` / `LabyrinthRule`) and by his own cooldown guides (`MageCurse` /
