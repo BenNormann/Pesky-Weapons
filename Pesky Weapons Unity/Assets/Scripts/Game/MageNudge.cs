@@ -111,13 +111,34 @@ namespace Pesky.Game
 
         bool HudOverlayOpen { get { return hud != null && hud.OverlayOpen; } }
 
-        float Cooldown { get { LabyrinthDef d = Def; return d != null ? d.nudgeCooldown : 8f; } }
+        /// <summary>A banished Mage: a poltergeist, nudging on the ghost numbers (docs/VOTING.md 5).</summary>
+        bool IsGhost { get { return authority != null && authority.LocalIsGhost; } }
+
+        float Cooldown
+        {
+            get
+            {
+                LabyrinthDef d = Def;
+                if (IsGhost) return d != null ? d.ghostNudgeCooldown : 16f;
+                return d != null ? d.nudgeCooldown : 8f;
+            }
+        }
+
+        float Range
+        {
+            get
+            {
+                LabyrinthDef d = Def;
+                if (IsGhost) return d != null ? d.ghostNudgeRange : 6f;
+                return d != null ? d.nudgeRange : 12f;
+            }
+        }
 
         bool IsMage
         {
             get
             {
-                return authority != null && authority.LocalRole == LabyrinthRole.Mage && !authority.LocalIsGhost && HudAwake;
+                return authority != null && authority.LocalRole == LabyrinthRole.Mage && HudAwake;
             }
         }
 
@@ -198,7 +219,7 @@ namespace Pesky.Game
             }
             if ((def == null || def.requireAirborne) && !airborne) { why = NudgeRefusal.NotAirborne; return false; }
 
-            float range = def != null ? def.nudgeRange : 12f;
+            float range = Range;
             if ((at - body).sqrMagnitude > range * range) { why = NudgeRefusal.OutOfRange; return false; }
 
             if (Physics.Linecast(body + Lift, at + Lift, sightMask, QueryTriggerInteraction.Ignore))

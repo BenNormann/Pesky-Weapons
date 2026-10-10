@@ -179,8 +179,7 @@ when the slot empties and at round start. Everything else follows it:
   `SoulBarrier` layer (`Collider.excludeLayers`), the `MagicDoor` sensor watches it like a weapon and
   `WorldAuthority.RequestMagicDoorTraverse(door, soul)` moves it through with its motion turned - a
   locked gate still stops it; it cannot possess (`TryPossess` / `Possess` refuse; the host's
-  `PossessValidator` refuses a banished slot too), nudge or curse (`LabyrinthRule` / `RunRule` refuse in
-  silence; `MageCurse` / `MageNudge` are off), call or vote (`VoteRule`, and the Vote slot says OUT).
+  `PossessValidator` refuses a banished slot too), call or vote (`VoteRule`, and the Vote slot says OUT).
   Goblins ignore souls already; it reports no contacts (it holds no weapon).
 - **What others see**: the remote chip reads `NAME` / `BANISHED - THE ARCH MAGE` or `A WEAPON`
   (`RemotePlayerSpawner`). The ghost's own HUD shows a line at the top (`RunHud` `ghost-status`):
@@ -190,9 +189,16 @@ when the slot empties and at round start. Everything else follows it:
   ends at once (after the thaw) with `RoundOutcome.WeaponsGone` (SESSION_END CrewLost): "EVERY WEAPON
   WAS BANISHED - THE ARCH MAGE WINS". A round that never had a weapon (a solo Mage) runs on as before.
   A banished player cannot start the run timer by leaving the start room.
-- **A banished Mage**: the run goes on; his powers are gone; the bar shows only a disabled Vote slot
-  (`RunHud.RefreshBar` hides the mageOnly slots for a ghost). ROUND_RESULT still names him among the
-  fragments, and the result banner lists everybody banished with the role each reveal named.
+- **A banished Mage** is a POLTERGEIST (2026-10-10, implemented, untested: nothing was compiled or
+  run): the run goes on and he keeps the nudge and the five curses on weaker numbers, read by the host
+  when the asker is banished (`RunRule` / `LabyrinthRule`) and by his own cooldown guides (`MageCurse` /
+  `MageNudge`): `RunDef.ghostCurseRange` 6 m, `ghostCurseCooldown` 60 s, `ghostCurseDuration` 10 s;
+  `LabyrinthDef.ghostNudgeRange` 6 m, `ghostNudgeCooldown` 16 s, `ghostNudgeScale` 0.5. No new
+  messages: CURSE_REQ and NUDGE_REQ as before, and the events still name no author - the short range
+  and his visible, labelled ghost are the tell. His bar keeps the Mage slots beside a disabled Vote
+  slot. A banished WEAPON has no powers (it never passes the host's Mage check). ROUND_RESULT still
+  names him among the fragments, and the result banner lists everybody banished with the role each
+  reveal named.
 
 ---
 

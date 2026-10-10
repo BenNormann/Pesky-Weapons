@@ -52,7 +52,7 @@ namespace Pesky.Game
         [SerializeField] string timedOutTitle = "TIME IS UP - THE ARCH MAGE WINS";
         [SerializeField] string resurrectedTitle = "THE ARCH MAGE WINS";
         [SerializeField] string weaponsGoneTitle = "EVERY WEAPON WAS BANISHED - THE ARCH MAGE WINS";
-        [SerializeField] string ghostMageText = "BANISHED - YOU WERE THE ARCH MAGE. SPECTATE AS A GHOST: FLY, PASS DOORS, TOUCH NOTHING.";
+        [SerializeField] string ghostMageText = "BANISHED - YOU WERE THE ARCH MAGE. HAUNT THEM AS A GHOST: GET CLOSE TO CURSE AND NUDGE.";
         [SerializeField] string ghostWeaponText = "BANISHED - YOU WERE A WEAPON. SPECTATE AS A GHOST: FLY, PASS DOORS, TOUCH NOTHING.";
 
         [Header("Tutorial")]
@@ -337,7 +337,7 @@ namespace Pesky.Game
 
         // ---------------------------------------------------------------- the ability bar
 
-        /// <summary>Everybody's bar while the round runs (the VOTE slot); the Mage slots for a Mage who is not banished. Cooldowns are local guides; the host decides.</summary>
+        /// <summary>Everybody's bar while the round runs (the VOTE slot); the Mage slots for a Mage, banished or not (a banished Mage is a poltergeist). Cooldowns are local guides; the host decides.</summary>
         void RefreshBar()
         {
             WorldSim sim = _session != null ? _session.Sim : null;
@@ -348,7 +348,7 @@ namespace Pesky.Game
                 Show(_barRoot, show);
             }
             if (!show || _bar == null) return;
-            _bar.SetMageSlots(IsMage && !IsGhost);
+            _bar.SetMageSlots(IsMage);
             _bar.Refresh(Time.time, _readyAt, _cooldownSeconds);
         }
 

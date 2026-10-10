@@ -113,6 +113,15 @@ namespace Pesky.Data
         [Tooltip("Seconds between one Mage's nudges or pulls (one cooldown for both clicks).")]
         [Min(0f)] public float nudgeCooldown = 8f;
 
+        [Tooltip("A banished Mage's nudge / pull range, metres from the ghost (docs/VOTING.md 5).")]
+        [Min(0f)] public float ghostNudgeRange = 6f;
+
+        [Tooltip("Seconds between a banished Mage's nudges or pulls.")]
+        [Min(0f)] public float ghostNudgeCooldown = 16f;
+
+        [Tooltip("A banished Mage's nudge or pull lands at this fraction of its strength.")]
+        [Range(0f, 1f)] public float ghostNudgeScale = 0.5f;
+
         [Tooltip("Velocity change of a NUDGE (left click), m/s, along the Mage's view direction. Doubled to 8 by the 2026-09-29 simplification: it should read as a jump that went badly wrong.")]
         [Min(0f)] public float nudgeImpulse = 8f;
 

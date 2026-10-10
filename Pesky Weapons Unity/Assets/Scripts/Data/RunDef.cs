@@ -41,6 +41,16 @@ namespace Pesky.Data
         [Tooltip("Half-angle of the cone around the centre of the Mage's screen in which a body is picked as the target, degrees. Client side only.")]
         [Range(1f, 45f)] public float curseAimCone = 8f;
 
+        [Header("Poltergeist (a banished Mage's curses; docs/VOTING.md 5)")]
+        [Tooltip("Metres from the ghost to the target. Short on purpose: everybody sees the ghost coming.")]
+        [Min(0f)] public float ghostCurseRange = 6f;
+
+        [Tooltip("Seconds between a banished Mage's curses. Shared by all five keys, like curseCooldown.")]
+        [Min(0f)] public float ghostCurseCooldown = 60f;
+
+        [Tooltip("Seconds a banished Mage's curse lasts on its victim.")]
+        [Min(0f)] public float ghostCurseDuration = 10f;
+
         [Header("1 Magnetic")]
         [Tooltip("The nearest OTHER weapon within this many metres pulls the victim's launch direction.")]
         [Min(0f)] public float magneticRange = 20f;

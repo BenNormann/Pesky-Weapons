@@ -51,7 +51,7 @@ namespace Pesky.Game
         [Tooltip("A wider gap before this slot, to set a group apart (the five curses after the nudge).")]
         public bool gapBefore;
 
-        [Tooltip("Shown to a Mage alone (the nudge, the curses). Off: everybody's slot (the vote). A banished Mage keeps only the latter.")]
+        [Tooltip("Shown to a Mage alone (the nudge, the curses). Off: everybody's slot (the vote). A banished Mage keeps both; a banished weapon only the latter.")]
         public bool mageOnly = true;
     }
 
@@ -206,7 +206,7 @@ namespace Pesky.Game
             return slot;
         }
 
-        /// <summary>Shows or hides every mageOnly slot (a weapon, or a banished Mage, keeps the rest).</summary>
+        /// <summary>Shows or hides every mageOnly slot (a weapon keeps the rest).</summary>
         public void SetMageSlots(bool on)
         {
             if (_mageSlots == on) return;
