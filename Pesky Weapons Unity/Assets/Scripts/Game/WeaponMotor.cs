@@ -84,6 +84,8 @@ namespace Pesky.Game
             MovementTuning t = weapon.Tuning;
             velocity = Vector3.zero;
             if (weapon.IsBroken) return LaunchResult.RefusedBroken;
+            // A wedged body (a blade in a floor-wall seam) is pushed clear first, so the launch is never absorbed by geometry.
+            weapon.ResolveOverlaps();
 
             LaunchResult result;
             Vector3 dir;

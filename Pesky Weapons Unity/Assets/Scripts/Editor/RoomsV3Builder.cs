@@ -43,6 +43,16 @@ namespace Pesky.Editor
         const string MGlow = "Assets/Materials/M_Glow.mat";
         const string MHazard = "Assets/Materials/M_Hazard.mat";
         const string MRope = "Assets/Materials/M_Rope.mat";
+        const string MMagicFlow = "Assets/Materials/M_MagicFlow.mat";
+        const string MAnvil = "Assets/Materials/M_Anvil.mat";
+        const string CircuitBridgePrefab = K + "Circuit/CircuitBridge.prefab";
+        const string MagicBridgePrefab = K + "Circuit/MagicBridge.prefab";
+        const string MagnetPrefab = K + "Hazards/MagnetZone.prefab";
+        const string DecoCrate = K + "Deco/Deco_Crate.prefab";
+        const string DecoBarrel = K + "Deco/Deco_Barrel.prefab";
+        const string DecoShelf = K + "Deco/Deco_Shelf.prefab";
+        const string DecoPillar = K + "Deco/Deco_Pillar.prefab";
+        const string DecoRubble = K + "Deco/Deco_Rubble.prefab";
         const int LayerWorld = 8;
         const int FirstRoomId = 3;
 
@@ -90,6 +100,22 @@ namespace Pesky.Editor
             InstallIntoOpenRunScene(scene);
             Debug.Log("[RoomsV3] built the five v3 rooms and installed them as rooms 3-7.");
         }
+
+        /// <summary>Only the two v4 rooms (the Circuit Room and the Chasm, indices 3 and 4): the other three prefabs and their
+        /// instances, hand edits included, are not touched. The scene still gets its registries, ids and NavMesh redone.</summary>
+        [MenuItem("Pesky/Rooms/Rebuild Circuit Room + Chasm (v4)")]
+        public static void RebuildV4()
+        {
+            if (!BackupBeforeBuild()) return;
+            CircuitRoom();
+            BatRoom();
+            AssetDatabase.SaveAssets();
+            Scene scene = EditorSceneManager.OpenScene(RunScene, OpenSceneMode.Single);
+            InstallIntoOpenRunScene(scene, new[] { 3, 4 });
+            Debug.Log("[RoomsV3] rebuilt the Circuit Room and the Chasm (v4) and reinstalled them as rooms " + (FirstRoomId + 3) + " and " + (FirstRoomId + 4) + ".");
+        }
+
+        static bool Wanted(int[] only, int i) { return only == null || System.Array.IndexOf(only, i) >= 0; }
 
         public static void CreateAllPrefabs()
         {
@@ -310,73 +336,246 @@ namespace Pesky.Editor
         // ------------------------------------------------------------------ Room 4: CIRCUIT ROOM
         static void CircuitRoom()
         {
+            // docs/level-design/rooms-v4-revamp.md: the goblins' power room. The generator powers every teleport door on
+            // the map; conduits leave it along the ceiling and down the walls, glowing. The one that feeds THIS room's
+            // exit is broken twice, in the maintenance pit and on the gallery: two Sword-sized metal bodies lying still
+            // close the breaks, stretch by stretch the conduit lights, and the door's own barrier lights and slides.
+            // Wiring rule: every rail ends exactly where the next starts, in a break's attach point, in a door's feed strip
+            // or inside a wall (Conduit() runs each end half a rail past its point, so corners close and ends bury). The
+            // cradles sit flush against a wall with their stubs on that wall's rail line. Rails have no colliders. No sign.
             const float W = 24f, L = 30f, H = 8f;
             const float exitX = 4f;
+            const float off = 0.3f;                  // a rail's centre line off a wall face; a cradle flush to that wall has its stubs here
+            const float rail = 0.6f;                 // wall conduits at hip height
+            const float onFloor = 0.13f;             // a rail along a wall's base, at the stubs' own height
+            float top = H - off;                     // ceiling conduits
+            float wx = -W / 2f + off, ex = W / 2f - off, sz = -L / 2f + off;
             Transform geo, play;
             GameObject room = Shell("RoomV3_CircuitRoom", W, L, H, 0f, out geo, out play, exitX);
 
-            // Source by the entry, a ledge in the south-west corner, the terminal at the exit.
-            Block(geo, "Plinth", new Vector3(-8f, 0.5f, 12f), new Vector3(1f, 1f, 1f), MMetal);
-            Block(geo, "Source", new Vector3(-8f, 1.5f, 12f), new Vector3(1f, 1f, 1f), MGlow);
-            Block(geo, "Ledge", new Vector3(-7f, 1.25f, -11f), new Vector3(10f, 2.5f, 8f), MLedge);
-            Block(geo, "Terminal", new Vector3(exitX - 2f, 0.5f, -L / 2f + 0.5f), new Vector3(0.6f, 1f, 0.6f), MMetal);
+            // The floor with the maintenance pit cut out of its south-west corner.
+            const float pitX0 = -11.5f, pitX1 = -5.5f, pitZ0 = -14.5f, pitZ1 = -6.5f, pitDepth = 2.5f;
+            DestroyChild(geo, "Floor");
+            Block(geo, "Floor_North", new Vector3(0f, -0.25f, (pitZ1 + L / 2f) / 2f), new Vector3(W, 0.5f, L / 2f - pitZ1), MFloor);
+            Block(geo, "Floor_SouthEast", new Vector3((pitX1 + W / 2f) / 2f, -0.25f, (pitZ0 + pitZ1) / 2f), new Vector3(W / 2f - pitX1, 0.5f, pitZ1 - pitZ0), MFloor);
+            Block(geo, "Floor_SouthWest", new Vector3((pitX0 - W / 2f) / 2f, -0.25f, (pitZ0 + pitZ1) / 2f), new Vector3(pitX0 + W / 2f, 0.5f, pitZ1 - pitZ0), MFloor);
+            Block(geo, "Floor_SouthStrip", new Vector3((pitX0 + pitX1) / 2f, -0.25f, (pitZ0 - L / 2f) / 2f), new Vector3(pitX1 - pitX0, 0.5f, pitZ0 + L / 2f), MFloor);
+            Block(geo, "Pit_Floor", new Vector3((pitX0 + pitX1) / 2f, -pitDepth - 0.25f, (pitZ0 + pitZ1) / 2f), new Vector3(pitX1 - pitX0 + 1f, 0.5f, pitZ1 - pitZ0 + 1f), MFloor);
+            Block(geo, "Pit_North", new Vector3((pitX0 + pitX1) / 2f, -pitDepth / 2f, pitZ1 + 0.25f), new Vector3(pitX1 - pitX0 + 1f, pitDepth, 0.5f), MWall);
+            Block(geo, "Pit_South", new Vector3((pitX0 + pitX1) / 2f, -pitDepth / 2f, pitZ0 - 0.25f), new Vector3(pitX1 - pitX0 + 1f, pitDepth, 0.5f), MWall);
+            Block(geo, "Pit_East", new Vector3(pitX1 + 0.25f, -pitDepth / 2f, (pitZ0 + pitZ1) / 2f), new Vector3(0.5f, pitDepth, pitZ1 - pitZ0 + 1f), MWall);
+            Block(geo, "Pit_West", new Vector3(pitX0 - 0.25f, -pitDepth / 2f, (pitZ0 + pitZ1) / 2f), new Vector3(0.5f, pitDepth, pitZ1 - pitZ0 + 1f), MWall);
+            // Goblin steps down into the pit from its north edge (0.5 m risers), the top step against the pit's face: no pocket.
+            Stair(geo, "PitSteps", new Vector3(-8f, -pitDepth, pitZ1 - 4 * 0.6f), Vector3.forward, 4, 0.5f, 0.6f, 2f);
 
-            // The wire as a dark rail with two gaps; the pads light when a metal body bridges them.
-            float wx = -W / 2f + 0.3f;
-            Wire(geo, new Vector3(-8f, 0.05f, 12f), new Vector3(wx, 0.05f, 12f));
-            Wire(geo, new Vector3(wx, 0.05f, 12f), new Vector3(wx, 0.05f, 1.6f));
-            Wire(geo, new Vector3(wx, 0.05f, 0.4f), new Vector3(wx, 0.05f, -7f));
-            Wire(geo, new Vector3(wx, 2.55f, -7.2f), new Vector3(wx, 2.55f, -10.4f));
-            Wire(geo, new Vector3(wx, 2.55f, -11.6f), new Vector3(wx, 2.55f, -14.5f));
-            Wire(geo, new Vector3(wx, 0.05f, -14.5f), new Vector3(exitX - 2f, 0.05f, -14.5f));
-            PressurePlate gap1 = Plate(play, "Gap_Low", new Vector3(wx + 0.6f, 0f, 1f), 0.5f, false, true);
-            PressurePlate gap2 = Plate(play, "Gap_High", new Vector3(wx + 0.6f, 2.5f, -11f), 0.5f, false, true);
-            Door exit = GateSouth(room, DoorCondition.Mode.PlatesHeld, null, null, null, new List<PressurePlate> { gap1, gap2 }, 0f, exitX);
-            SignAt(room, new Vector3(6f, 0f, L / 2f - 5f), "THE WIRE TO THE DOOR IS BROKEN IN TWO PLACES. METAL BODIES LYING STILL ACROSS BOTH GAPS CLOSE THE CIRCUIT.");
-            Profile(room, "circuit_room", Names[3], "Two metal bodies lie still across the two gaps in the wire at the same time; the power reaches the door.", 3);
+            // The gallery: a mezzanine over the exit door along the south-east, with its own goblin stair up the east wall.
+            const float galleryY = 4f;
+            Block(geo, "Gallery", new Vector3(6f, galleryY - 0.25f, -12f), new Vector3(12f, 0.5f, 6f), MLedge);
+            Stair(geo, "GalleryStair", new Vector3(11f, 0f, -2f), Vector3.back, 8, 0.5f, 0.6f, 2f);
+            Block(geo, "GalleryLanding", new Vector3(11f, galleryY / 2f, -7.9f), new Vector3(2f, galleryY, 2.2f), MLedge);
+
+            // The generator: floor to ceiling, a crystal core in a cage with two halos. Every conduit starts at its top.
+            Vector3 gen = new Vector3(0f, 0f, 2f);
+            Generator(geo, gen, H);
+            Vector3 genTop = gen + new Vector3(0f, top, 0f);
+
+            // Intact conduits, live for good. East: along the ceiling, down the east wall, north along it and out through the
+            // north wall. North: along the ceiling to the entry and down into the entry's own feed strip. South: along the
+            // ceiling, down the south wall through the gallery's slab and out through the floor.
+            Conduit(geo, "Live_E_1", genTop, new Vector3(ex, top, gen.z));
+            Conduit(geo, "Live_E_2", new Vector3(ex, top, gen.z), new Vector3(ex, rail, gen.z));
+            Conduit(geo, "Live_E_3", new Vector3(ex, rail, gen.z), new Vector3(ex, rail, L / 2f + 0.2f));
+            Conduit(geo, "Live_N_1", genTop, new Vector3(-1.73f, top, gen.z));
+            Conduit(geo, "Live_N_2", new Vector3(-1.73f, top, gen.z), new Vector3(-1.73f, top, L / 2f - 0.52f));
+            Conduit(geo, "Live_N_3", new Vector3(-1.73f, top, L / 2f - 0.52f), new Vector3(-1.73f, 3.4f, L / 2f - 0.52f));
+            Conduit(geo, "Live_S_1", genTop, new Vector3(9.5f, top, gen.z));
+            Conduit(geo, "Live_S_2", new Vector3(9.5f, top, gen.z), new Vector3(9.5f, top, sz));
+            Conduit(geo, "Live_S_3", new Vector3(9.5f, top, sz), new Vector3(9.5f, -0.3f, sz));
+
+            // THE DEAD RUN. Stretch 0: ceiling west, down the west wall, south along it at hip height, over the pit's lip,
+            // down the pit's north-west corner and along the pit's west wall at floor level into BREAK 1 (flush to that wall).
+            float px = pitX0 + off;
+            float pitRail = -pitDepth + onFloor;
+            CircuitBridge b1 = BridgeAt(play, "Break_Pit", new Vector3(px, -pitDepth, -11f), 90f, 1.05f);   // A north, B south
+            Vector3 b1In = geo.InverseTransformPoint(b1.AttachA), b1Out = geo.InverseTransformPoint(b1.AttachB);
+            List<Renderer> s0 = new List<Renderer>();
+            s0.Add(Conduit(geo, "Dead_0a", genTop, new Vector3(wx, top, gen.z)));
+            s0.Add(Conduit(geo, "Dead_0b", new Vector3(wx, top, gen.z), new Vector3(wx, rail, gen.z)));
+            s0.Add(Conduit(geo, "Dead_0c", new Vector3(wx, rail, gen.z), new Vector3(wx, rail, pitZ1 - off)));
+            s0.Add(Conduit(geo, "Dead_0d", new Vector3(wx, rail, pitZ1 - off), new Vector3(px, rail, pitZ1 - off)));
+            s0.Add(Conduit(geo, "Dead_0e", new Vector3(px, rail, pitZ1 - off), new Vector3(px, pitRail, pitZ1 - off)));
+            s0.Add(Conduit(geo, "Dead_0f", new Vector3(px, pitRail, pitZ1 - off), b1In));
+            // Stretch 1: on along the pit's west wall, up its south-west corner, east along the south wall at hip height, up
+            // that wall just west of the gallery and along the gallery's floor into BREAK 2 (flush to the south wall).
+            CircuitBridge b2 = BridgeAt(play, "Break_Gallery", new Vector3(6f, galleryY, sz), 0f, 1.05f);   // A west, B east
+            Vector3 b2In = geo.InverseTransformPoint(b2.AttachA), b2Out = geo.InverseTransformPoint(b2.AttachB);
+            float galleryRail = galleryY + onFloor;
+            List<Renderer> s1 = new List<Renderer>();
+            s1.Add(Conduit(geo, "Dead_1a", b1Out, new Vector3(px, pitRail, pitZ0 + off)));
+            s1.Add(Conduit(geo, "Dead_1b", new Vector3(px, pitRail, pitZ0 + off), new Vector3(px, rail, pitZ0 + off)));
+            s1.Add(Conduit(geo, "Dead_1c", new Vector3(px, rail, pitZ0 + off), new Vector3(px, rail, sz)));
+            s1.Add(Conduit(geo, "Dead_1d", new Vector3(px, rail, sz), new Vector3(-0.5f, rail, sz)));
+            s1.Add(Conduit(geo, "Dead_1e", new Vector3(-0.5f, rail, sz), new Vector3(-0.5f, galleryRail, sz)));
+            s1.Add(Conduit(geo, "Dead_1f", new Vector3(-0.5f, galleryRail, sz), b2In));
+            // Stretch 2: east a step, down through the gallery's slab and into the top of the exit door's own feed strip
+            // (on its right jamb: x exitX + 1.73, 0.52 into the room).
+            float feedX = exitX + 1.73f;
+            List<Renderer> s2 = new List<Renderer>();
+            s2.Add(Conduit(geo, "Dead_2a", b2Out, new Vector3(7.6f, galleryRail, sz)));
+            s2.Add(Conduit(geo, "Dead_2b", new Vector3(7.6f, galleryRail, sz), new Vector3(7.6f, 3.2f, sz)));
+            s2.Add(Conduit(geo, "Dead_2c", new Vector3(7.6f, 3.2f, sz), new Vector3(feedX + 0.11f, 3.2f, sz)));
+
+            // The exit: its own barrier and portal wear the dead magic until the circuit is whole.
+            GameObject circuitGo = new GameObject("Circuit");
+            circuitGo.transform.SetParent(play, false);
+            Circuit circuit = circuitGo.AddComponent<Circuit>();
+            Door exit = GateSouth(room, DoorCondition.Mode.CircuitLive, null, null, null, null, 0f, exitX, circuit);
+            List<Renderer> consumers = new List<Renderer>();
+            Transform panel = exit.transform.Find("Panel");
+            if (panel != null) { Paint(panel.gameObject, MMagicFlow); consumers.Add(panel.GetComponent<Renderer>()); }
+            Transform southDoor = room.transform.Find("Doorways/Doorway_South");
+            if (southDoor != null) foreach (string nm in new[] { "Plane", "Feed_L", "Feed_R" }) { Transform t = southDoor.Find(nm); if (t != null && t.GetComponent<Renderer>() != null) consumers.Add(t.GetComponent<Renderer>()); }
+            SetArray(circuit, "bridges", new List<CircuitBridge> { b1, b2 });
+            SetSegments(circuit, new List<List<Renderer>> { s0, s1, s2 });
+            SetArray(circuit, "consumers", consumers);
+
+            // Decorations: flush to each other or 1.5 m clear of everything; the crate stack hides the pit's break from the entry.
+            // No pillars (owner, round 27).
+            Deco(geo, DecoCrate, "Crate_1", new Vector3(-7.5f, 0f, -4.5f), 0f);
+            Deco(geo, DecoCrate, "Crate_2", new Vector3(-6.5f, 0f, -4.5f), 0f);
+            Deco(geo, DecoCrate, "Crate_3", new Vector3(-7.5f, 1f, -4.5f), 0f);
+            Deco(geo, DecoBarrel, "Barrel_1", new Vector3(3f, 0f, 5.4f), 0f);
+            Deco(geo, DecoBarrel, "Barrel_2", new Vector3(3.8f, 0f, 5.4f), 0f);
+            Deco(geo, DecoShelf, "Shelf_1", new Vector3(W / 2f - 0.55f, 0f, 8f), 90f);
+
+            Profile(room, "circuit_room", Names[3], "Two Sword-sized metal bodies lie still across the two breaks, in the pit and on the gallery; the conduit lights to the door.", 3);
             SaveRoom(room, PrefabPath(3));
         }
 
         // ------------------------------------------------------------------ Room 5: BAT ROOM (exit beyond)
         static void BatRoom()
         {
-            const float W = 24f, L = 52f, H = 24f, bankY = 6f;
+            // docs/level-design/rooms-v4-revamp.md: the fallen bridge. Both doors at bank level, a cistern between the
+            // banks, a bridge of pure magic that is dead because the short break on the goblins' side is open. A heavy
+            // bats a braced Dagger across (a bat always leaves at 35 deg or steeper); it plays dead among two goblins,
+            // lies across the break, the bridge comes alive. One goblin on the near bank attacks whatever moves. A magnet
+            // over the near lip lifts metal out of the cistern; a goblin stair in the far west corner serves the rest.
+            // THE WIDTH IS THE MATH. Gravity is 20 m/s^2 and a braced bat leaves at the 35 deg lift floor at
+            // batBraceSpeed * mA / (mA + mB). At the owner's "super far" 26: Hammer on Dagger 24.3 m/s flies 27.7 m, Mace
+            // on Dagger 25 m, Orb on Dagger 20 m, Sword on Dagger 18 m, Staff on Dagger 16 m; abutment tip to tip is 12 m,
+            // the far wall 25 m, so every batter clears it and the heavies smack the far wall. (At 19 it was Hammer 14.7,
+            // Mace 13.4, Orb 10.9, Sword 9.7: only the heavies crossed.) The banks are 12 m up, the owner's 2x.
+            const float W = 24f, L = 38f, H = 30f, bankY = 12f;
+            const float gap = 14f;                                   // bank face to bank face, z -7..7
+            const float stubLen = 1f;                                // the old bridge's abutments: the flight is gap - 2
+            const float off = 0.3f, onFloor = 0.13f;
+            float tipToTip = gap - 2f * stubLen;
             Transform geo, play;
             GameObject room = Shell("RoomV3_BatRoom", W, L, H, bankY, out geo, out play);
-            DestroyChild(geo, "Floor");
+            // The entry up at bank level too: the north wall is rebuilt with its opening raised (Shell only raises the exit),
+            // and the spawn point, torches, sign and number go up with it.
+            DestroyChild(geo, "Wall_North");
+            DoorwayWall(geo, "Wall_North", L / 2f + 0.25f, W, H, 0f, bankY);
+            Transform north = room.transform.Find("Doorways/Doorway_North");
+            if (north != null) north.localPosition = new Vector3(0f, bankY, L / 2f);
+            Transform spawn = room.transform.Find("SpawnPoint");
+            if (spawn != null) spawn.localPosition = new Vector3(0f, bankY + 0.6f, L / 2f - 4f);
+            Transform fixtures = room.transform.Find("Fixtures");
+            if (fixtures != null) foreach (Transform f in fixtures) f.localPosition += Vector3.up * bankY;
 
-            // Entry floor, four steps up to the dais, the chasm floor, the south bank, the west corridor.
-            Block(geo, "Floor_Entry", new Vector3(0f, -0.25f, 22f), new Vector3(W, 0.5f, 8f), MFloor);
-            for (int i = 0; i < 4; i++)
-                Block(geo, "Step_" + (i + 1), new Vector3(1.5f, 0.75f * (i + 1), 16.5f - 3f * i), new Vector3(21f, 1.5f * (i + 1), 3f), MLedge);
-            Block(geo, "Dais", new Vector3(1.5f, bankY / 2f, 3f), new Vector3(21f, bankY, 6f), MLedge);
-            Block(geo, "Floor_Chasm", new Vector3(0f, -0.25f, -7f), new Vector3(W, 0.5f, 14f), MFloor);
-            Block(geo, "Bank_South", new Vector3(0f, bankY / 2f, -20f), new Vector3(W, bankY, 12f), MLedge);
-            Block(geo, "Corridor_West", new Vector3(-10.5f, -0.25f, 2f), new Vector3(3f, 0.5f, 32f), MFloor);
-            Block(geo, "BracePad", new Vector3(6f, bankY + 0.05f, 1f), new Vector3(3f, 0.1f, 3f), MHazard);
-            Block(geo, "BracePad_Arrow", new Vector3(6f, bankY + 0.3f, 0.2f), new Vector3(0.5f, 0.3f, 1.2f), MGlow);
+            // Banks, the old bridge's abutments over the gap, rubble below (1.5 m clear of everything), the goblin stair
+            // flush to the west wall topping out at the near bank's face.
+            float bankDepth = L / 2f - gap / 2f;
+            Block(geo, "Bank_North", new Vector3(0f, bankY / 2f, gap / 2f + bankDepth / 2f), new Vector3(W, bankY, bankDepth), MLedge);
+            Block(geo, "Bank_South", new Vector3(0f, bankY / 2f, -gap / 2f - bankDepth / 2f), new Vector3(W, bankY, bankDepth), MLedge);
+            Block(geo, "BridgeStub_N", new Vector3(0f, bankY - 0.3f, gap / 2f - stubLen / 2f), new Vector3(4.4f, 0.6f, stubLen), MLedge);
+            Block(geo, "BridgeStub_S", new Vector3(0f, bankY - 0.3f, -gap / 2f + stubLen / 2f), new Vector3(4.4f, 0.6f, stubLen), MLedge);
+            // The fallen bridge's rubble, 1.5 m clear of the walls, the stair and each other.
+            Deco(geo, DecoRubble, "Rubble_1", new Vector3(-5f, 0f, 2f), 20f);
+            Deco(geo, DecoRubble, "Rubble_2", new Vector3(4f, 0f, 2f), -35f);
+            Deco(geo, DecoRubble, "Rubble_3", new Vector3(-2f, 0f, -3f), 70f);
+            Deco(geo, DecoRubble, "Rubble_4", new Vector3(7f, 0f, -2f), 10f);
+            // The goblin stair runs ALONG the near bank's face, west to the corner: its foot near the middle of the cistern
+            // floor, its top step at the bank's north-west corner, every step flush against the face (no pocket behind it).
+            int steps = Mathf.RoundToInt(bankY / 0.5f);
+            Stair(geo, "CisternStair", new Vector3(-W / 2f + steps * 0.6f, 0f, gap / 2f - 1f), Vector3.left, steps, 0.5f, 0.6f, 2f);
 
-            // The drawbridge: a DropRamp standing upright on the bank's lip, released by the lever beside it.
-            GameObject rampGo = Kit(RampPrefab, play, "Drawbridge", new Vector3(-5f, bankY, -14f), Quaternion.Euler(-90f, 0f, 0f));
-            DropRamp ramp = rampGo.GetComponent<DropRamp>();
-            SetInt(ramp, "mode", (int)DropRamp.Mode.Swing);
-            SetFloat(ramp, "swingDegrees", 90f);
-            SetFloat(ramp, "fallSeconds", 2f);
-            Transform deck = rampGo.transform.Find("Deck");
-            if (deck != null) { deck.localPosition = new Vector3(0f, -0.2f, 7.25f); deck.localScale = new Vector3(6f, 0.4f, 14.5f); Paint(deck.gameObject, MWood); }
-            Cylinder(geo, "Hinge_A", new Vector3(-7.5f, bankY, -14f), new Vector3(0.4f, 0.3f, 0.4f), MMetal, Quaternion.Euler(0f, 0f, 90f));
-            Cylinder(geo, "Hinge_B", new Vector3(-2.5f, bankY, -14f), new Vector3(0.4f, 0.3f, 0.4f), MMetal, Quaternion.Euler(0f, 0f, 90f));
-            ImpactLever lBridge = Lever(play, "Lever_Bridge", new Vector3(-5f, bankY + 0.5f, -18f), Quaternion.identity);
-            SetRef(ramp, "lever", lBridge);
-            ChainRun(geo, "Chain_Catch", new Vector3(-5f, bankY + 0.6f, -17.6f), new Vector3(-5f, bankY + 1.6f, -14.4f));
+            // The magic bridge: dead until the circuit on the far bank is whole, and dead it is not there at all. Not in
+            // the NavMesh. Its top a centimetre under the abutments' and its ends a hand inside them: no face shares a
+            // plane with the banks (no flicker) and nothing of it shows past the abutments.
+            GameObject bridgeGo = Kit(MagicBridgePrefab, play, "MagicBridge", new Vector3(0f, bankY, 0f), Quaternion.identity);
+            MagicBridge magicBridge = bridgeGo.GetComponent<MagicBridge>();
+            Transform deck = bridgeGo.transform.Find("Deck");
+            if (deck != null)
+            {
+                deck.localPosition = new Vector3(0f, -0.16f, 0f);
+                deck.localScale = new Vector3(4f, 0.3f, tipToTip + 0.2f);
+                NavMeshModifier mod = deck.gameObject.AddComponent<NavMeshModifier>();
+                mod.ignoreFromBuild = true;
+            }
 
-            // Nothing climbs out of the chasm on the far side: the only way across is a friend's bat. A body that falls
-            // in walks the west passage back to the entry floor and up the steps.
-            SignAt(room, new Vector3(0f, 0f, -7f), "FELL IN? THE WEST PASSAGE LEADS BACK TO THE STEPS. NOTHING CLIMBS OUT THE FAR SIDE.");
+            // The far bank's conduit: out of the south wall beside the exit, down it, north along the bank's floor into the
+            // short break (fed from the south), on to the old abutment and into the bridge.
+            float sz = -L / 2f + off;
+            float bankRail = bankY + onFloor;
+            float stubZ = -gap / 2f + stubLen / 2f;
+            CircuitBridge b3 = BridgeAt(play, "Break_Short", new Vector3(3.5f, bankY, -gap / 2f - 2f), -90f, 0.5f);   // A south, B north
+            Vector3 b3In = geo.InverseTransformPoint(b3.AttachA), b3Out = geo.InverseTransformPoint(b3.AttachB);
+            List<Renderer> s0 = new List<Renderer>();
+            s0.Add(Conduit(geo, "Feed_0a", new Vector3(3.5f, bankY + 3f, -L / 2f - 0.2f), new Vector3(3.5f, bankY + 3f, sz)));
+            s0.Add(Conduit(geo, "Feed_0b", new Vector3(3.5f, bankY + 3f, sz), new Vector3(3.5f, bankRail, sz)));
+            s0.Add(Conduit(geo, "Feed_0c", new Vector3(3.5f, bankRail, sz), b3In));
+            List<Renderer> s1 = new List<Renderer>();
+            s1.Add(Conduit(geo, "Feed_1a", b3Out, new Vector3(3.5f, bankRail, stubZ)));
+            s1.Add(Conduit(geo, "Feed_1b", new Vector3(3.5f, bankRail, stubZ), new Vector3(2.1f, bankRail, stubZ)));
+            GameObject circuitGo = new GameObject("Circuit");
+            circuitGo.transform.SetParent(play, false);
+            Circuit circuit = circuitGo.AddComponent<Circuit>();
+            SetArray(circuit, "bridges", new List<CircuitBridge> { b3 });
+            SetSegments(circuit, new List<List<Renderer>> { s0, s1 });
+            List<Renderer> consumers = new List<Renderer>();
+            if (deck != null) consumers.Add(deck.GetComponent<Renderer>());
+            SetArray(circuit, "consumers", consumers);
+            SetRef(magicBridge, "circuit", circuit);
 
-            GateSouth(room, DoorCondition.Mode.LeverOn, null, lBridge, null, null, bankY);
-            SignAt(room, new Vector3(-6f, 0f, L / 2f - 2f), "NO LAUNCH CROSSES THE CHASM. STAND ON THE PAD AND HOLD SHIFT TO BRACE. A MACE OR HAMMER LAUNCHED INTO YOU BATS YOU OVER. THE LEVER DROPS THE BRIDGE.");
-            Profile(room, "bat_room", Names[4], "The heavy bats a braced friend across the chasm; the friend drops the drawbridge with the lever; everyone crosses to the Exit.", 4);
+            // The magnet over the near lip, east side, clear of the bat's flight line down the middle. Metal gathers under the
+            // red head itself (the prefab's own hold point, 1.7 m below it). Its box covers the cistern beneath it and the
+            // lip but NOT the bank's top, so a body that launches off the hold onto the bank is out of its reach at once.
+            GameObject magnet = Kit(MagnetPrefab, play, "Magnet", new Vector3(9f, bankY + 6f, gap / 2f - 1f), Quaternion.identity);
+            BoxCollider volume = magnet.GetComponent<BoxCollider>();
+            if (volume != null) { volume.center = new Vector3(-1.5f, -(bankY + 6f) / 2f, -1.75f); volume.size = new Vector3(9f, bankY + 7f, 6.5f); }
+            SetFloat(magnet.GetComponent<MagnetZone>(), "range", bankY + 8f);
+            Block(geo, "MagnetPost", new Vector3(9f, bankY + 3f, gap / 2f + 1.2f), new Vector3(0.4f, 6f, 0.4f), MMetal);
+            Block(geo, "MagnetArm", new Vector3(9f, bankY + 6.2f, gap / 2f + 0.1f), new Vector3(0.4f, 0.4f, 2.6f), MMetal);
+
+            // Goblins: one on the near bank, two on the far bank, each hearing only its own bank.
+            GameObject nearVol = Kit(RoomVolumePrefab, play, "NearBankVolume", new Vector3(0f, bankY + 5f, gap / 2f + bankDepth / 2f), Quaternion.identity);
+            BoxCollider nearBox = nearVol.GetComponent<BoxCollider>();
+            if (nearBox != null) { nearBox.center = Vector3.zero; nearBox.size = new Vector3(W, 10f, bankDepth); }
+            GameObject farVol = Kit(RoomVolumePrefab, play, "FarBankVolume", new Vector3(0f, bankY + 5f, -gap / 2f - bankDepth / 2f), Quaternion.identity);
+            BoxCollider farBox = farVol.GetComponent<BoxCollider>();
+            if (farBox != null) { farBox.center = Vector3.zero; farBox.size = new Vector3(W, 10f, bankDepth); }
+            RoomVolume nearRoom = nearVol.GetComponent<RoomVolume>();
+            RoomVolume farRoom = farVol.GetComponent<RoomVolume>();
+            SetString(nearRoom, "roomName", "Near Bank");
+            SetString(farRoom, "roomName", "Far Bank");
+            GameObject gNear = Kit(GoblinPrefab, play, "Goblin_Near", new Vector3(6f, bankY, gap / 2f + 6f), Quaternion.identity);
+            GameObject gFarA = Kit(GoblinPrefab, play, "Goblin_Far_A", new Vector3(-5f, bankY, -gap / 2f - 5f), Quaternion.identity);
+            GameObject gFarB = Kit(GoblinPrefab, play, "Goblin_Far_B", new Vector3(5f, bankY, -gap / 2f - 8f), Quaternion.identity);
+            SetArray(nearRoom, "enemies", new List<GoblinBrain> { gNear.GetComponent<GoblinBrain>() });
+            SetArray(farRoom, "enemies", new List<GoblinBrain> { gFarA.GetComponent<GoblinBrain>(), gFarB.GetComponent<GoblinBrain>() });
+            SetRef(gNear.GetComponent<GoblinBrain>(), "room", nearRoom);
+            SetRef(gFarA.GetComponent<GoblinBrain>(), "room", farRoom);
+            SetRef(gFarB.GetComponent<GoblinBrain>(), "room", farRoom);
+
+            // Decorations: barrels and crates on the goblins' bank; flush or 1.5 m clear. No pillars (owner, round 27).
+            Deco(geo, DecoBarrel, "Barrel_1", new Vector3(-8f, bankY, -L / 2f + 4f), 0f);
+            Deco(geo, DecoBarrel, "Barrel_2", new Vector3(-7.2f, bankY, -L / 2f + 4f), 0f);
+            Deco(geo, DecoCrate, "Crate_1", new Vector3(8f, bankY, -L / 2f + 3f), 0f);
+            Deco(geo, DecoCrate, "Crate_2", new Vector3(8f, bankY + 1f, -L / 2f + 3f), 0f);
+
+            GateSouth(room, DoorCondition.Mode.AlwaysOpen, null, null, null, null, bankY);
+            Profile(room, "bat_room", Names[4], "The heavy bats a braced Dagger over the cistern; it plays dead, lies across the short break, the magic bridge comes alive; everyone crosses to the Exit.", 4);
             SaveRoom(room, PrefabPath(4));
         }
 
@@ -393,14 +592,15 @@ namespace Pesky.Editor
             AssetDatabase.SaveAssets();
         }
 
-        public static void InstallIntoOpenRunScene(Scene scene)
+        /// <summary>Installs the built prefabs into the open Run scene: all five, or only the indices in `only`.</summary>
+        public static void InstallIntoOpenRunScene(Scene scene, int[] only = null)
         {
             if (!scene.IsValid() || scene.path != RunScene) { Debug.LogError("[RoomsV3] expected the Run scene, got " + scene.path); return; }
             GameObject environment = FindRoot(scene, "Environment");
             GameObject managers = FindRoot(scene, "_Managers");
             Transform roomsRoot = environment != null ? environment.transform.Find("Rooms") : null;
             if (roomsRoot == null || managers == null) { Debug.LogError("[RoomsV3] Run scene is missing Environment/Rooms or _Managers."); return; }
-            for (int i = 0; i < Names.Length; i++) ReplaceRoom(roomsRoot, FirstRoomId + i, PrefabPath(i), Names[i]);
+            for (int i = 0; i < Names.Length; i++) if (Wanted(only, i)) ReplaceRoom(roomsRoot, FirstRoomId + i, PrefabPath(i), Names[i]);
 
             WorldAuthority authority = managers.GetComponentInChildren<WorldAuthority>(true);
             LabyrinthDirector director = managers.GetComponentInChildren<LabyrinthDirector>(true);
@@ -408,6 +608,7 @@ namespace Pesky.Editor
             LevelClock clock = managers.GetComponentInChildren<LevelClock>(true);
             for (int i = 0; i < Names.Length; i++)
             {
+                if (!Wanted(only, i)) continue;
                 Transform room = roomsRoot.Find("Room_" + (FirstRoomId + i).ToString("00") + "_" + SafeName(Names[i]));
                 if (room != null) WireSceneReferences(room.gameObject, authority, director, clock, Names[i]);
             }
@@ -480,6 +681,7 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
             foreach (Door x in room.GetComponentsInChildren<Door>(true)) SetRef(x, "authority", authority);
             foreach (ImpactLever x in room.GetComponentsInChildren<ImpactLever>(true)) { SetRef(x, "authority", authority); SetRef(x, "clock", clock); }
             foreach (PressurePlate x in room.GetComponentsInChildren<PressurePlate>(true)) SetRef(x, "authority", authority);
+            foreach (CircuitBridge x in room.GetComponentsInChildren<CircuitBridge>(true)) SetRef(x, "authority", authority);
             foreach (Rope x in room.GetComponentsInChildren<Rope>(true)) { SetRef(x, "authority", authority); SetRef(x, "clock", clock); }
             foreach (DropRamp x in room.GetComponentsInChildren<DropRamp>(true)) SetRef(x, "clock", clock);
             foreach (PorterGate x in room.GetComponentsInChildren<PorterGate>(true)) SetRef(x, "authority", authority);
@@ -520,6 +722,7 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
             SetArray(authority, "rooms", ComponentsInScene<RoomVolume>(scene));
             SetArray(authority, "doors", ComponentsInScene<Door>(scene));
             SetArray(authority, "plates", ComponentsInScene<PressurePlate>(scene));
+            SetArray(authority, "circuitBridges", ComponentsInScene<CircuitBridge>(scene));
             SetArray(authority, "levers", ComponentsInScene<ImpactLever>(scene));
             SetArray(authority, "ropes", ComponentsInScene<Rope>(scene));
             SetArray(authority, "porterGates", ComponentsInScene<PorterGate>(scene));
@@ -572,8 +775,8 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
             Transform fixtures = room.transform.Find("Fixtures");
             if (fixtures != null)
             {
-                Transform sign = fixtures.Find("RoomSign");
-                if (sign != null) { sign.localPosition = new Vector3(w / 2f - 1.5f, 0f, l / 2f - 3f); sign.localRotation = Quaternion.identity; } // readable side (-Z) into the room
+                // No signs: the owner is removing them all (a narrator will hint later). The two-door base still carries one.
+                DestroyChild(fixtures, "RoomSign");
                 Transform number = fixtures.Find("FloorNumber");
                 if (number != null) number.localPosition = new Vector3(0f, 0.02f, l / 2f - 8f);
                 string[] torches = { "Torch_1", "Torch_2", "Torch_3", "Torch_4" };
@@ -650,7 +853,7 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
         }
 
         /// <summary>The exit gate on the south doorway with one condition.</summary>
-        static Door GateSouth(GameObject room, DoorCondition.Mode mode, PressurePlate plate, ImpactLever lever, RoomVolume volume, List<PressurePlate> plates, float sillY, float exitX = 0f)
+        static Door GateSouth(GameObject room, DoorCondition.Mode mode, PressurePlate plate, ImpactLever lever, RoomVolume volume, List<PressurePlate> plates, float sillY, float exitX = 0f, Circuit circuit = null)
         {
             Transform doorways = room.transform.Find("Doorways");
             Door gate = DoorAt(doorways, DoorPrefab, "Gate_South", new Vector3(exitX, sillY, -RoomLength(room) / 2f), Quaternion.identity);
@@ -660,6 +863,7 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
             if (lever != null) SetRef(c, "lever", lever);
             if (volume != null) SetRef(c, "room", volume);
             if (plates != null) SetArray(c, "plates", plates);
+            if (circuit != null) SetRef(c, "circuit", circuit);
             Transform south = doorways.Find("Doorway_South");
             if (south != null) SetRef(south.GetComponent<MagicDoor>(), "gate", gate);
             return gate;
@@ -792,6 +996,100 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
             cord.layer = LayerWorld;
             Paint(cord, material);
             return segment;
+        }
+
+        /// <summary>A run of magical conduit: a 0.22 m rail on M_MagicFlow, static, no collider (nothing wedges against it).
+        /// Each end runs HALF A RAIL PAST its point: two rails meeting at a corner close it, and a rail into a break's attach
+        /// point, a door's feed strip or a wall buries its end. No gaps. Returns its renderer so a Circuit can light it.</summary>
+        static Renderer Conduit(Transform geo, string name, Vector3 from, Vector3 to)
+        {
+            const float half = 0.11f;
+            Vector3 n = (to - from).normalized;
+            Vector3 a = from - n * half, b = to + n * half;
+            Vector3 up = Mathf.Abs(n.y) > 0.9f ? Vector3.forward : Vector3.up;
+            GameObject railGo = Block(geo, name, (a + b) / 2f, new Vector3(0.22f, 0.22f, (b - a).magnitude), MMagicFlow, Quaternion.LookRotation(n, up), true);
+            Collider c = railGo.GetComponent<Collider>();
+            if (c != null) Object.DestroyImmediate(c);
+            return railGo.GetComponent<Renderer>();
+        }
+
+        /// <summary>A break in a conduit: the CircuitBridge kit piece with its stubs set `gap` apart (1.05 takes a Sword, 0.5 a Dagger).
+        /// yaw 0 lies along X (A west, B east), 90 along Z (A north, B south), -90 along Z (A south, B north); A is the fed
+        /// side. pos is the floor point under the cradle's centre; 0.3 off a wall face puts the cradle flush to that wall with its
+        /// stubs on the wall's rail line. Its Attach_A / Attach_B points (the stubs' outer faces, CircuitBridge.AttachA / AttachB)
+        /// are where the conduits run to and from.</summary>
+        static CircuitBridge BridgeAt(Transform play, string name, Vector3 pos, float yaw, float gap)
+        {
+            GameObject go = Kit(CircuitBridgePrefab, play, name, pos, Quaternion.Euler(0f, yaw, 0f));
+            Transform a = go.transform.Find("StubA"), b = go.transform.Find("StubB");
+            if (a != null) a.localPosition = new Vector3(-gap / 2f, a.localPosition.y, 0f);
+            if (b != null) b.localPosition = new Vector3(gap / 2f, b.localPosition.y, 0f);
+            float len = gap + 0.65f;
+            foreach (string nm in new[] { "Base", "Rail_N", "Rail_S" }) { Transform t = go.transform.Find(nm); if (t != null) t.localScale = new Vector3(len, t.localScale.y, t.localScale.z); }
+            BoxCollider trig = go.GetComponent<BoxCollider>();
+            if (trig != null) trig.size = new Vector3(gap + 0.85f, trig.size.y, trig.size.z);
+            Transform sparks = go.transform.Find("Sparks");
+            if (sparks != null) sparks.localPosition = new Vector3(-gap / 2f + 0.08f, sparks.localPosition.y, 0f);
+            Transform fill = go.transform.Find("Fill");
+            if (fill != null) fill.localScale = new Vector3(gap, fill.localScale.y, fill.localScale.z);
+            Transform attachA = go.transform.Find("Attach_A"), attachB = go.transform.Find("Attach_B");
+            if (attachA != null) attachA.localPosition = new Vector3(-gap / 2f - 0.11f, attachA.localPosition.y, 0f);
+            if (attachB != null) attachB.localPosition = new Vector3(gap / 2f + 0.11f, attachB.localPosition.y, 0f);
+            return go.GetComponent<CircuitBridge>();
+        }
+
+        /// <summary>The Circuit's stretches: a nested array (Run.pieces) the generic SetArray cannot reach.</summary>
+        static void SetSegments(Circuit circuit, List<List<Renderer>> runs)
+        {
+            SerializedObject so = new SerializedObject(circuit);
+            SerializedProperty p = so.FindProperty("segments");
+            p.arraySize = runs.Count;
+            for (int i = 0; i < runs.Count; i++)
+            {
+                SerializedProperty pieces = p.GetArrayElementAtIndex(i).FindPropertyRelative("pieces");
+                pieces.arraySize = runs[i].Count;
+                for (int j = 0; j < runs[i].Count; j++) pieces.GetArrayElementAtIndex(j).objectReferenceValue = runs[i][j];
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>A goblin stair: `count` solid steps from `foot` (the ground point at the bottom-front edge) climbing along `dir`,
+        /// each `rise` higher and `tread` deeper, `width` across. Plain boxes: nothing wedges.</summary>
+        static void Stair(Transform geo, string name, Vector3 foot, Vector3 dir, int count, float rise, float tread, float width)
+        {
+            GameObject stair = new GameObject(name);
+            stair.transform.SetParent(geo, false);
+            bool alongZ = Mathf.Abs(dir.z) > Mathf.Abs(dir.x);
+            for (int k = 1; k <= count; k++)
+            {
+                float h = k * rise;
+                Vector3 centre = foot + dir.normalized * ((k - 0.5f) * tread) + Vector3.up * (h / 2f);
+                Vector3 scale = alongZ ? new Vector3(width, h, tread) : new Vector3(tread, h, width);
+                Block(stair.transform, "Step_" + k, centre, scale, MLedge);
+            }
+        }
+
+        /// <summary>A decoration from the Deco kit (a plain box with a plain collider, static, art swapped later per prefab).</summary>
+        static GameObject Deco(Transform geo, string prefab, string name, Vector3 pos, float yaw)
+        {
+            return Kit(prefab, geo, name, pos, Quaternion.Euler(0f, yaw, 0f));
+        }
+
+        /// <summary>The generator: a crystal core floor to ceiling in a four-post cage, two halos, a dark base. Lives on M_MagicFlow.</summary>
+        static void Generator(Transform geo, Vector3 at, float h)
+        {
+            GameObject g = new GameObject("Generator");
+            g.transform.SetParent(geo, false);
+            g.transform.localPosition = at;
+            Cylinder(g.transform, "Base", new Vector3(0f, 0.3f, 0f), new Vector3(3.2f, 0.3f, 3.2f), MAnvil, Quaternion.identity);
+            Cylinder(g.transform, "Core", new Vector3(0f, h / 2f, 0f), new Vector3(1.6f, h / 2f, 1.6f), MMagicFlow, Quaternion.identity);
+            Cylinder(g.transform, "Halo_Low", new Vector3(0f, h * 0.55f, 0f), new Vector3(3.4f, 0.06f, 3.4f), MMagicFlow, Quaternion.identity);
+            Cylinder(g.transform, "Halo_High", new Vector3(0f, h * 0.8f, 0f), new Vector3(2.6f, 0.06f, 2.6f), MMagicFlow, Quaternion.identity);
+            float r = 1.7f;
+            Block(g.transform, "Post_NE", new Vector3(r, h / 2f, r), new Vector3(0.4f, h, 0.4f), MMetal);
+            Block(g.transform, "Post_NW", new Vector3(-r, h / 2f, r), new Vector3(0.4f, h, 0.4f), MMetal);
+            Block(g.transform, "Post_SE", new Vector3(r, h / 2f, -r), new Vector3(0.4f, h, 0.4f), MMetal);
+            Block(g.transform, "Post_SW", new Vector3(-r, h / 2f, -r), new Vector3(0.4f, h, 0.4f), MMetal);
         }
 
         static void Wire(Transform geo, Vector3 from, Vector3 to)

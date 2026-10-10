@@ -1,5 +1,8 @@
 # Rooms v3: the five rooms revised to the owner's 2026-10-02 notes (text + floor plans)
 
+> Rooms 4 and 5 (Circuit Room, Bat Room) were redone in round 22: see rooms-v4-revamp.md. The text below is
+> superseded for those two.
+
 Status: DESIGN ONLY, nothing built. Supersedes `rooms-v2.md`. Floor plans: `rooms-v3-plans.html`
 (same folder). Sources: `docs/PREMISE.md` (2026-09-29 simplification, 2026-10-01 voting, 2026-10-02
 THE FIVE ROOMS, which overrides v2 wherever they differ), `docs/KIT.md`, `docs/RUN.md` section 8.

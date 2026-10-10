@@ -24,6 +24,8 @@ namespace Pesky.Protocol
         Lightning = 14,
         /// <summary>pieceId is the porter's enemy id, actor the weapon. state 1 = picked up, 0 = dropped in alarm, 2 = placed.</summary>
         PorterCarry = 15,
+        /// <summary>A CircuitBridge (a break in a magical conduit): state 1 = a metal body lies across it, 0 = open. Host-decided, like a hold plate.</summary>
+        Circuit = 16,
     }
 
     [Flags]

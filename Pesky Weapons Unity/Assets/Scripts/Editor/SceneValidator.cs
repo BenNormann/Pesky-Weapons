@@ -532,6 +532,8 @@ namespace Pesky.Editor
                 RequireNotStatic<PorterGate>(go, path, problems);
                 RequireNotStatic<ImpactLever>(go, path, problems);
                 RequireNotStatic<RopeSegment>(go, path, problems);
+                RequireNotStatic<CircuitBridge>(go, path, problems);
+                RequireNotStatic<MagicBridge>(go, path, problems);
 
                 RequireSolidCollider<Rope>(go, path, problems);
                 RequireSolidCollider<Pot>(go, path, problems);
@@ -540,6 +542,7 @@ namespace Pesky.Editor
                 RequireSolidCollider<RopeSegment>(go, path, problems);
                 RequireTriggerCollider<LightningField>(go, path, problems);
                 RequireTriggerCollider<MassPan>(go, path, problems);
+                RequireTriggerCollider<CircuitBridge>(go, path, problems);
 
                 Rope rope = go.GetComponent<Rope>();
                 if (rope != null && rope.Ramp != null && rope.Ramp.Rope != rope)

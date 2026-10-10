@@ -269,6 +269,40 @@ A piece that reacts to being HIT carries its own **solid (non-trigger) collider 
 script** — a static collider is the one that receives the collision message for the weapon that hit it. The
 scene validator enforces that.
 
+### CircuitBridge + Circuit + MagicBridge (round 22) - `Kit/Circuit/`
+**Rule.** The labyrinth runs on magical energy (`M_MagicFlow`, shader `Pesky/MagicFlow`: dark purple with
+drifting lavender specks; `_Live` 0 = dead and dim). A **`CircuitBridge`** is a break in a conduit: two stubs
+with a cradle between them. A METAL weapon lying STILL (slower than `restSpeed` 1.5) whose collider bounds
+reach both stubs (within `tolerance` 0.12) closes it: a 1.05 m break takes a Sword, Mace or Hammer, not a
+Dagger; a 0.5 m break takes a Dagger. While the fed stub is live and the break is open it throws sparks.
+**Host state:** closed flag, host-decided every physics step from the bridge's own report
+(`ReportCircuitBridge`), broadcast as KIT_STATE `Circuit` (1 closed / 0 open), the way a hold plate travels.
+A **`Circuit`** lists its bridges in order from the source and its conduit stretches (`Run.pieces`, every rail
+of one stretch): stretch i is live when bridges 0..i-1 are closed, `IsLive` when all are; it drives the
+renderers' `_Live` through a property block and sets each bridge's `Powered` (the first open break sparks).
+A Door on `DoorCondition.Mode.CircuitLive` opens when its `circuit` is whole. A **`MagicBridge`** is a span
+whose deck collider is on, and lit, only while its circuit is live; dead it is not drawn at all.
+**Seal (round 23).** Whole once is whole for good: the moment every break is closed the Circuit SEALS, each
+break shows its `fill` piece across the gap, the weapons may leave, and the whole run pulses (`_Live` above 1
+brightens the shader). The host keeps reporting a sealed circuit's bridges closed, so every peer, late state
+included, sees the same seal. **Place and wire.** CircuitBridge: `id` (2501+), `authority`, `stubA/B`,
+`sparks`, `stubRendererA/B`, `fill`, and the wiring points `attachA/B` (`Attach_A` / `Attach_B`, the stubs'
+outer faces; A is the fed side); Trigger layer, not static, a trigger box (validator). Circuit and
+MagicBridge hold no state; the builder's `BridgeAt`, `Conduit`, `SetSegments` do the wiring: every rail runs
+point to point with each end half a rail PAST its point (corners close, ends bury), to and from a break's
+attach points (`CircuitBridge.AttachA/B`), into a door's feed strip or into a wall, so there are no gaps. A
+cradle placed 0.3 m off a wall face sits flush to it with its stubs on that wall's rail line. Rails are
+collider-less static pieces. **Snap (round 25):** every break is a small magnet: metal weapons within
+`snapRange` (2.5 m) that this peer simulates are drawn toward the cradle's centre (`snapPull` 16 m/s^2 at
+the centre fading to nothing at the range, never lifting, capped at `snapMaxSpeed`) and turned along the
+cradle (`snapTurn`), so a landing that is nearly right becomes right. Not while held, carried, stuck or
+braced, and off once sealed.
+
+### Deco - `Kit/Deco/`
+`Deco_Crate` (1 m), `Deco_Barrel`, `Deco_Shelf`, `Deco_Pillar` (4 m), `Deco_Rubble`: grey boxes with plain box
+colliders, static, placed by the builder's `Deco()`. Rule: flush against something or at least 1.5 m clear of
+walls and each other, so no weapon wedges. Swap the art per prefab and every room follows.
+
 ### Rope + DropRamp — `Rope.prefab`, `DropRamp.prefab`
 **Rule.** `Rope` is a taut cord with a capsule collider. A **bladed** weapon hitting it at `minCutSpeed`
 (5 m/s) or more cuts it; blunt weapons bounce off, which is the whole puzzle (a Mace must soul-swap for a

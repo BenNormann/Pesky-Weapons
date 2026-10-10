@@ -525,7 +525,8 @@ namespace Pesky.Game
             float minSpeed = data != null ? data.batMinSpeed : 4f;
             float maxSpeed = data != null ? data.batMaxSpeed : 18f;
             float bounce = data != null ? data.batRestitution : 0.5f;
-            if (relativeVelocity.magnitude < minSpeed) return false;
+            // A BRACED friend is primed: ANY touch by a teammate sends them (no speed floor); the ordinary shove needs a real hit.
+            if (!theirs.IsBraced && relativeVelocity.magnitude < minSpeed) return false;
             if (Time.time - _lastBatTime < 0.25f) return false;
             _lastBatTime = Time.time;
 
@@ -537,26 +538,70 @@ namespace Pesky.Game
                 // A BRACED friend (standing up, Shift held) takes the bat along MY aim, the direction my launch set out
                 // on, at the brace speed scaled by my share of the two masses: a Mace or Hammer on a Dagger or Banana
                 // clears the Bat Room's chasm, a Sword on a Dagger does not (docs/level-design/rooms-v3.md).
-                float braceSpeed = data != null ? data.batBraceSpeed : 19f;
-                WeaponMotor motor = mine.GetComponent<WeaponMotor>();
-                Vector3 dir = motor != null ? motor.LastLaunchDirection : Vector3.zero;
-                if (dir.sqrMagnitude < 1e-6f) dir = relativeVelocity.sqrMagnitude > 1e-6f ? relativeVelocity.normalized : Vector3.up;
-                dv = dir * (braceSpeed * mA / (mA + mB));
-                // The batter gave its momentum away: it stops dead and drops where it struck.
-                if (data == null || data.batterStops)
-                {
-                    mine.Body.linearVelocity = Vector3.zero;
-                    mine.Body.angularVelocity = Vector3.zero;
-                }
+                dv = BracedBat(mine, theirs, relativeVelocity, data);
             }
             else dv = relativeVelocity * ((1f + bounce) * mA / (mA + mB));
 
             BatClaimMsg claim = new BatClaimMsg();
             claim.targetSlot = holder.slot;
-            claim.velocityChange = Vector3.ClampMagnitude(dv, maxSpeed);
+            // The braced bat is bounded by batBraceSpeed itself; the clamp is for the ordinary shove.
+            claim.velocityChange = theirs.IsBraced ? dv : Vector3.ClampMagnitude(dv, maxSpeed);
             claim.point = point;
             _session.Send(claim.Encode());
             return true;
+        }
+
+        /// <summary>The braced bat: along the batter's aim, never flatter than batMinLiftDegrees (aiming low cannot miss, only
+        /// left or right can), at the brace speed times the batter's share of the two masses; the batter stops dead.
+        /// Shared by the claim on a remote friend and the host's bat on a loose braced body.</summary>
+        Vector3 BracedBat(WeaponBody mine, WeaponBody theirs, Vector3 relativeVelocity, GameData data)
+        {
+            float braceSpeed = data != null ? data.batBraceSpeed : 26f;
+            float minLift = data != null ? data.batMinLiftDegrees : 35f;
+            float mA = Mathf.Max(0.01f, mine.Body.mass);
+            float mB = Mathf.Max(0.01f, theirs.Body.mass);
+            WeaponMotor motor = mine.GetComponent<WeaponMotor>();
+            Vector3 aim = motor != null ? motor.LastLaunchDirection : Vector3.zero;
+            // The HEADING is the way the batter was travelling when it struck (the aim it set out on goes stale after a
+            // bounce); failing that the aim's heading; failing that from the batter to the struck. The LIFT is the aim's,
+            // never under the floor and never past 70 degrees: aiming low cannot miss, only left or right can.
+            Vector3 travel = new Vector3(relativeVelocity.x, 0f, relativeVelocity.z);
+            Vector3 heading = travel.sqrMagnitude > 1f ? travel : new Vector3(aim.x, 0f, aim.z);
+            if (heading.sqrMagnitude < 1e-4f) heading = Vector3.ProjectOnPlane(theirs.Body.position - mine.Body.position, Vector3.up);
+            heading = heading.sqrMagnitude > 1e-6f ? heading.normalized : Vector3.forward;
+            float lift = aim.sqrMagnitude > 1e-6f ? Mathf.Atan2(aim.y, new Vector3(aim.x, 0f, aim.z).magnitude) * Mathf.Rad2Deg : minLift;
+            lift = Mathf.Clamp(lift, minLift, 70f);
+            float r = lift * Mathf.Deg2Rad;
+            Vector3 dir = heading * Mathf.Cos(r) + Vector3.up * Mathf.Sin(r);
+            // The batter gave its momentum away: it stops dead and drops where it struck, and for a moment the two pass
+            // through each other, so the batter never stands in the flyer's way.
+            if (data == null || data.batterStops)
+            {
+                mine.Body.linearVelocity = Vector3.zero;
+                mine.Body.angularVelocity = Vector3.zero;
+            }
+            mine.IgnoreCollisionsWith(theirs, BatPassThroughSeconds);
+            return dir * (braceSpeed * mA / (mA + mB));
+        }
+
+        /// <summary>How long the batter and a braced flyer pass through each other after the bat.</summary>
+        const float BatPassThroughSeconds = 0.6f;
+
+        /// <summary>The host's own bat on a LOOSE braced weapon (autoBrace, nobody's): no claim, the host simulates that body
+        /// and everyone sees it fly through the loose-weapon stream. Only the host's own weapon can bat it.</summary>
+        public void BatLoose(WeaponBody mine, WeaponBody theirs, Vector3 relativeVelocity, Vector3 point)
+        {
+            if (!IsHostPeer || mine == null || theirs == null || mine.Body == null || theirs.Body == null) return;
+            if (!mine.IsLocallyPossessed || theirs.Possessor != null || !theirs.IsBraced) return;
+            GameData data = _session != null ? _session.Data : null;
+            float minSpeed = data != null ? data.batMinSpeed : 4f;
+            // Braced is primed: any touch sends it (the caller already checked the stance).
+            if (!theirs.IsBraced && relativeVelocity.magnitude < minSpeed) return;
+            if (Time.time - _lastBatTime < 0.25f) return;
+            _lastBatTime = Time.time;
+            Vector3 flight = BracedBat(mine, theirs, relativeVelocity, data);
+            theirs.Fling(flight);
+            DebugGate.Log("bat: loose braced " + theirs.name + " from " + mine.name + " at " + flight.magnitude.ToString("0.0") + " m/s, lift " + Mathf.Asin(Mathf.Clamp(flight.normalized.y, -1f, 1f)) * Mathf.Rad2Deg + " deg");
         }
 
         void OnBatEvent(BatEventMsg msg)
@@ -564,7 +609,15 @@ namespace Pesky.Game
             if (msg.targetSlot == LocalSlot)
             {
                 PlayerSoul local = LocalSoul;
-                if (local != null && local.IsPossessing) local.Weapon.Knockback(msg.velocityChange);
+                if (local != null && local.IsPossessing && local.Weapon != null)
+                {
+                    WeaponBody mine = local.Weapon;
+                    // The batter's body on this machine is its remote view: for a moment the two pass through each other.
+                    WeaponBody batter = RemoteWeaponOf(msg.fromSlot);
+                    if (batter != null) mine.IgnoreCollisionsWith(batter, BatPassThroughSeconds);
+                    // Braced, I leave at exactly the bat's velocity (the flight the batter aimed); otherwise the shove adds.
+                    if (mine.IsBraced) mine.Fling(msg.velocityChange); else mine.Knockback(msg.velocityChange);
+                }
             }
             if (Batted != null) Batted(msg.fromSlot, msg.targetSlot, msg.velocityChange, msg.point);
         }
@@ -1101,6 +1154,15 @@ void OnNetReply(byte id, byte[] payload)
                     EvaluateDoors();
                     return;
                 }
+                case KitKind.Circuit:
+                {
+                    CircuitBridge bridge;
+                    if (!_circuitById.TryGetValue(id, out bridge) || bridge.Closed == on) return;
+                    bridge.ApplyClosed(on);
+                    if (CircuitBridgeChanged != null) CircuitBridgeChanged(bridge, on);
+                    EvaluateDoors();
+                    return;
+                }
                 case KitKind.Key:
                 {
                     KeyPickup key;
@@ -1259,7 +1321,17 @@ void OnNetReply(byte id, byte[] payload)
             return false;
         }
 
-void NetPlateMass(int plateId, float mass)
+/// <summary>A CircuitBridge's report every physics step: does a metal body lie across it? The host decides and
+        /// broadcasts each change (KIT_STATE Circuit, 1 = closed), the way a hold plate's Held travels.</summary>
+        public void ReportCircuitBridge(int bridgeId, bool bridged)
+        {
+            CircuitBridge bridge;
+            if (!_circuitById.TryGetValue(bridgeId, out bridge) || !IsHostPeer) return;
+            if (bridge.Closed == bridged) return;
+            SubmitKit(KitKind.Circuit, bridgeId, (byte)(bridged ? 1 : 0), null, 0f);
+        }
+
+        void NetPlateMass(int plateId, float mass)
         {
             PressurePlate plate;
             if (!_plateById.TryGetValue(plateId, out plate) || !IsHostPeer) return;
