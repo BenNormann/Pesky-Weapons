@@ -2724,3 +2724,182 @@ next key or click. ATCK's answer, already in the template: keys.js has `Pesky_Ke
 `Pesky_ToggleFullscreen` / `Pesky_IsFullscreen` in `Plugins/WebGL/PeskyPlatform.jslib` call those; the
 settings button's pointer-down calls the plugin, which is still inside the press's user activation, so the
 browser grants it at once. Editor and desktop keep `Screen.fullScreen`. A jslib change needs a full rebuild.
+
+## Round 22: rooms v4, the Circuit Room and the Chasm revamped (2026-10-09)
+Owner: both rooms too simple and senseless as goblin rooms; redo them with real effort, grey box, no signs,
+decorations that block sight and movement and are swappable for art later, hitboxes that cannot wedge a
+weapon. Design: docs/level-design/rooms-v4-revamp.md. Branch `rooms-revamp`.
+- The magic: shader `Pesky/MagicFlow` + `M_MagicFlow` (dark purple, drifting lavender specks, `_Live`).
+  Every teleport door's portal wears it, with two feed strips up the jambs (MagicDoor prefab).
+- Kit: `CircuitBridge` (a break a metal body lying still closes; host state KIT_STATE Circuit, protocol 9),
+  `Circuit` (stretches light in order), `MagicBridge` (solid only when live), `DoorCondition.CircuitLive`,
+  five `Deco_*` prefabs. `WeaponBody.WorldBounds`. Validator rules for the new pieces.
+- Circuit Room: a floor-to-ceiling generator in a cage with halos; conduits leave along the ceiling and down
+  the walls, three live, one dead: down into a maintenance pit (goblin steps, break 1 on the pit floor), up
+  and along the south wall to the gallery (mezzanine at 4 m, goblin stair up the east wall, break 2), down
+  to the exit door, whose barrier and portal are dead magic until both breaks are closed. No door opener, no
+  sign, no floor rails. Crates hide the pit break from the entry.
+- Chasm: both doors at bank level (the north wall rebuilt with its opening at 6 m), a 28 m cistern with the
+  old bridge's stubs and rubble, a magic bridge that is dead until the Dagger-sized break on the far bank is
+  closed, one goblin on the near bank and two on the far bank (own volumes), a magnet on a gantry over the
+  near lip (east side, clear of the bat line) that lifts metal out of the cistern, a goblin stair in the far
+  west corner for the wooden ones. No launch pad, no sign, the exit door always open (the bridge is the gate).
+- Bat: `BracedBat` shared helper; the friend never leaves flatter than `GameData.batMinLiftDegrees` (35);
+  `WeaponBody.autoBrace` (a loose weapon stands up by itself) and `WorldAuthority.BatLoose` (the host bats a
+  loose braced body directly) for the test scene.
+- Test scene `Assets/Scenes/Dev/BatTest.unity` (a FeelBox copy): the Bat Room without doorways or goblins, a
+  rack with Mace, Hammer, Dagger, Sword, Mace, Hammer, Banana on the near bank, a bot Dagger standing braced
+  on the lip (possess it if you like), spawn on the near bank. Play it in the Editor.
+Validator 0 problems. Untested by me. To watch for: the Sword actually spanning the 1.05 m stubs when it
+lies in the cradle (bounds are axis-aligned, a diagonal Sword reads longer), the sparks' look, the magnet's
+pull on a Dagger batted off-centre toward the east, goblins on the far bank hearing a landed Dagger that is
+still rolling (restSpeed), and whether the conduit's dead/live reads clearly enough without a sign.
+
+## Round 23: the Chasm by the numbers, sealed circuits, gapless wiring (2026-10-09)
+
+Owner's test of round 22 in the Editor: the Hammer could not get the Dagger across; the dead magic bridge
+still showed; the bridge deck z-fought the banks; a doorway in the test scene opened onto nothing; gaps in
+the wiring at every break. Then: "once the whole circuit has been completed it should pulse with power and
+the missing gaps should fill in so you don't have to keep the sword/dagger there."
+
+**The Chasm.** The first cut was 28 m bank to bank (the doc said 14; the builder said 28). The maths with the
+project's gravity (20 m/s2), the 35 degree lift floor and `batBraceSpeed` 19 x mA/(mA+mB): Hammer on Dagger
+14.7 m, Mace on Dagger 13.4, Orb on Banana 13.4, Sword on Banana 12.4, Orb on Dagger 10.9, Sword on Dagger
+9.7 (numeric sim, damping 0.05). Now 14 m bank to bank with 1 m abutments: 12 m tip to tip. Room 24 x 38 x 24.
+The near goblin, pillars, magnet, stair (now flush to the west wall, no slot), rubble, far-bank clutter and
+spawn all re-placed; torches, sign and number lifted to bank level (they were inside the banks).
+
+**MagicBridge** dead is not drawn (`deckRenderer.enabled = live`). The deck's top is 1 cm under the abutments
+and its ends 10 cm inside them: no coplanar faces, nothing shows past the abutments.
+
+**Seal.** `Circuit` latches the moment every break is closed (`IsSealed`, `IsLive` stays true); each
+`CircuitBridge` gets `Sealed` (shows its `Fill` piece, stops sparking, both stubs live) and `Glow` (the
+`_Live` value, pulsing 1.0-1.7 from the Circuit each frame); the shader brightens above 1. The host reports
+a sealed bridge closed for good (`bridged || _sealed`), so the KIT_STATE never reopens it and late state
+agrees. No protocol change.
+
+**Wiring.** `CircuitBridge` prefab: stubs a full rail tall (0.22), `Attach_A` / `Attach_B` at the stubs'
+outer faces (fields `attachA/B`, `CircuitBridge.AttachA/B` in world space), `Fill` (M_MagicFlow, renderer
+off). `Conduit()` runs each end half a rail past its point (corners close, ends bury); the dead run in the
+Circuit Room is re-routed through the attach points with the cradles flush to the pit's west wall and the
+gallery's south wall (the stubs on the wall's rail line, Rail_S against the wall); the Chasm's break is fed
+from the south (yaw -90) and its onward conduit ends inside the far abutment. An Editor check confirmed
+every attach point coincides with a rail end (0.000 m). `Live_S` moved to x 9.5 so it does not shadow the
+dead drop at x 7.6. The pit steps now touch the pit's face (no pocket).
+
+**Doorway to nothing.** Only the test scene: the whole MagicDoor instances were deactivated there, which
+removed the prefab's own alcove and Back along with the portal. Now the door geometry stays on, the portal
+Plane and the MagicDoor script are off, and the prefab's Back wears the new `M_Brick`: a bricked-up passage.
+In Run the portal plane covers it anyway.
+
+**Builder.** `Pesky/Rooms/Rebuild Circuit Room + Chasm (v4)` rebuilds only those two prefabs and replaces
+only their instances (`InstallIntoOpenRunScene(scene, only)`), after the usual backup; the other three rooms
+and any hand edits to them are untouched. Backup `Backups/rooms-v3/20261009-161952`. No WebGL build this
+round: the owner tests in the Editor (Run.unity and Dev/BatTest.unity).
+
+Watch: the Fill piece appears inside the weapon still lying in the cradle (it may leave); a sealed circuit
+never reopens (by design); the Sword must lie along the cradle's slot (0.44 m wide) against the wall.
+
+## Round 24: the bat made honest, the Chasm doubled, the magnet to its head (2026-10-09)
+
+Owner, testing round 23 in the Editor: the Dagger "does not get launched really far at all", "make it launch
+super far"; both banks 2x higher; the stair along the starting side, left to right, not out toward the far
+side; "the batting mechanics are super janky, just fully fix those"; the magnet pulled to the pole, not to
+the red head; a Hammer got stuck on the magnet and could not jump off.
+
+**Why the bat was short.** The Editor console showed the braced bat firing every time. What ate it: (1) the
+velocity change was ADDED on top of whatever impulse PhysX had already given the contact (a 14 kg Hammer on a
+1 kg Dagger: a large, random push along the contact normal, often down into the floor), and (2) the batter
+stopped dead where it struck, which is on top of or in front of the flyer, so the flyer's first step ran
+into the batter and PhysX pushed it back. Fixes:
+- `WeaponBody.Fling(velocity)`: a braced body leaves at EXACTLY the bat's velocity (constraints off, body
+  awake, angular velocity zero) and counts as launched (magnets release it, the blade aligns).
+- `WeaponBody.IgnoreCollisionsWith(other, seconds)`: batter and flyer pass through each other for 0.6 s
+  (`BatPassThroughSeconds`), both on the batter's machine (the flyer's remote view) and on the flyer's (the
+  batter's remote view, `RemoteWeaponOf(fromSlot)`).
+- `BracedBat`: the HEADING is the batter's travel at the moment of the strike (the launch aim goes stale after a
+  bounce), falling back to the aim, then to batter-to-struck; the LIFT is the aim's, clamped 35..70.
+- The braced bat is exempt from `batMaxSpeed`: the claim is sent unclamped and the host validator's ceiling
+  is max(batMaxSpeed, batBraceSpeed). `OnBatEvent` flings when the local body is braced, knocks otherwise
+  (no wire change: the flyer knows its own stance).
+- `batBraceSpeed` 19 -> 26 in GameData and GameData_Tutorial: Hammer on Dagger 24.3 m/s, 27.7 m at the 35
+  degree floor. The debug line now prints speed and lift.
+
+**The Chasm.** Banks 12 m up (bankY 12, H 30). The goblin stair runs along the near bank's face from the
+middle of the cistern floor west to the north-west corner (24 steps, 2 m deep, flush to the face). Rubble
+re-placed clear of it. The magnet's hold point is the prefab's own, 1.7 m under the red head (the round 22
+override that put it beside the post is gone); its box is 9 x (bankY+7) x 6.5, from the cistern floor to
+above the head, over the cistern and the lip and NOT the bank's top, so a body that launches off the hold
+onto the bank is free of it; range bankY + 8 so the pull still beats gravity at the floor. That was the
+"stuck on the magnet": the old box covered 3 m of bank, so every landing was pulled straight back up.
+
+**BatTest** raised with the room (bot, rack, weapons, spawn +6 m). Rebuilt with `Pesky/Rooms/Rebuild Circuit
+Room + Chasm (v4)` (backup taken). No WebGL build; the owner tests in the Editor.
+
+Watch: a flyer launched at 24 m/s hits the far wall before it lands; the pass-through window (0.6 s) is also
+a window in which the batter cannot be hit by the flyer; a possessed friend must still hold Shift to be
+braced (the bot braces by itself).
+
+## Round 25: a braced friend is primed; a small magnet in every break (2026-10-09)
+
+Owner: "seems better now"; a SMALL amount of magnet on the circuit-complete to make it easier; and the bat
+is still sometimes a mere bump with no boost: "THAT SHOULD ONLY HAPPEN IF YOU AREN'T HOLDING SHIFT. If you
+hold shift you are primed and will get sent far by your team mate", distance still by the masses.
+
+**Primed.** The bat's speed floor (`batMinSpeed` 4 m/s) no longer applies to a BRACED target: any touch by a
+teammate's weapon sends them, in `RequestBat` (a possessed friend) and `BatLoose` (the test bot). The floor
+still gates the ordinary shove, so a bump between two unbraced weapons stays a bump. The flight is still
+`batBraceSpeed` x mA / (mA + mB), the batter's share of the two masses: a Hammer sends a Dagger at 93 % of 26,
+a Dagger sends a Hammer at 7 %.
+
+**Snap.** `CircuitBridge.Snap()` every physics step: an overlap sphere of `snapRange` 2.5 m around the
+cradle's centre; each metal weapon this peer simulates (non-kinematic: the owner's own, or loose on the host)
+that is not held, carried, stuck or braced gets `snapPull` 16 m/s^2 toward the centre, fading linearly to 0
+at the range, only while its speed toward the centre is under `snapMaxSpeed` 2.5, plus a turn of its long
+axis (local +Z) along the cradle whichever end is nearer, with damping. Gravity is 20, so it never lifts; a
+resting body a hand off slides in (static friction is beaten inside about half a metre), a body in flight is
+only nudged. Off once the circuit has sealed. No prefab or scene change: the new fields take their defaults.
+
+No rebuild, no WebGL build; the owner tests in the Editor.
+
+## Round 26: nothing wedges in a seam (2026-10-09)
+
+Owner: a Dagger stuck standing at the seam between the floor and a wall, blade sunk into the floor; "this
+has happened in other levels too... and other spots too. Is there a way to prevent this?"
+
+**Why.** Two causes, one of them ours. (1) The brace stood a weapon up with `Rigidbody.MoveRotation`, a
+kinematic rotation about the body's centre: a blade lying flat was rotated INTO the floor (the Dagger's blade
+reaches 0.3 m below its pivot) and, against a wall, into the seam; and the stance then zeroed every upward
+velocity each step, so the solver's push-out could never lift it: pinned. (2) In general a thin blade (a
+0.08 x 0.04 box) pressed into the inner edge where two boxes meet gets contact normals from both faces and
+can be jittered in; once overlapping, a launch is absorbed by the depenetration.
+
+**Fixes (WeaponBody).**
+- The brace is PHYSICAL now: no `FreezeRotation`, no `MoveRotation`. Each step the body gets an angular
+  velocity toward the stance (`BraceTurnGain` 6 per radian of error, capped at the old 270 deg/s, the wobble
+  folded into the target), and the solver resolves contacts after, so the floor and the walls push back as the
+  body rights itself. Horizontal velocity is still held at zero (a braced body does not slide); vertical is
+  left to gravity and the contacts.
+- `ResolveOverlaps()`: an overlap box over the weapon's bounds on the ground and wall layers (static and
+  kinematic colliders only; other weapons are the solver's business), `Physics.ComputePenetration` per
+  collider pair, the body moved out along the summed push (capped at 0.6 m, plus a centimetre). Called before
+  EVERY launch (`WeaponMotor.TryLaunch`), so a wedged weapon's launch is never absorbed, and every 0.5 s while
+  a simulated body lies still (speed under 0.2 m/s), not held, carried or stuck in wood.
+
+No prefab, scene or build change; the owner tests in the Editor. Watch: the physical stand-up may lean on a
+wall instead of standing clear of it (correct, it is leaning); a weapon resting in a cradle or on a plate
+is not "wedged" (no overlap, so no push).
+
+**No sign.** The two-door base prefab carries a `RoomSign` fixture (the "SIGN" post the owner saw on the
+Chasm's bank); `Shell` now destroys it, so every room the v3 builder makes from here has none. Nothing at
+runtime referenced it. The Circuit Room and the Chasm rebuilt (v4 menu); the other three keep theirs until
+their next build. The pillars the owner asked about are `Deco_Pillar` grey boxes, 0.8 x 4 m stone columns
+meant to break sight lines on the near bank and beside the Circuit Room's entry: placeholders for art, and
+as easy to drop as to re-place.
+
+## Round 27: no pillars (2026-10-09)
+
+Owner, settled after two tries: "ONLY REMOVE PILLARS". The crates, barrels, shelf and rubble stay where
+rounds 22-24 put them; the two pillars in each room and the gallery's post are gone (the gallery slab hangs
+off its two walls, grey-box). The Deco_Pillar prefab stays in the kit. Rebuilt with the v4 menu, BatTest
+re-applied, validator 0 problems. Then commit, rebase, push, PR.

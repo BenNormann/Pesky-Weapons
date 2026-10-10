@@ -29,6 +29,7 @@ namespace Pesky.Game
         [SerializeField] GoblinBrain[] enemies = new GoblinBrain[0];
         [SerializeField] Door[] doors = new Door[0];
         [SerializeField] PressurePlate[] plates = new PressurePlate[0];
+        [SerializeField] CircuitBridge[] circuitBridges = new CircuitBridge[0];
         [SerializeField] KeyPickup[] keys = new KeyPickup[0];
         [SerializeField] RunePickup[] runes = new RunePickup[0];
         [SerializeField] AnvilStation[] anvils = new AnvilStation[0];
@@ -50,6 +51,7 @@ namespace Pesky.Game
         readonly Dictionary<int, GoblinBrain> _enemyById = new Dictionary<int, GoblinBrain>();
         readonly Dictionary<int, Door> _doorById = new Dictionary<int, Door>();
         readonly Dictionary<int, PressurePlate> _plateById = new Dictionary<int, PressurePlate>();
+        readonly Dictionary<int, CircuitBridge> _circuitById = new Dictionary<int, CircuitBridge>();
         readonly Dictionary<int, KeyPickup> _keyById = new Dictionary<int, KeyPickup>();
         readonly Dictionary<int, RunePickup> _runeById = new Dictionary<int, RunePickup>();
         readonly Dictionary<int, AnvilStation> _anvilById = new Dictionary<int, AnvilStation>();
@@ -77,6 +79,8 @@ namespace Pesky.Game
         /// <summary>(pickup scene id, taker or null)</summary>
         public event Action<int, WeaponBody> PickupTaken;
         public event Action<PressurePlate> PlateLatched;
+        /// <summary>A break in a conduit closed (true) or opened (false), host-decided.</summary>
+        public event Action<CircuitBridge, bool> CircuitBridgeChanged;
         public event Action<Door> DoorOpened;
         /// <summary>A closesAgain door shut because its condition lapsed (a hold plate was left).</summary>
         public event Action<Door> DoorClosed;
@@ -111,6 +115,7 @@ namespace Pesky.Game
             Index(enemies, _enemyById);
             Index(doors, _doorById);
             Index(plates, _plateById);
+            Index(circuitBridges, _circuitById);
             Index(keys, _keyById);
             Index(runes, _runeById);
             Index(anvils, _anvilById);

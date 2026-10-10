@@ -60,9 +60,14 @@ namespace Pesky.Game
         Vector3 _stuckNormal = Vector3.up;
         float _stickRearmAt;
         bool _carried;
+        [Tooltip("A loose weapon that stands up by itself and takes a bat: the Bat Room test scene's bot Dagger. Nobody's, so the host bats it directly.")]
+        [SerializeField] bool autoBrace;
         bool _braceWanted, _braced;
         float _braceHoldOff = -999f;
         const float BraceTurnDegreesPerSecond = 270f;   // slow: a weapon has weight
+        const float BraceTurnGain = 6f;                  // angular speed per radian of error, up to the cap above
+        float _nextOverlapCheck;
+        static readonly Collider[] _overlapBuf = new Collider[24];
         const float BraceWobbleDegrees = 12f;            // it overshoots upright and settles back
         float _braceStandStart = -1f;
         float _lastImpactTime = -999f;
@@ -83,6 +88,27 @@ namespace Pesky.Game
         public WeaponDef Def { get { return def; } }
         public MovementTuning Tuning { get { return tuning; } }
         public Rigidbody Body { get { return body; } }
+
+        /// <summary>The union of this body's solid collider bounds in world space: the shape as it lies right now.</summary>
+        public Bounds WorldBounds
+        {
+            get
+            {
+                Bounds b = new Bounds(body != null ? body.position : transform.position, Vector3.zero);
+                bool first = true;
+                if (_colliders != null)
+                {
+                    for (int i = 0; i < _colliders.Length; i++)
+                    {
+                        Collider c = _colliders[i];
+                        if (c == null || !c.enabled || c.isTrigger) continue;
+                        if (first) { b = c.bounds; first = false; }
+                        else b.Encapsulate(c.bounds);
+                    }
+                }
+                return b;
+            }
+        }
         public WeaponHomeSlot HomeSlot { get { return homeSlot; } }
         public float Hp { get { return _hp; } }
         public float MaxHp { get { return def != null ? def.maxHp : 0f; } }
@@ -293,6 +319,12 @@ void FixedUpdate()
             if (_broken) return;
             if (NetFixedUpdate()) return;
             TickBrace();
+            // A body lying still may be wedged (a blade in the seam between a floor and a wall): now and then push it out.
+            if (Time.fixedTime >= _nextOverlapCheck && !_held && !_carried && !_stuck && !body.isKinematic && body.linearVelocity.sqrMagnitude < 0.04f)
+            {
+                _nextOverlapCheck = Time.fixedTime + 0.5f;
+                ResolveOverlaps();
+            }
 
             if (_stuck)
             {
@@ -385,6 +417,53 @@ public void Teleport(Vector3 position, Quaternion rotation)
             body.AddForce(velocityChange, ForceMode.VelocityChange);
         }
 
+        /// <summary>A bat on a BRACED body: the stance lets go and the body leaves at EXACTLY this velocity, whatever the
+        /// contact's own impulse did, so the flight is the one the batter aimed. It counts as a launch: a magnet lets it go
+        /// for its release window and the blade aligns to the flight.</summary>
+        public void Fling(Vector3 velocity)
+        {
+            if (_broken || body == null) return;
+            ReleaseHold();
+            Unstick();
+            _braceHoldOff = Time.fixedTime + 1f;
+            if (_braced) { _braced = false; body.constraints = RigidbodyConstraints.None; }
+            body.WakeUp();
+            body.linearVelocity = velocity;
+            body.angularVelocity = Vector3.zero;
+            MarkLaunched();
+        }
+
+        /// <summary>For a moment this body passes through another weapon's solid colliders: the batter, stopped dead where it
+        /// struck, must not stand in the flyer's way (and the flyer must not kick the batter over the edge).</summary>
+        public void IgnoreCollisionsWith(WeaponBody other, float seconds)
+        {
+            if (other == null || other == this || _colliders == null || other._colliders == null) return;
+            SetCollisionsIgnored(other._colliders, true);
+            StartCoroutine(RestoreCollisions(other._colliders, seconds));
+        }
+
+        void SetCollisionsIgnored(Collider[] theirs, bool ignored)
+        {
+            if (_colliders == null) return;
+            for (int i = 0; i < _colliders.Length; i++)
+            {
+                Collider a = _colliders[i];
+                if (a == null || a.isTrigger) continue;
+                for (int j = 0; j < theirs.Length; j++)
+                {
+                    Collider b = theirs[j];
+                    if (b == null || b.isTrigger) continue;
+                    Physics.IgnoreCollision(a, b, ignored);
+                }
+            }
+        }
+
+        System.Collections.IEnumerator RestoreCollisions(Collider[] theirs, float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            SetCollisionsIgnored(theirs, false);
+        }
+
         /// <summary>The possessing player holds the brace key (Left Shift while possessing): stand up and take a bat.</summary>
         public void SetBrace(bool on)
         {
@@ -399,13 +478,15 @@ public void Teleport(Vector3 position, Quaternion rotation)
         /// </summary>
         void TickBrace()
         {
-            bool want = _braceWanted && IsLocallyPossessed && !_held && !_carried && !_stuck && IsGrounded
+            bool want = ((_braceWanted && IsLocallyPossessed) || (autoBrace && _possessor == null && !_remoteDriven)) && !_held && !_carried && !_stuck && IsGrounded
                 && body != null && !body.isKinematic && Time.fixedTime >= _braceHoldOff;
             if (want != _braced)
             {
                 _braced = want;
-                body.constraints = want ? RigidbodyConstraints.FreezeRotation : RigidbodyConstraints.None;
-                if (want) { body.angularVelocity = Vector3.zero; _braceStandStart = -1f; }
+                // Never frozen: the solver must stay free to resolve contacts while the body stands and while it stands there.
+                body.constraints = RigidbodyConstraints.None;
+                if (want) _braceStandStart = -1f;
+                else body.angularVelocity = Vector3.zero;
             }
             if (!_braced) return;
             // Stand: local +Z (the point / the head) down for a blade, up for the rest; keep the facing.
@@ -424,9 +505,59 @@ public void Teleport(Vector3 position, Quaternion rotation)
                 Vector3 side = Vector3.Cross(Vector3.up, flat.normalized);
                 target = Quaternion.AngleAxis(tilt, side) * target;
             }
-            body.MoveRotation(Quaternion.RotateTowards(body.rotation, target, BraceTurnDegreesPerSecond * Time.fixedDeltaTime));
+            // PHYSICALLY: an angular velocity toward the stance, capped, never a kinematic MoveRotation. The floor and the
+            // walls push back as the body rights itself, so a blade is never rotated INTO the seam between them and pinned
+            // there. The horizontal velocity is held at zero (a braced body does not slide); the vertical is left to gravity
+            // and to the contacts, so a tip that has sunk in is pushed back out.
+            Quaternion delta = target * Quaternion.Inverse(body.rotation);
+            float angle; Vector3 axis;
+            delta.ToAngleAxis(out angle, out axis);
+            if (angle > 180f) angle -= 360f;
+            Vector3 spin = Vector3.zero;
+            if (Mathf.Abs(angle) > 0.01f && axis.sqrMagnitude > 1e-6f && !float.IsNaN(axis.x))
+                spin = Vector3.ClampMagnitude(axis.normalized * (angle * Mathf.Deg2Rad * BraceTurnGain), BraceTurnDegreesPerSecond * Mathf.Deg2Rad);
+            body.angularVelocity = spin;
             Vector3 v = body.linearVelocity;
-            body.linearVelocity = new Vector3(0f, Mathf.Min(v.y, 0f), 0f);
+            body.linearVelocity = new Vector3(0f, v.y, 0f);
+        }
+
+        /// <summary>Pushes the body out of any geometry it overlaps (a blade wedged in the seam between a floor and a wall,
+        /// a corner it was rotated into, a door that closed on it). Called before every launch, so a wedged weapon's launch
+        /// is never absorbed, and now and then while a body lies still. Static and kinematic colliders on the ground and
+        /// wall layers count; other weapons do not (the solver settles those). Returns true when it moved the body.</summary>
+        public bool ResolveOverlaps()
+        {
+            if (_broken || body == null || body.isKinematic || _colliders == null || tuning == null) return false;
+            Bounds b = WorldBounds;
+            b.Expand(0.1f);
+            int mask = tuning.groundMask.value | tuning.wallMask.value;
+            int n = Physics.OverlapBoxNonAlloc(b.center, b.extents, _overlapBuf, Quaternion.identity, mask, QueryTriggerInteraction.Ignore);
+            Vector3 push = Vector3.zero;
+            int hits = 0;
+            for (int i = 0; i < n; i++)
+            {
+                Collider other = _overlapBuf[i];
+                if (other == null || other.isTrigger) continue;
+                Rigidbody orb = other.attachedRigidbody;
+                if (orb == body) continue;
+                if (orb != null && !orb.isKinematic) continue;   // a dynamic body (another weapon): the solver's business
+                for (int j = 0; j < _colliders.Length; j++)
+                {
+                    Collider mine = _colliders[j];
+                    if (mine == null || mine.isTrigger || !mine.enabled) continue;
+                    Vector3 dir; float dist;
+                    if (Physics.ComputePenetration(mine, mine.transform.position, mine.transform.rotation, other, other.transform.position, other.transform.rotation, out dir, out dist) && dist > 0.005f)
+                    {
+                        push += dir * dist;
+                        hits++;
+                    }
+                }
+            }
+            if (hits == 0) return false;
+            push = Vector3.ClampMagnitude(push, 0.6f);
+            body.position += push + push.normalized * 0.01f;
+            body.WakeUp();
+            return true;
         }
 
         /// <summary>The motor calls this on every launch.</summary>

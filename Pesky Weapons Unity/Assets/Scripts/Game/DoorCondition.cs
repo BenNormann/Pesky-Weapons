@@ -22,7 +22,9 @@ namespace Pesky.Game
             /// <summary>A HOLD plate (PressurePlate.latching off): satisfied only while enough mass rests on it.</summary>
             PlateHeld = 7,
             /// <summary>Every plate in `plates` is Held at once (a circuit whose gaps are all bridged).</summary>
-            PlatesHeld = 8
+            PlatesHeld = 8,
+            /// <summary>Power reaches the door: every break in its Circuit is closed (round 22).</summary>
+            CircuitLive = 9
         }
 
         [SerializeField] Mode mode = Mode.AlwaysOpen;
@@ -36,6 +38,8 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] ImpactLever lever;
         [Tooltip("ScalesSatisfied: this ScalesLock must have latched.")]
         [OptionalRef][SerializeField] ScalesLock scales;
+        [Tooltip("CircuitLive: the circuit that must be whole.")]
+        [OptionalRef][SerializeField] Circuit circuit;
         [Tooltip("PlatesHeld: every one of these must be Held at the same time.")]
         [OptionalRef][SerializeField] PressurePlate[] plates = new PressurePlate[0];
         [Tooltip("Optional second condition OR-ed with this one (a portcullis held by a plate OR pinned by a lever).")]
@@ -66,6 +70,7 @@ public bool IsSatisfied(WorldAuthority authority)
                     return true;
                 case Mode.PartyHasKey: return authority != null && authority.HasKey(keyId);
                 case Mode.LeverOn: return lever != null && lever.IsOn;
+                case Mode.CircuitLive: return circuit != null && circuit.IsLive;
                 case Mode.ScalesSatisfied: return scales != null && scales.Latched;
                 default: return false; // Sealed
             }
@@ -80,6 +85,7 @@ public bool IsSatisfied(WorldAuthority authority)
                 case Mode.RoomCleared: return room != null ? "CLEAR " + room.RoomName : "CLEAR ROOM";
                 case Mode.PlateLatched: return "PLATE";
                 case Mode.PlateHeld: return "HOLD THE PLATE";
+                case Mode.CircuitLive: return "POWER";
                 case Mode.PlatesHeld: return "CLOSE THE CIRCUIT";
                 case Mode.PartyHasKey: return "KEY " + keyId;
                 case Mode.LeverOn: return "LEVER";

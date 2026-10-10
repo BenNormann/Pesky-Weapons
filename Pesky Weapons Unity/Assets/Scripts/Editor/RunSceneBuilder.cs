@@ -482,6 +482,7 @@ namespace Pesky.Editor
                 case "CrackedWall": return 2201;
                 case "PorterGate": return 2301;
                 case "ExitZone": return 2401;
+                case "CircuitBridge": return 2501;
                 default: return 3001;
             }
         }

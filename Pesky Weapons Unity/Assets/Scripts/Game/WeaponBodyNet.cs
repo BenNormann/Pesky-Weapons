@@ -149,9 +149,16 @@ namespace Pesky.Game
             Rigidbody rb = collision.rigidbody;
             if (rb == null) return;
             WeaponBody other = rb.GetComponent<WeaponBody>();
-            if (other == null || !other._remoteDriven || other._broken) return;
+            if (other == null || other._broken) return;
             Vector3 point = collision.contactCount > 0 ? collision.GetContact(0).point : body.worldCenterOfMass;
-            _net.RequestBat(this, other, _preStepVelocity - other._remoteVelocity, point);
+            if (other._remoteDriven)
+            {
+                _net.RequestBat(this, other, _preStepVelocity - other._remoteVelocity, point);
+                return;
+            }
+            // A loose weapon standing braced by itself (autoBrace, the Bat Room test's bot): the host bats it directly.
+            if (other.IsBraced && other._possessor == null && other.body != null)
+                _net.BatLoose(this, other, _preStepVelocity - other.body.linearVelocity, point);
         }
     }
 }

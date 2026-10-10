@@ -39,5 +39,6 @@ MonoBehaviour:
   batMinSpeed: 4
   batMaxSpeed: 20
   batRestitution: 0.5
-  batBraceSpeed: 19
+  batBraceSpeed: 26
   batterStops: 1
+  batMinLiftDegrees: 35

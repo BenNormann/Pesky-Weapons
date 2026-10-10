@@ -32,7 +32,9 @@ namespace Pesky.Session.Validators
             var key = (fromSlot << 8) | claim.targetSlot;
             if (_lastBatTick.TryGetValue(key, out var last) && tick - last < CooldownTicks) return;
 
-            var max = sim.Data != null ? sim.Data.batMaxSpeed : 18f;
+            // The ordinary shove is clamped to batMaxSpeed by the claimant; a braced bat may run up to batBraceSpeed (times the
+            // batter's share of the masses, so always under it). The sim does not know who is braced, so the ceiling is the larger.
+            var max = sim.Data != null ? Mathf.Max(sim.Data.batMaxSpeed, sim.Data.batBraceSpeed) : 26f;
             var dv = claim.velocityChange;
             if (float.IsNaN(dv.x) || float.IsNaN(dv.y) || float.IsNaN(dv.z)) return;
             dv = Vector3.ClampMagnitude(dv, max);
