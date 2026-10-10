@@ -279,6 +279,13 @@ namespace Pesky.Session.Rules
                 return;
             }
 
+            // The poltergeist's kit is trimmed (RunDef.ghost*): the curses he lost are not curses of his any more.
+            if (ghost && !(def != null ? def.GhostCurseAllowed((int)req.curse) : (req.curse == CurseKind.Nausea || req.curse == CurseKind.Blindness)))
+            {
+                Refuse(events, fromSlot, req.targetSlot, CurseRefusal.NoSuchCurse, 0, what);
+                return;
+            }
+
             uint cooldown = LabyrinthRule.Ticks(ghost ? (def != null ? def.ghostCurseCooldown : 60f) : (def != null ? def.curseCooldown : 30f));
             if (_curseUsed[fromSlot] && game < _lastCurseTick[fromSlot] + cooldown)
             {

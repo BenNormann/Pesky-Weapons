@@ -137,6 +137,8 @@ namespace Pesky.Game
             byte slot;
             Vector3 at;
             RunDef def = Def;
+            // A curse the poltergeist lost: its slot is off his bar, and the key does nothing and sends nothing.
+            if (IsGhost && def != null && !def.GhostCurseAllowed((int)kind)) return;
             float cone = def != null ? def.curseAimCone : 8f;
             // Nothing in the cone: nothing happens and nothing is sent, as for anybody else's key.
             if (!MageAim.FindTarget(authority, orbitCamera != null ? orbitCamera.transform : null, cone, out slot, out at)) return;

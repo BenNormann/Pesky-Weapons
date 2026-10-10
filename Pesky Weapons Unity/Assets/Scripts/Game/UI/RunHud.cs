@@ -52,7 +52,7 @@ namespace Pesky.Game
         [SerializeField] string timedOutTitle = "TIME IS UP - THE ARCH MAGE WINS";
         [SerializeField] string resurrectedTitle = "THE ARCH MAGE WINS";
         [SerializeField] string weaponsGoneTitle = "EVERY WEAPON WAS BANISHED - THE ARCH MAGE WINS";
-        [SerializeField] string ghostMageText = "BANISHED - YOU WERE THE ARCH MAGE. HAUNT THEM AS A GHOST: GET CLOSE TO CURSE AND NUDGE.";
+        [SerializeField] string ghostMageText = "BANISHED - YOU WERE THE ARCH MAGE. HAUNT THEM AS A GHOST: GET CLOSE TO NUDGE, SICKEN AND BLIND THEM.";
         [SerializeField] string ghostWeaponText = "BANISHED - YOU WERE A WEAPON. SPECTATE AS A GHOST: FLY, PASS DOORS, TOUCH NOTHING.";
 
         [Header("Tutorial")]
@@ -348,7 +348,14 @@ namespace Pesky.Game
                 Show(_barRoot, show);
             }
             if (!show || _bar == null) return;
-            _bar.SetMageSlots(IsMage);
+            int lost = 0;
+            RunDef def = Def;
+            // A banished Mage keeps only the poltergeist's curses (RunDef.ghost*).
+            for (int c = (int)CurseKind.Magnetic; IsGhost && def != null && c <= (int)CurseKind.Heavy; c++)
+            {
+                if (!def.GhostCurseAllowed(c)) lost |= 1 << c;
+            }
+            _bar.SetMageSlots(IsMage, lost);
             _bar.Refresh(Time.time, _readyAt, _cooldownSeconds);
         }
 

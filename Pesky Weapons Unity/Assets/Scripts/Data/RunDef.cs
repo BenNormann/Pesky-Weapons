@@ -51,6 +51,13 @@ namespace Pesky.Data
         [Tooltip("Seconds a banished Mage's curse lasts on its victim.")]
         [Min(0f)] public float ghostCurseDuration = 10f;
 
+        [Tooltip("Which of the five curses a banished Mage keeps. The rest are refused by the host and leave his bar.")]
+        public bool ghostMagnetic = false;
+        public bool ghostNausea = true;
+        public bool ghostSlippery = false;
+        public bool ghostBlindness = true;
+        public bool ghostHeavy = false;
+
         [Header("1 Magnetic")]
         [Tooltip("The nearest OTHER weapon within this many metres pulls the victim's launch direction.")]
         [Min(0f)] public float magneticRange = 20f;
@@ -101,6 +108,20 @@ namespace Pesky.Data
 
         [Tooltip("Seconds the result stays on screen (the game stays paused) before PAUSE_END.")]
         [Min(0f)] public float voteResultSeconds = 4f;
+
+        /// <summary>Whether a banished Mage may still cast this curse, by CurseKind value (1..5).</summary>
+        public bool GhostCurseAllowed(int curse)
+        {
+            switch (curse)
+            {
+                case 1: return ghostMagnetic;
+                case 2: return ghostNausea;
+                case 3: return ghostSlippery;
+                case 4: return ghostBlindness;
+                case 5: return ghostHeavy;
+                default: return false;
+            }
+        }
 
         /// <summary>The five curses' names, by CurseKind value (1..5). Empty for anything else.</summary>
         public static string CurseName(int curse)

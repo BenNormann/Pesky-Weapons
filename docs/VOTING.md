@@ -190,7 +190,9 @@ when the slot empties and at round start. Everything else follows it:
   WAS BANISHED - THE ARCH MAGE WINS". A round that never had a weapon (a solo Mage) runs on as before.
   A banished player cannot start the run timer by leaving the start room.
 - **A banished Mage** is a POLTERGEIST (2026-10-10, implemented, untested: nothing was compiled or
-  run): the run goes on and he keeps the nudge and the five curses on weaker numbers, read by the host
+  run): the run goes on and he keeps the nudge and TWO curses, Nausea and Blindness (the `RunDef.ghost<Curse>`
+  toggles; the host refuses the others with `NoSuchCurse` and `RunHud.RefreshBar` takes their slots off
+  his bar), on weaker numbers, read by the host
   when the asker is banished (`RunRule` / `LabyrinthRule`) and by his own cooldown guides (`MageCurse` /
   `MageNudge`): `RunDef.ghostCurseRange` 6 m, `ghostCurseCooldown` 60 s, `ghostCurseDuration` 10 s;
   `LabyrinthDef.ghostNudgeRange` 6 m, `ghostNudgeCooldown` 16 s, `ghostNudgeScale` 0.5. No new
