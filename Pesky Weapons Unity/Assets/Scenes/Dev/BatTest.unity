@@ -119,17 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!114 &112523520 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7556462219842471521, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
-  m_PrefabInstance: {fileID: 446002906}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a684d68efa76e254ea4c2db36e014c5f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.GoblinBrain
 --- !u!114 &112523521 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4793994217862826261, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
@@ -474,9 +463,9 @@ MonoBehaviour:
   - {fileID: 1416830818}
   - {fileID: 1019703185}
   enemies:
-  - {fileID: 446002911}
   - {fileID: 112523522}
-  - {fileID: 112523520}
+  - {fileID: 446002915}
+  - {fileID: 446002911}
   doors: []
   plates: []
   circuitBridges:
@@ -623,7 +612,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 887969813919701642, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: id
-      value: 502
+      value: 501
       objectReference: {fileID: 0}
     - target: {fileID: 887969813919701642, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: authority
@@ -633,10 +622,26 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1243925852580756090, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+      propertyPath: id
+      value: 502
+      objectReference: {fileID: 0}
+    - target: {fileID: 1243925852580756090, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+      propertyPath: authority
+      value: 
+      objectReference: {fileID: 267765539}
     - target: {fileID: 1558563083467971911, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1597607420073346147, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+      propertyPath: id
+      value: 503
+      objectReference: {fileID: 0}
+    - target: {fileID: 1597607420073346147, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+      propertyPath: authority
+      value: 
+      objectReference: {fileID: 267765539}
     - target: {fileID: 1854329430604242165, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -657,6 +662,10 @@ PrefabInstance:
       propertyPath: authority
       value: 
       objectReference: {fileID: 267765539}
+    - target: {fileID: 2313631023476236581, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2664376216084710940, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: id
       value: 502
@@ -917,7 +926,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.MagnetZone
 --- !u!114 &446002911 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6489653170848154662, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+  m_CorrespondingSourceObject: {fileID: 1597607420073346147, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
   m_PrefabInstance: {fileID: 446002906}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
@@ -959,6 +968,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67af5dad7b096c14a8a9ad2d54f4ea25, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.RoomVolume
+--- !u!114 &446002915 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1243925852580756090, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+  m_PrefabInstance: {fileID: 446002906}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a684d68efa76e254ea4c2db36e014c5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.GoblinBrain
 --- !u!1 &544965564
 GameObject:
   m_ObjectHideFlags: 0

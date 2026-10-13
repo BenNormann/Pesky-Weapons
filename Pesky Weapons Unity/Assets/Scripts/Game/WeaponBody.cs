@@ -67,6 +67,7 @@ namespace Pesky.Game
         const float BraceTurnDegreesPerSecond = 270f;   // slow: a weapon has weight
         const float BraceTurnGain = 6f;                  // angular speed per radian of error, up to the cap above
         float _nextOverlapCheck;
+        float _zMin, _zMax;                              // the solid colliders' reach along local Z (the grip end, the point / head end)
         static readonly Collider[] _overlapBuf = new Collider[24];
         const float BraceWobbleDegrees = 12f;            // it overshoots upright and settles back
         float _braceStandStart = -1f;
@@ -231,6 +232,7 @@ public void HoldAtHome()
         {
             _colliders = GetComponentsInChildren<Collider>(true);
             _renderers = GetComponentsInChildren<Renderer>(true);
+            MeasureLength();
             ApplyDef();
             _hp = MaxHp;
             _spawnPosition = transform.position;
@@ -493,7 +495,10 @@ public void Teleport(Vector3 position, Quaternion rotation)
             Vector3 flat = Vector3.ProjectOnPlane(transform.up, Vector3.up);
             if (flat.sqrMagnitude < 1e-4f) flat = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
             if (flat.sqrMagnitude < 1e-4f) flat = Vector3.forward;
-            Vector3 along = def != null && def.bladed ? Vector3.down : Vector3.up;
+            // A blade that already points up (hanging in its rack, leaning on a wall) stands on its pommel instead: it never
+            // has to flip end over end through the rack's rails or the floor to get up, so Shift works from the rack too.
+            bool pointUp = def != null && def.bladed && Vector3.Dot(transform.forward, Vector3.up) > 0.3f;
+            Vector3 along = def != null && def.bladed && !pointUp ? Vector3.down : Vector3.up;
             Quaternion target = Quaternion.LookRotation(along, flat.normalized);
             // Up, then a wobble: once nearly upright it tips past vertical and settles back, a thing with weight finding its feet.
             float off = Quaternion.Angle(body.rotation, target);
@@ -517,8 +522,48 @@ public void Teleport(Vector3 position, Quaternion rotation)
             if (Mathf.Abs(angle) > 0.01f && axis.sqrMagnitude > 1e-6f && !float.IsNaN(axis.x))
                 spin = Vector3.ClampMagnitude(axis.normalized * (angle * Mathf.Deg2Rad * BraceTurnGain), BraceTurnDegreesPerSecond * Mathf.Deg2Rad);
             body.angularVelocity = spin;
+            // Pivot about the end that stands on the floor: the centre RISES as the body turns, the way a thing is righted by
+            // its foot. Turning about the centre drove that end into the floor and the solver cancelled the turn to keep it
+            // out: a flat Sword felt too heavy to get up at all (round 28).
+            float endZ = along == Vector3.down ? _zMax : _zMin;
+            Vector3 pivot = transform.TransformPoint(new Vector3(0f, 0f, endZ));
+            Vector3 rise = Vector3.Cross(spin, body.worldCenterOfMass - pivot);
             Vector3 v = body.linearVelocity;
-            body.linearVelocity = new Vector3(0f, v.y, 0f);
+            body.linearVelocity = new Vector3(0f, Mathf.Max(v.y, rise.y), 0f);
+        }
+
+        /// <summary>How far the solid colliders reach along local Z, both ways: the ends a braced body stands on.</summary>
+        void MeasureLength()
+        {
+            _zMin = 0f; _zMax = 0f;
+            if (_colliders == null) return;
+            Vector3[] corners = new Vector3[8];
+            for (int i = 0; i < _colliders.Length; i++)
+            {
+                Collider c = _colliders[i];
+                if (c == null || c.isTrigger) continue;
+                BoxCollider box = c as BoxCollider;
+                if (box != null)
+                {
+                    Vector3 h = box.size * 0.5f;
+                    int k = 0;
+                    for (int sx = -1; sx <= 1; sx += 2) for (int sy = -1; sy <= 1; sy += 2) for (int sz = -1; sz <= 1; sz += 2)
+                        corners[k++] = box.transform.TransformPoint(box.center + new Vector3(sx * h.x, sy * h.y, sz * h.z));
+                }
+                else
+                {
+                    Bounds b = c.bounds;
+                    int k = 0;
+                    for (int sx = -1; sx <= 1; sx += 2) for (int sy = -1; sy <= 1; sy += 2) for (int sz = -1; sz <= 1; sz += 2)
+                        corners[k++] = b.center + new Vector3(sx * b.extents.x, sy * b.extents.y, sz * b.extents.z);
+                }
+                for (int k = 0; k < 8; k++)
+                {
+                    float z = transform.InverseTransformPoint(corners[k]).z;
+                    if (z < _zMin) _zMin = z;
+                    if (z > _zMax) _zMax = z;
+                }
+            }
         }
 
         /// <summary>Pushes the body out of any geometry it overlaps (a blade wedged in the seam between a floor and a wall,

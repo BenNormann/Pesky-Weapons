@@ -8,7 +8,8 @@ namespace Pesky.Session.Validators
     /// POSSESS_REQ and RELEASE_REQ. Two players can never hold one weapon because the host answers the
     /// requests one at a time against the weapon row: the first WEAPON_OWNER is applied to the host's sim
     /// before the second request is read, so the second finds the weapon taken and is dropped.
-    /// A release while the weapon is in combat breaks it instead of dropping it.
+    /// A release always drops the weapon where it is (round 28: it used to break in combat, and a goblin merely targeting
+    /// the player counted as combat, so weapons dropped after a fight "vanished" to their racks).
     /// </summary>
     public sealed class PossessValidator : IIntentValidator
     {
@@ -42,12 +43,6 @@ namespace Pesky.Session.Validators
             if (sim.Pause.Paused) return; // frozen (docs/VOTING.md)
             var w = sim.Weapons.Get(req.weaponId);
             if (w == null || w.broken || w.ownerSlot != fromSlot) return;
-
-            if (sim.InCombat(w.id))
-            {
-                events.Emit(WeaponRule.Broken(events, w.id, BreakCause.ReleasedInCombat));
-                return;
-            }
 
             var msg = new WeaponOwnerMsg();
             msg.header = events.Header();

@@ -376,17 +376,12 @@ namespace Pesky.Game
             return true;
         }
 
-        /// <summary>Q: leave the weapon. In combat the weapon breaks; otherwise it just drops there.</summary>
+        /// <summary>Q: leave the weapon. It drops where it is, in combat or not (round 28: the old rule broke it in combat, which
+        /// to a player looked like the weapon vanishing for no reason; a goblin still targeting you counted as combat).</summary>
         public bool Release()
         {
             if (_weapon == null) return false;
             if (_authority != null) return _authority.RequestRelease(this);
-
-            if (InCombat)
-            {
-                _weapon.Break(); // OnWeaponBroken pops the soul out.
-                return true;
-            }
             ApplyRelease();
             return true;
         }

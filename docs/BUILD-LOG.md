@@ -2903,3 +2903,33 @@ Owner, settled after two tries: "ONLY REMOVE PILLARS". The crates, barrels, shel
 rounds 22-24 put them; the two pillars in each room and the gallery's post are gone (the gallery slab hangs
 off its two walls, grey-box). The Deco_Pillar prefab stays in the kit. Rebuilt with the v4 menu, BatTest
 re-applied, validator 0 problems. Then commit, rebase, push, PR.
+
+## Round 28: the slot by the exit door, the vanishing release, the flat Sword (2026-10-13)
+
+Owner, after the group playtest (branch `fixes-floor-brace-release`): a gap in the Circuit Room's floor along
+the exit wall; weapons "straight up disappear" sometimes when a player (the host too) presses Q to leave a
+weapon resting on the floor, in other rooms; a Sword lying flat cannot lift itself on Shift, it "felt too
+heavy", and only stood once a jump had left it tilted. My first reading (the gap explains the vanishing, the
+rack blocks the brace) was wrong on both counts and the owner said so.
+
+**The gap.** `Floor_SouthEast` and `Floor_SouthWest` stopped at the pit's south edge (z -14.5) instead of
+the south wall (z -15): a half-metre slot ran along the whole exit wall, right in front of the exit door, and
+showed the sky. Both slabs now run to the wall.
+
+**The vanishing weapon** was the old rule "release in combat breaks the weapon" (`PlayerSoul.Release` offline,
+`PossessValidator` on the host): InCombat is any goblin still targeting you, or five seconds since the last
+hit either way, so a weapon dropped on the floor after a fight broke and respawned on its rack ten seconds
+later. To a player: it vanished. Release now always drops the weapon, in combat or not (the host validator
+and the offline path agree). HP 0 still breaks it.
+
+**The flat Sword.** The round 26 brace turned the body about its CENTRE with an angular velocity: from flat,
+that drives the standing end into the floor and the solver cancels nearly all the turn to keep it out, so a
+long blade never got up (a tilted one, after a jump, had a shorter lever and did). The brace now pivots about
+the end that stands: `MeasureLength()` finds the solid colliders' reach along local Z at Awake, and each step
+the centre is given the upward velocity of a body turning about that end (`rise = spin x (com - pivot)`), so it
+rights itself the way a thing is lifted by its foot. A blade whose point already points up (hanging in its
+rack, leaning on a wall) stands on its pommel instead of flipping end over end; flat, it stands on its point.
+
+Rebuilt the two v4 rooms (the Chasm unchanged), BatTest re-applied, validator 0 problems. Watch: the pivot
+lift means a braced body can hop a little when it starts to turn on uneven ground; a Sword on its pommel is a
+shorter target than one on its point.
