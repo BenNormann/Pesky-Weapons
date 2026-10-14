@@ -4,6 +4,14 @@ Built as written below with the owner's edits: no textures, grey-box; decoration
 or movement (the braziers, banners and empty rack are out; crates, barrels, a cart and a shelf stay); both
 the stair and the timber post lead to the chamber; the chamber is 6 x 6 (the passage's width); the portcullis
 is built by the builder from the Door prefab (no separate prefab); `Deco_Cart` is the one new Deco piece.
+Round 29b (owner): the winch chamber, its window, the stair and the post are on the BACK face of the gate
+wall, not the front, so the pin lever can only be reached by someone who has passed under the raised gate
+(the interlock); the portcullis sits at the passage's FRONT end and rises into the solid wall; the two
+switch wires meet in the junction on the gate passage's west wall, in view from both yards, and the gate
+line runs along the passage ceiling to the gate and up inside the wall to the drum.
+Round 29c: the portcullis is inset 0.2 m behind the wall's face and 0.1 m into the walls, floor and ceiling
+(its raised face flickered against the wall); the pin lever's handle faces into the chamber, south of the
+drum; the hold plate is SPENT once the lever is on (pressed, dark). Validator: coplanar-face check.
 
 Owner's brief: the hallway gate room (room 3, `RoomsV3Builder.ArmoryGate`) is too simple and needs
 decoration; propose a design as interesting as the Circuit Room. Owner's notes on draft 1: no moat (the trench

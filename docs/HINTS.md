@@ -17,14 +17,18 @@ Staff 2.5, Dagger 1, Banana 0.5.
 - Nobody is ever stuck for good: a weapon that falls out of the world comes back to the last place it lay
   still; Q and a new weapon from the start room is always an option.
 
-## Room 3: ARMORY GATE (the portcullis and the trench)
+## Room 3: THE GATEHOUSE (the portcullis, the winch chamber and the guards' yard)
 
-1. "The gate is held up by weight, and whoever holds it cannot also go through it."
-2. "A heavy body parked on the plate lifts the gate. On the far side of the wall there is a lever that pins
-   the gate open for good; after that the plate can be left. Then everybody goes down into the trench."
-3. "Mace or Hammer sits still on the hold plate (8 kg). Another weapon passes under the raised gate and hits
-   the lever on the wall's back face; the gate stays up. The heavy follows. The plate on the trench floor
-   wants 10 kg at once: a Hammer alone, or a Mace with a Sword or an Orb on it. It latches, the exit opens."
+1. "Follow the wires. One comes out of the floor at a plate in the yard and runs into the gate passage; the
+   gate is up only while something heavy sits on that plate, and whoever holds it cannot also go through."
+2. "The other wire into the passage comes down from the winch chamber inside the wall, above the gate, which
+   opens onto the FAR side. A lever up there pins the winch with the gate up; after that the plate can be left.
+   The stair up the wall's back face takes anyone; a blade can climb the timber post instead."
+3. "Mace or Hammer sits still on the hold plate (8 kg; the plate's wire, the junction and the winch drum all
+   light). Another weapon passes under the raised gate, hops up the stair on the back of the gate wall into the
+   chamber and hits the lever: the gate stays up, the heavy follows. Behind the gate, two guards and a plate
+   hidden behind the crates in the far left corner: it wants 10 kg at once (a Hammer, or a Mace with a Sword or
+   an Orb on it); its wire lights up the wall into the exit door and the portal comes alive."
 
 ## Room 4: WELL ROOM (the hanging platform and the rope)
 

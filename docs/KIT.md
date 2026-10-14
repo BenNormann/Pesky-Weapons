@@ -729,8 +729,9 @@ is where lines meet on a wall: `inputs` (PowerLines), OR by default (`requireAll
 lights with it, and it is itself a line's source. Both are pure views (the source carries the host state), so
 no wire change and nothing to sync. The builder routes rails with `Conduit()` as the Circuit Room does: along a
 floor at 0.13 m, along a wall 0.3 m off its face, ends half a rail past their points, buried in walls where
-they must pass through. Rooms: the Gatehouse (plate line and lever line into a junction, junction line to the
-winch; weigh plate line into the exit door), the Well Room (exit plate line into the exit door), the Porter
+they must pass through. Rooms: the Gatehouse (plate line and lever line into the junction on the gate passage's
+west wall, junction line along the passage ceiling to the gate and up to the winch; weigh plate line into the
+exit door), the Well Room (exit plate line into the exit door), the Porter
 Room (grate lever line to the grate's wheel; the exit door lit by its own Door). The Circuit Room's exit stays
 on its `Circuit`.
 
@@ -769,7 +770,57 @@ The STICKABLE wood (`WoodBlock`: the Well Room's frames, the Gatehouse's climb p
 saturated orange-brown (URP Lit, no texture: grey-box, art later) that is unmistakably not stone next to the
 grey walls and the blue-grey ledges. `M_Wood` (muted brown) stays on grips, racks, crates, barrels and the
 Well Room's deck: wood you cannot stick in. Sticking itself is more lenient: `stickMinSpeed` 6 -> 4,
-`stickMaxAngleDeg` 60 -> 70.
+`stickMaxAngleDeg` 60 -> 70. Wood does NOT glow (owner, round 29b): the glow round's `GlowShell` is off the
+WoodBlock prefab; the glow is for action pieces (levers, plates), the timber is plain.
+
+### Spent plates - `PressurePlate.spentWhenLeverOn`
+A plate that can no longer do anything should look it (owner, round 29b): a hold plate whose job a lever has
+taken over (the Gatehouse's hold plate once the winch is pinned) names that lever in `spentWhenLeverOn`; while
+the lever is on the plate is `IsSpent`: its pad sits PRESSED for good and its glow is off, whatever rests on
+it, exactly like a plate that has latched. A view fact only; `Held` and the host state are unchanged, so the
+plate's own PowerLine goes dark and the lever's line carries the power. The builder sets it with
+`SetRef(plate, "spentWhenLeverOn", lever)`.
+
+### Coplanar faces - `SceneValidator.CheckCoplanarFaces` (round 29c)
+Two cube faces in the same plane, pointing the same way and overlapping in area draw over each other and
+flicker (the raised portcullis against the gate wall's face). `Pesky/Validate Open Scenes` now lists every
+such pair: every enabled cube renderer that is not under a Rigidbody is an oriented box; pairs whose
+bounds touch are checked face against face (3 mm plane tolerance, 2 cm minimum overlap, so slabs and wall
+pieces that merely abut are fine); every `Door`'s panel and whatever rides it (lattice bars) is checked a
+second time at its OPEN offset. Fix by insetting the moving piece (the portcullis is 0.2 m behind the wall's
+face and 0.1 m into the walls, floor and ceiling), by giving crossing pieces different thicknesses (conduits
+are 0.24 along x, 0.23 along z, 0.20 vertical, a break's stubs 0.22; the door wire pieces follow the same
+rule; a conduit's end runs 0.09 m past its point, SHORTER than any half-thickness, so an end face is always
+buried in the rail it meets) or by burying the overlap. Stairs: even steps are 2 cm narrower than odd ones.
+Lattice: the rails sit a hair behind the bars. A break's rails are 2 cm shorter than its base and 1 cm in from its
+edges. The Circuit
+Room's pit walls stop 2 cm under the floor's top and stand 2 cm proud into the pit; its gallery is 5 cm above
+the door frame's top under it; its south run leaves the generator southward (it used to share the east run's
+line). The lever prefab's post glow shell starts 2 cm above the post's foot. Only EXPOSED overlaps count: a
+probe a centimetre in front of the overlap must lie inside a RoomVolume and inside no other block. `/check-ship-pr` (`.claude/commands/check-ship-pr.md`) runs the validator before it
+rebases, pushes and opens a PR, and refuses to ship on any problem.
+
+### NarratorChat - `Game/UI/NarratorChat.cs`, `NarratorLines.cs` (round 29c)
+The game chat in the top right of the Run HUD (`chat-root` / `chat-lines` in `Run.uxml`, `.chat-line` in
+`Run.uss`; on the RunHud's UIDocument). The NARRATOR watches which room the local player is in (the
+`RoomVolume` child of each `LabyrinthRoom` in the director's list) and, after `firstHintSeconds` (60) in the
+same room, says the room's first line; after `secondHintSeconds` (120) the detailed one; the clock restarts
+on every room change. Lines are keyed by `PuzzleRoomProfile.puzzleId` (`start`, `gate_hall`, `pool` for rooms
+without one) in `NarratorLines`, sarcastic and a little mean, the facts of `docs/HINTS.md`. Goblins speak
+into the same chat: `NarratorChat.SayNear(NarratorChat.Goblin, line, at)` from the porter's refusal (both
+the local brain and the net puppet), heard within `goblinHearing` (40 m) of the camera. Lines fade after
+`lineSeconds` (30), at most `maxLines` (6). Purely local. **Place and wire:** the component on the RunHud
+object with `document`, `spawner` (PlayerSpawner) and `labyrinth` (LabyrinthDirector).
+
+### Thick partition and the grate inside it - Porter Room (round 29c)
+The Porter Room's partition is 1.2 m thick (three blocks: left, right, lintel over a 3 x 3.5 passage) with
+the `PorterGate` in the middle of the passage and `openOffset` 3.3 of its 3.5, so the raised grate is wholly
+inside the wall with its bottom edge just showing. Lever, wheel, chain, bars point and the grate's wire sit
+off the wall's BACK face (`backZ`).
+
+### Rope - the cut hides everything (round 29c)
+`Rope.ApplyCut` now disables every renderer under the rope that is not one of the loose ends: the glow
+round's `GlowShell_Cord` beside the cord used to stay behind as a bare purple rod.
 
 ### Deco_Cart - `Kit/Deco/Deco_Cart.prefab`
 A goblin hand cart: a 1.2 x 1 x 2.2 grey box with a plain box collider, static, World. An obstacle (it hides

@@ -31,6 +31,8 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] Renderer[] glowRenderers;
         [ColorUsage(false, true)][SerializeField] Color glowIdle = new Color(0.7f, 0.42f, 1.8f, 1f);
         [ColorUsage(false, true)][SerializeField] Color glowHeld = Color.black;
+        [Tooltip("A plate that can no longer do anything once this lever is on (the Gatehouse's hold plate after the winch is pinned): from then on it sits PRESSED with its glow off, whatever rests on it, and asks for nothing (owner, round 29b).")]
+        [OptionalRef][SerializeField] ImpactLever spentWhenLeverOn;
 
         [Header("Sound")]
         [Tooltip("The pad starting down under a weight: the wooden slide (any press, permanent or not).")]
@@ -49,6 +51,7 @@ namespace Pesky.Game
         Vector3 _padUp;
         float _mass;
         bool _latched;
+        bool _spentShown;
 
         public int SceneId { get { return id; } }
         public float MassThreshold { get { return massThreshold; } }
@@ -57,6 +60,8 @@ namespace Pesky.Game
         public bool IsLatching { get { return latching; } }
         /// <summary>Host-decided: a latching plate once latched, a hold plate while enough mass rests on it.</summary>
         public bool Held { get { return latching ? _latched : _held; } }
+        /// <summary>The plate no longer matters (its lever has taken over): pressed for good, glow off. A view fact, not a host one.</summary>
+        public bool IsSpent { get { return spentWhenLeverOn != null && spentWhenLeverOn.IsOn; } }
 
         void Awake()
         {
@@ -118,15 +123,22 @@ namespace Pesky.Game
             bool held = mass >= massThreshold;
             if (held == _held) return;
             _held = held;
-            Tint(held ? latchedColor : idleColor);
+            Tint(held || IsSpent ? latchedColor : idleColor);
         }
 
         void Update()
         {
+            // Spent (its lever took over): the pad goes down and stays, the glow goes out, like a plate that has latched.
+            bool spent = IsSpent;
+            if (spent != _spentShown)
+            {
+                _spentShown = spent;
+                Tint(spent || Held ? latchedColor : idleColor);
+            }
             if (pad == null) return;
             // The pad only goes down under ENOUGH weight: the press is the activation (a latching plate stays down; a hold
             // plate comes back up when the weight leaves). A single Dagger on a 10 kg plate does nothing visible.
-            bool pressed = _latched || _mass >= massThreshold;
+            bool pressed = _latched || spent || _mass >= massThreshold;
             if (pressed != _soundPressed)
             {
                 _soundPressed = pressed;

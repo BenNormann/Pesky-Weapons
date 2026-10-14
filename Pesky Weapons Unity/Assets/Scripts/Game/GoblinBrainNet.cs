@@ -199,7 +199,12 @@ namespace Pesky.Game
             if (next == State.Curious || next == State.Fetch) ShowMarker("?", curiousColor);
             else if (next == State.Alarmed) ShowMarker("!", alarmColor);
             else if (next == State.Asleep) ShowMarker("z", sleepColor);
-            else if (next == State.Refuse) ShowMarker(def != null ? def.porterRefuseLine : "it will not fit", curiousColor);
+            else if (next == State.Refuse)
+            {
+                string line = def != null ? def.porterRefuseLine : "it will not fit";
+                ShowMarker(line, curiousColor);
+                NarratorChat.SayNear(NarratorChat.Goblin, line, transform.position);
+            }
             else HideMarker();
         }
     }

@@ -238,6 +238,7 @@ namespace Pesky.Game
                         Stop();
                         SetState(State.Refuse);
                         ShowMarker(def.porterRefuseLine, curiousColor);
+                        NarratorChat.SayNear(NarratorChat.Goblin, def.porterRefuseLine, transform.position);   // the chat carries it: a line over a head behind a grate is unreadable (round 29c)
                         return true;
                     }
                     // Walk to the bars and wait there, looking.

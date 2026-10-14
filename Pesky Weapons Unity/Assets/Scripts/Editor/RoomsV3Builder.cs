@@ -192,12 +192,14 @@ namespace Pesky.Editor
             // THE PORTCULLIS at the passage's FRONT end: the Door prefab's panel grown to the passage (6 x 7 x 1), bars on both
             // faces, the slab itself the collider and a carving NavMesh obstacle (shut, no goblin paths through; open, it rises
             // clear). It slides UP into the solid part of the wall.
-            Door gate = DoorAt(play, DoorPrefab, "Portcullis", new Vector3(0f, 0f, wallN - 0.5f), Quaternion.identity);
+            // Inset 0.2 m behind the wall's face and 0.1 m INTO the walls, the floor and the ceiling, so none of its faces, shut
+            // or risen, ever lies in a face of the wall (the raised gate flickered against the wall's face: round 29c).
+            Door gate = DoorAt(play, DoorPrefab, "Portcullis", new Vector3(0f, 0f, wallN - 0.7f), Quaternion.identity);
             Transform gatePanel = gate.transform.Find("Panel");
             if (gatePanel != null)
             {
                 gatePanel.localPosition = new Vector3(0f, passH / 2f, 0f);
-                gatePanel.localScale = new Vector3(passW, passH, 1f);
+                gatePanel.localScale = new Vector3(passW + 0.2f, passH + 0.2f, 1f);
                 Lattice(gatePanel, 0.35f);
                 Lattice(gatePanel, -0.35f);
                 NavMeshModifier mod = gatePanel.gameObject.AddComponent<NavMeshModifier>();
@@ -213,11 +215,14 @@ namespace Pesky.Editor
 
             // THE SWITCHES: the hold plate in the front yard (8 kg: a Mace or a Hammer, held, not latched) and the pin lever on
             // the chamber's west wall (latching). Gate and counterweight are up while the plate is held OR the lever is on.
-            const float leverZ = 4f;
+            // The lever's handle is its +Z: on the chamber's west wall it faces +X, out into the room (owner, round 29c: it faced
+            // the wall), and sits south of the drum so the handle's swing is clear of it.
+            const float leverZ = 2.5f;
             PressurePlate hold = Plate(play, "Plate_Hold", new Vector3(-8f, 0f, 20f), 8f, false, false);
-            ImpactLever pin = Lever(play, "Lever_Pin", new Vector3(-passW / 2f + 0.6f, chamberY + 1.5f, wallS + leverZ), Quaternion.Euler(0f, -90f, 0f));
+            ImpactLever pin = Lever(play, "Lever_Pin", new Vector3(-passW / 2f + 0.6f, chamberY + 1.5f, wallS + leverZ), Quaternion.Euler(0f, 90f, 0f));
             HeldOrPinned(gate, hold, pin);
             HeldOrPinned(weight, hold, pin);
+            SetRef(hold, "spentWhenLeverOn", pin);   // once the winch is pinned the plate is spent: pressed for good, glow off (owner, round 29b)
 
             // THE WIRING. The junction sits on the passage's west wall, halfway through, at hand height. The hold plate's line:
             // along the front yard's floor to the gate wall, along the foot of its north face to the passage, along the foot of
@@ -245,7 +250,7 @@ namespace Pesky.Editor
             // the gate's line, up to the gate (just clear of the rising bars), then (inside the wall) up to the chamber and
             // into the drum.
             PowerJunction junction = Junction(play, geo, "Junction", junctionAt, new List<PowerLine> { holdLine, pinLine });
-            float gx = -1.5f, gy = passH - off, gateZ = wallN - 1f - 0.7f;   // the gate line stops 0.2 m short of the bars
+            float gx = -1.5f, gy = passH - off, gateZ = wallN - 1.2f - 0.5f;   // the gate line stops short of the bars
             List<Renderer> gateRails = new List<Renderer>();
             gateRails.Add(Conduit(geo, "Gate_0", new Vector3(px, gy, wallS + leverZ + 0.3f), new Vector3(px, gy, gateZ)));
             gateRails.Add(Conduit(geo, "Gate_1", new Vector3(px, gy, gateZ), new Vector3(gx, gy, gateZ)));
@@ -345,16 +350,19 @@ namespace Pesky.Editor
             // CARGO (round 29b): the lift is the goblins' freight elevator and it is loaded. Crates and barrels stand along the
             // deck's two side edges and ride with it (children of the ramp, NOT static); the middle lane stays clear for the
             // heavy's ride up the fallen ramp.
+            // Along the deck (local z, hinge at 0) the guide frames' uprights pass the deck's side edges at z 7.5..8.4 and
+            // 11.1..12.0 and the yokes lip its ends at 0..0.5 and 19..19.5: every piece keeps 1.5 m from those (no pocket
+            // between a crate and an upright at deck height).
             float side = platform / 2f - 1.25f;
-            DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_1", new Vector3(side, 0f, 6f), 0f);
-            DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_2", new Vector3(side, 0f, 7f), 0f);
-            DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_3", new Vector3(side, 1f, 6f), 0f);
-            DecoMoving(rampGo.transform, DecoBarrel, "Cargo_Barrel_1", new Vector3(side, 0f, 12f), 0f);
-            DecoMoving(rampGo.transform, DecoBarrel, "Cargo_Barrel_2", new Vector3(side, 0f, 12.8f), 0f);
-            DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_4", new Vector3(-side, 0f, 10f), 0f);
-            DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_5", new Vector3(-side, 0f, 11f), 0f);
-            DecoMoving(rampGo.transform, DecoBarrel, "Cargo_Barrel_3", new Vector3(-side, 0f, 4f), 0f);
-            DecoMoving(rampGo.transform, DecoBarrel, "Cargo_Barrel_4", new Vector3(-side, 0f, 4.8f), 0f);
+            DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_1", new Vector3(side, 0f, 4f), 0f);
+            DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_2", new Vector3(side, 0f, 5f), 0f);
+            DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_3", new Vector3(side, 1f, 4f), 0f);
+            DecoMoving(rampGo.transform, DecoBarrel, "Cargo_Barrel_1", new Vector3(side, 0f, 14f), 0f);
+            DecoMoving(rampGo.transform, DecoBarrel, "Cargo_Barrel_2", new Vector3(side, 0f, 14.8f), 0f);
+            DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_4", new Vector3(-side, 0f, 15f), 0f);
+            DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_5", new Vector3(-side, 0f, 16f), 0f);
+            DecoMoving(rampGo.transform, DecoBarrel, "Cargo_Barrel_3", new Vector3(-side, 0f, 2.5f), 0f);
+            DecoMoving(rampGo.transform, DecoBarrel, "Cargo_Barrel_4", new Vector3(-side, 0f, 3.3f), 0f);
 
             // Guide frames on the platform's four edge midpoints (blades stick in the uprights and climb them).
             float frameH = balconyY + 4f;   // tall posts: a blade climbs well past the platform and the ledge
@@ -433,8 +441,16 @@ namespace Pesky.Editor
             Transform geo, play;
             GameObject room = Shell("RoomV3_PorterRoom", W, L, H, 0f, out geo, out play);
 
-            DoorwayWall(geo, "Partition", partitionZ, W, partitionH, 0f, 0f);
+            // The partition is THICK (owner, round 29c): 1.2 m, with the grate in the middle of its 3 x 3.5 passage, so the
+            // raised grate is wholly inside the wall with only its bottom edge poking out under the lintel. The wall's faces are
+            // at partitionZ +- 0.6; what used to sit 0.6 off a 0.5 m wall now sits 0.6 off the back face.
+            const float partD = 1.2f;
+            float backZ = partitionZ - partD / 2f;
+            Block(geo, "Partition_Left", new Vector3(-W / 4f - 0.75f, partitionH / 2f, partitionZ), new Vector3(W / 2f - 1.5f, partitionH, partD), MWall);
+            Block(geo, "Partition_Right", new Vector3(W / 4f + 0.75f, partitionH / 2f, partitionZ), new Vector3(W / 2f - 1.5f, partitionH, partD), MWall);
+            Block(geo, "Partition_Lintel", new Vector3(0f, (3.5f + partitionH) / 2f, partitionZ), new Vector3(3f, partitionH - 3.5f, partD), MWall);
             GameObject gateGo = Kit(PorterGatePrefab, play, "GrateDoor", new Vector3(0f, 0f, partitionZ), Quaternion.identity);
+            SetVector3(gateGo.GetComponent<PorterGate>(), "openOffset", new Vector3(0f, 3.3f, 0f));   // up 3.3 of its 3.5: the bottom just shows
             PorterGate gate = gateGo.GetComponent<PorterGate>();
             SetArray(gate, "porters", new List<GoblinBrain>());   // nobody opens it but the lever inside
             ImpactLever bell = null;
@@ -456,38 +472,64 @@ namespace Pesky.Editor
                 SetFloat(bell, "minSpeed", 3f);
                 SetFloat(bell, "rearmSeconds", 0.3f);
             }
-            GameObject wheel = Cylinder(geo, "Wheel_GrateDoor", new Vector3(0f, 4f, partitionZ - 0.5f), new Vector3(0.8f, 0.15f, 0.8f), MMagicFlow, Quaternion.Euler(0f, 0f, 90f));
-            ChainRun(geo, "Chain_GrateDoor", new Vector3(0f, 3.8f, partitionZ - 0.4f), new Vector3(0f, partitionH + 0.5f, partitionZ));
+            GameObject wheel = Cylinder(geo, "Wheel_GrateDoor", new Vector3(0f, 4f, backZ - 0.3f), new Vector3(0.8f, 0.15f, 0.8f), MMagicFlow, Quaternion.Euler(0f, 0f, 90f));
+            ChainRun(geo, "Chain_GrateDoor", new Vector3(0f, 4.2f, backZ - 0.3f), new Vector3(0f, partitionH + 0.5f, backZ - 0.3f));
 
             // Inside: the lever that lifts the grate for good, the porter's stand, and where it stands at the bars.
-            ImpactLever lDoor = Lever(play, "Lever_Door", new Vector3(-3f, 1.5f, partitionZ - 0.6f), Quaternion.Euler(0f, 180f, 0f));
+            ImpactLever lDoor = Lever(play, "Lever_Door", new Vector3(-3f, 1.5f, backZ - 0.6f), Quaternion.Euler(0f, 180f, 0f));
             SetRef(gate, "latchLever", lDoor);
-            GameObject stand = Kit(StandPrefab, play, "Stand_Inside", new Vector3(3f, 0f, partitionZ - 7f), Quaternion.identity);
+            GameObject stand = Kit(StandPrefab, play, "Stand_Inside", new Vector3(-5.7f, 0f, -23f), Quaternion.identity);   // the far corner of the store, round the maze; its plinth 1.5 m off the west wall
             Transform slot = stand.transform.Find("Slot");
             GameObject bars = new GameObject("BarsPoint");
             bars.transform.SetParent(play, false);
-            bars.transform.localPosition = new Vector3(0f, 0f, partitionZ - 1.3f);
-            GameObject porter = Kit(PorterPrefab, play, "Goblin_Porter", new Vector3(0f, 0f, partitionZ - 5f), Quaternion.identity);
+            bars.transform.localPosition = new Vector3(0f, 0f, backZ - 1.3f);
+            GameObject porter = Kit(PorterPrefab, play, "Goblin_Porter", new Vector3(3f, 0f, -17.5f), Quaternion.identity);   // beside the bars, clear of the maze
             GoblinBrain porterBrain = porter.GetComponent<GoblinBrain>();
             if (slot != null) SetRef(porterBrain, "dropPoint", slot);
             SetRef(porterBrain, "bell", bell);
             SetRef(porterBrain, "barsPoint", bars.transform);
 
-            // DECORATION (round 29b): crate stacks and barrels in the hall break the sight lines between the entry, the two
-            // goblins and the grate; a shelf on the east wall. In the guard room the porter's stores: a shelf on the west wall and
-            // crates by the east wall, clear of the porter's walk from the bars to its stand.
-            Deco(geo, DecoCrate, "Hall_Crate_1", new Vector3(-4f, 0f, 10f), 0f);
-            Deco(geo, DecoCrate, "Hall_Crate_2", new Vector3(-3f, 0f, 10f), 0f);
-            Deco(geo, DecoCrate, "Hall_Crate_3", new Vector3(-4f, 1f, 10f), 0f);
+            // THE RECEIVING HALL (docs/level-design/porter-room-v5.md, round 29d). THE COUNTER: waist high (1 m, 1 m thick), 8 m in
+            // front of the grate, from the west wall to 3 m short of the east wall: the inspectors' side and the petitioners'. A
+            // weapon hops it; goblins go round its open east end, so the fight has a shape. Two crate stacks on its top break the
+            // sight line from the entry to the grate.
+            float counterZ = partitionZ + partD / 2f + 8f;
+            Block(geo, "Counter", new Vector3(-1.5f, 0.5f, counterZ), new Vector3(13f, 1f, 1f), MLedge);
+            Deco(geo, DecoCrate, "Counter_Crate_1", new Vector3(-5f, 1f, counterZ), 0f);
+            Deco(geo, DecoCrate, "Counter_Crate_2", new Vector3(-4f, 1f, counterZ), 0f);
+            Deco(geo, DecoCrate, "Counter_Crate_3", new Vector3(-5f, 2f, counterZ), 0f);
+            Deco(geo, DecoCrate, "Counter_Crate_4", new Vector3(2f, 1f, counterZ), 0f);
+            Deco(geo, DecoCrate, "Counter_Crate_5", new Vector3(2f, 2f, counterZ), 0f);
+            // THE RECEIVING DOCK: the hall's west side from the counter to the north wall, raised 0.5 m (a goblin riser: no step
+            // needed, a weapon hops it), clear of the entry doorway. The petitioners' queue: barrels along its edge, the cart at
+            // its head, a crate stack on it: cover for a Dagger to creep along while the inspectors hunt whatever moved last.
+            const float dockY = 0.5f, dockE = -2f;
+            float dockN = L / 2f, dockS = counterZ + 0.5f;
+            Block(geo, "Dock", new Vector3((-W / 2f + dockE) / 2f, dockY / 2f, (dockS + dockN) / 2f), new Vector3(dockE + W / 2f, dockY, dockN - dockS), MLedge);
+            Deco(geo, DecoBarrel, "Dock_Barrel_1", new Vector3(dockE - 0.45f, dockY, 14f), 0f);
+            Deco(geo, DecoBarrel, "Dock_Barrel_2", new Vector3(dockE - 0.45f, dockY, 14.8f), 0f);
+            Deco(geo, DecoBarrel, "Dock_Barrel_3", new Vector3(dockE - 0.45f, dockY, 4f), 0f);
+            Deco(geo, DecoBarrel, "Dock_Barrel_4", new Vector3(dockE - 0.45f, dockY, 4.8f), 0f);
+            Deco(geo, DecoCart, "Dock_Cart", new Vector3(-5.5f, dockY, 20.5f), 0f);
+            Deco(geo, DecoCrate, "Dock_Crate_1", new Vector3(-5.5f, dockY, 9f), 0f);
+            Deco(geo, DecoCrate, "Dock_Crate_2", new Vector3(-4.5f, dockY, 9f), 0f);
+            Deco(geo, DecoCrate, "Dock_Crate_3", new Vector3(-5.5f, dockY + 1f, 9f), 0f);
             Deco(geo, DecoBarrel, "Hall_Barrel_1", new Vector3(5f, 0f, 2f), 0f);
             Deco(geo, DecoBarrel, "Hall_Barrel_2", new Vector3(5.8f, 0f, 2f), 0f);
-            Deco(geo, DecoCrate, "Hall_Crate_4", new Vector3(-6f, 0f, -11f), 0f);
-            Deco(geo, DecoCrate, "Hall_Crate_5", new Vector3(-5f, 0f, -11f), 0f);
-            Deco(geo, DecoShelf, "Hall_Shelf", new Vector3(W / 2f - 0.3f, 0f, -5f), 90f);
-            Deco(geo, DecoShelf, "Guard_Shelf", new Vector3(-W / 2f + 0.3f, 0f, -20f), -90f);
-            Deco(geo, DecoCrate, "Guard_Crate_1", new Vector3(5f, 0f, -19f), 0f);
-            Deco(geo, DecoCrate, "Guard_Crate_2", new Vector3(6f, 0f, -19f), 0f);
-            Deco(geo, DecoCrate, "Guard_Crate_3", new Vector3(5f, 1f, -19f), 0f);
+            Deco(geo, DecoShelf, "Hall_Shelf", new Vector3(W / 2f - 0.3f, 0f, -1f), 90f);
+            // THE STORE behind the grate: shelves flush along both walls and a crate maze (stacks 1.5 m apart and from the walls)
+            // between the bars and the porter's stand in the far west corner, so the Dagger's carry goes round a corner through
+            // goods. The lever and the grate's wire stay on the partition's back face.
+            Deco(geo, DecoShelf, "Store_Shelf_W", new Vector3(-W / 2f + 0.3f, 0f, -19f), -90f);
+            Deco(geo, DecoShelf, "Store_Shelf_E", new Vector3(W / 2f - 0.3f, 0f, -22f), 90f);
+            Deco(geo, DecoCrate, "Store_Crate_1", new Vector3(-5f, 0f, -19.5f), 0f);
+            Deco(geo, DecoCrate, "Store_Crate_2", new Vector3(-5f, 1f, -19.5f), 0f);
+            Deco(geo, DecoCrate, "Store_Crate_3", new Vector3(-0.5f, 0f, -19.5f), 0f);
+            Deco(geo, DecoCrate, "Store_Crate_4", new Vector3(0.5f, 0f, -19.5f), 0f);
+            Deco(geo, DecoCrate, "Store_Crate_5", new Vector3(-0.5f, 1f, -19.5f), 0f);
+            Deco(geo, DecoCrate, "Store_Crate_6", new Vector3(4f, 0f, -19.5f), 0f);
+            Deco(geo, DecoCrate, "Store_Crate_7", new Vector3(2f, 0f, -22.5f), 0f);
+            Deco(geo, DecoCrate, "Store_Crate_8", new Vector3(2f, 1f, -22.5f), 0f);
 
             // Two goblins in the hall; their volume clears the exit. The guard room is the porter's own volume.
             GameObject hallGo = Kit(RoomVolumePrefab, play, "HallVolume", new Vector3(0f, H / 2f, (partitionZ + L / 2f) / 2f), Quaternion.identity);
@@ -495,8 +537,8 @@ namespace Pesky.Editor
             if (hallBox != null) { hallBox.center = Vector3.zero; hallBox.size = new Vector3(W, H, L / 2f - partitionZ); }
             RoomVolume hall = hallGo.GetComponent<RoomVolume>();
             SetString(hall, "roomName", "Hall");
-            GameObject gobA = Kit(GoblinPrefab, play, "Goblin_A", new Vector3(-4f, 0f, 6f), Quaternion.identity);
-            GameObject gobB = Kit(GoblinPrefab, play, "Goblin_B", new Vector3(4f, 0f, 0f), Quaternion.identity);
+            GameObject gobA = Kit(GoblinPrefab, play, "Goblin_A", new Vector3(-4f, 0f, -10f), Quaternion.identity);   // the inspectors start behind the counter
+            GameObject gobB = Kit(GoblinPrefab, play, "Goblin_B", new Vector3(3f, 0f, -12f), Quaternion.identity);
             SetArray(hall, "enemies", new List<GoblinBrain> { gobA.GetComponent<GoblinBrain>(), gobB.GetComponent<GoblinBrain>() });
             SetRef(gobA.GetComponent<GoblinBrain>(), "room", hall);
             SetRef(gobB.GetComponent<GoblinBrain>(), "room", hall);
@@ -511,7 +553,7 @@ namespace Pesky.Editor
             Line(play, "Line_Exit", exit, DoorMagic(room));
             // The grate's lever is a switch on a wire (round 29): its line runs up the partition's south face to the grate's
             // wheel, and the wheel lights when the lever is on. No sign.
-            float gz = partitionZ - 0.55f;
+            float gz = backZ - 0.3f;
             List<Renderer> grateRails = new List<Renderer>();
             grateRails.Add(Conduit(geo, "Grate_0", new Vector3(-3.6f, 1.2f, gz), new Vector3(-3.6f, 4f, gz)));
             grateRails.Add(Conduit(geo, "Grate_1", new Vector3(-3.6f, 4f, gz), new Vector3(-0.5f, 4f, gz)));
@@ -551,15 +593,18 @@ namespace Pesky.Editor
             Block(geo, "Floor_SouthWest", new Vector3((pitX0 - W / 2f) / 2f, -0.25f, (pitZ1 - L / 2f) / 2f), new Vector3(pitX0 + W / 2f, 0.5f, pitZ1 + L / 2f), MFloor);
             Block(geo, "Floor_SouthStrip", new Vector3((pitX0 + pitX1) / 2f, -0.25f, (pitZ0 - L / 2f) / 2f), new Vector3(pitX1 - pitX0, 0.5f, pitZ0 + L / 2f), MFloor);
             Block(geo, "Pit_Floor", new Vector3((pitX0 + pitX1) / 2f, -pitDepth - 0.25f, (pitZ0 + pitZ1) / 2f), new Vector3(pitX1 - pitX0 + 1f, 0.5f, pitZ1 - pitZ0 + 1f), MFloor);
-            Block(geo, "Pit_North", new Vector3((pitX0 + pitX1) / 2f, -pitDepth / 2f, pitZ1 + 0.25f), new Vector3(pitX1 - pitX0 + 1f, pitDepth, 0.5f), MWall);
-            Block(geo, "Pit_South", new Vector3((pitX0 + pitX1) / 2f, -pitDepth / 2f, pitZ0 - 0.25f), new Vector3(pitX1 - pitX0 + 1f, pitDepth, 0.5f), MWall);
-            Block(geo, "Pit_East", new Vector3(pitX1 + 0.25f, -pitDepth / 2f, (pitZ0 + pitZ1) / 2f), new Vector3(0.5f, pitDepth, pitZ1 - pitZ0 + 1f), MWall);
-            Block(geo, "Pit_West", new Vector3(pitX0 - 0.25f, -pitDepth / 2f, (pitZ0 + pitZ1) / 2f), new Vector3(0.5f, pitDepth, pitZ1 - pitZ0 + 1f), MWall);
+            // The pit's walls sit under the floor slabs: their tops stop 2 cm under the floor's top and their inner faces stand 2 cm
+            // proud into the pit, so no face of theirs lies in a face of a slab (round 29d, the coplanar check).
+            float pitWallY = -(pitDepth + 0.02f) / 2f, pitWallH = pitDepth - 0.02f;
+            Block(geo, "Pit_North", new Vector3((pitX0 + pitX1) / 2f, pitWallY, pitZ1 + 0.24f), new Vector3(pitX1 - pitX0 + 1f, pitWallH, 0.52f), MWall);
+            Block(geo, "Pit_South", new Vector3((pitX0 + pitX1) / 2f, pitWallY, pitZ0 - 0.24f), new Vector3(pitX1 - pitX0 + 1f, pitWallH, 0.52f), MWall);
+            Block(geo, "Pit_East", new Vector3(pitX1 + 0.24f, pitWallY, (pitZ0 + pitZ1) / 2f), new Vector3(0.52f, pitWallH, pitZ1 - pitZ0 + 1f), MWall);
+            Block(geo, "Pit_West", new Vector3(pitX0 - 0.24f, pitWallY, (pitZ0 + pitZ1) / 2f), new Vector3(0.52f, pitWallH, pitZ1 - pitZ0 + 1f), MWall);
             // Goblin steps down into the pit from its north edge (0.5 m risers), the top step against the pit's face: no pocket.
             Stair(geo, "PitSteps", new Vector3(-8f, -pitDepth, pitZ1 - 4 * 0.6f), Vector3.forward, 4, 0.5f, 0.6f, 2f);
 
             // The gallery: a mezzanine over the exit door along the south-east, with its own goblin stair up the east wall.
-            const float galleryY = 4f;
+            const float galleryY = 4.05f;   // 5 cm above the exit door frame's top (4.0) under it: no shared face
             Block(geo, "Gallery", new Vector3(6f, galleryY - 0.25f, -12f), new Vector3(12f, 0.5f, 6f), MLedge);
             Stair(geo, "GalleryStair", new Vector3(11f, 0f, -2f), Vector3.back, 8, 0.5f, 0.6f, 2f);
             Block(geo, "GalleryLanding", new Vector3(11f, galleryY / 2f, -7.9f), new Vector3(2f, galleryY, 2.2f), MLedge);
@@ -570,17 +615,19 @@ namespace Pesky.Editor
             Vector3 genTop = gen + new Vector3(0f, top, 0f);
 
             // Intact conduits, live for good. East: along the ceiling, down the east wall, north along it and out through the
-            // north wall. North: along the ceiling to the entry and down into the entry's own feed strip. South: along the
+            // north wall. North: along the ceiling to the entry and down the north wall into the entry door's own supply wire
+            // (SupplyY, where the prefab's Supply_In turns into the wall). South: south along the ceiling, a jog west, on to the
+            // south wall west of the gallery and down it through the floor (it used to share the east run's line). The rest: along the
             // ceiling, down the south wall through the gallery's slab and out through the floor.
             Conduit(geo, "Live_E_1", genTop, new Vector3(ex, top, gen.z));
             Conduit(geo, "Live_E_2", new Vector3(ex, top, gen.z), new Vector3(ex, rail, gen.z));
             Conduit(geo, "Live_E_3", new Vector3(ex, rail, gen.z), new Vector3(ex, rail, L / 2f + 0.2f));
-            Conduit(geo, "Live_N_1", genTop, new Vector3(-1.73f, top, gen.z));
-            Conduit(geo, "Live_N_2", new Vector3(-1.73f, top, gen.z), new Vector3(-1.73f, top, L / 2f - 0.52f));
-            Conduit(geo, "Live_N_3", new Vector3(-1.73f, top, L / 2f - 0.52f), new Vector3(-1.73f, 3.4f, L / 2f - 0.52f));
-            Conduit(geo, "Live_S_1", genTop, new Vector3(9.5f, top, gen.z));
-            Conduit(geo, "Live_S_2", new Vector3(9.5f, top, gen.z), new Vector3(9.5f, top, sz));
-            Conduit(geo, "Live_S_3", new Vector3(9.5f, top, sz), new Vector3(9.5f, -0.3f, sz));
+            Conduit(geo, "Live_N_1", genTop, new Vector3(0f, top, L / 2f - off));
+            Conduit(geo, "Live_N_2", new Vector3(0f, top, L / 2f - off), new Vector3(0f, SupplyY, L / 2f - off));
+            Conduit(geo, "Live_S_1", genTop, new Vector3(0f, top, gen.z - 3f));
+            Conduit(geo, "Live_S_2", new Vector3(0f, top, gen.z - 3f), new Vector3(-1.5f, top, gen.z - 3f));
+            Conduit(geo, "Live_S_3", new Vector3(-1.5f, top, gen.z - 3f), new Vector3(-1.5f, top, sz));
+            Conduit(geo, "Live_S_4", new Vector3(-1.5f, top, sz), new Vector3(-1.5f, -0.3f, sz));
 
             // THE DEAD RUN. Stretch 0: ceiling west, down the west wall, south along it at hip height, over the pit's lip,
             // down the pit's north-west corner and along the pit's west wall at floor level into BREAK 1 (flush to that wall).
@@ -1123,7 +1170,7 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
                 bar.name = "Rail_" + i;
                 Object.DestroyImmediate(bar.GetComponent<Collider>());
                 bar.transform.SetParent(panel, false);
-                bar.transform.localPosition = new Vector3(0f, -0.4f + i * 0.4f, side);
+                bar.transform.localPosition = new Vector3(0f, -0.4f + i * 0.4f, side * 0.9f);   // a hair behind the bars: no shared face (round 29c)
                 bar.transform.localScale = new Vector3(1f, 0.04f, 0.3f);
                 Paint(bar, MMetal);
             }
@@ -1191,11 +1238,15 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
         /// point, a door's feed strip or a wall buries its end. No gaps. Returns its renderer so a Circuit can light it.</summary>
         static Renderer Conduit(Transform geo, string name, Vector3 from, Vector3 to)
         {
-            const float half = 0.11f;
+            const float half = 0.09f;   // past each point; SHORTER than any rail's half-thickness (0.10..0.12), so an end face is always buried in the rail it meets
             Vector3 n = (to - from).normalized;
             Vector3 a = from - n * half, b = to + n * half;
             Vector3 up = Mathf.Abs(n.y) > 0.9f ? Vector3.forward : Vector3.up;
-            GameObject railGo = Block(geo, name, (a + b) / 2f, new Vector3(0.22f, 0.22f, (b - a).magnitude), MMagicFlow, Quaternion.LookRotation(n, up), true);
+            // The cross-section depends on the rail's axis (x 0.24, z 0.23, y 0.20; a break's stubs are 0.22), so where two rails
+            // cross or one ends inside another no two faces share a plane: coplanar faces flicker (round 29c, the validator's
+            // coplanar check). The MagicDoor prefab's wire pieces follow the same rule.
+            float thick = Mathf.Abs(n.y) > 0.9f ? 0.20f : (Mathf.Abs(n.x) >= Mathf.Abs(n.z) ? 0.24f : 0.23f);
+            GameObject railGo = Block(geo, name, (a + b) / 2f, new Vector3(thick, thick, (b - a).magnitude), MMagicFlow, Quaternion.LookRotation(n, up), true);
             Collider c = railGo.GetComponent<Collider>();
             if (c != null) Object.DestroyImmediate(c);
             return railGo.GetComponent<Renderer>();
@@ -1213,7 +1264,9 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
             if (a != null) a.localPosition = new Vector3(-gap / 2f, a.localPosition.y, 0f);
             if (b != null) b.localPosition = new Vector3(gap / 2f, b.localPosition.y, 0f);
             float len = gap + 0.65f;
-            foreach (string nm in new[] { "Base", "Rail_N", "Rail_S" }) { Transform t = go.transform.Find(nm); if (t != null) t.localScale = new Vector3(len, t.localScale.y, t.localScale.z); }
+            foreach (string nm in new[] { "Base", "Rail_N", "Rail_S" }) { Transform t = go.transform.Find(nm); if (t != null) t.localScale = new Vector3(nm == "Base" ? len : len - 0.02f, t.localScale.y, t.localScale.z); }   // rails 2 cm shorter: no shared end face
+            // The side rails sit a centimetre in from the base's edges too, so their outer faces do not lie in the base's sides.
+            foreach (string nm in new[] { "Rail_N", "Rail_S" }) { Transform t = go.transform.Find(nm); if (t != null) { Vector3 lp = t.localPosition; t.localPosition = new Vector3(lp.x, lp.y, Mathf.Sign(lp.z) * Mathf.Max(0f, Mathf.Abs(lp.z) - 0.01f)); } }
             BoxCollider trig = go.GetComponent<BoxCollider>();
             if (trig != null) trig.size = new Vector3(gap + 0.85f, trig.size.y, trig.size.z);
             Transform sparks = go.transform.Find("Sparks");
@@ -1252,7 +1305,10 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
             {
                 float h = k * rise;
                 Vector3 centre = foot + dir.normalized * ((k - 0.5f) * tread) + Vector3.up * (h / 2f);
-                Vector3 scale = alongZ ? new Vector3(width, h, tread) : new Vector3(tread, h, width);
+                // Every step is a full-height box, so neighbours' side faces would lie in the same plane and flicker: even
+                // steps are 2 cm narrower (round 29c).
+                float w = k % 2 == 0 ? width - 0.02f : width;
+                Vector3 scale = alongZ ? new Vector3(w, h, tread) : new Vector3(tread, h, w);
                 Block(stair.transform, "Step_" + k, centre, scale, MLedge);
             }
         }

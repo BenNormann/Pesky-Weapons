@@ -81,7 +81,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 5.6, z: 0.11}
-  m_LocalScale: {x: 0.22, y: 0.22, z: 0.82}
+  m_LocalScale: {x: 0.23, y: 0.23, z: 0.82}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1539799612787156733}
@@ -625,7 +625,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -1.73, y: 1.75, z: 0.52}
-  m_LocalScale: {x: 0.22, y: 3.5, z: 0.22}
+  m_LocalScale: {x: 0.2, y: 3.5, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1539799612787156733}
@@ -714,8 +714,8 @@ Transform:
   m_GameObject: {fileID: 3919047062199548582}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 3.61, z: 0.52}
-  m_LocalScale: {x: 3.68, y: 0.22, z: 0.22}
+  m_LocalPosition: {x: 0, y: 3.62, z: 0.52}
+  m_LocalScale: {x: 3.7, y: 0.24, z: 0.24}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1539799612787156733}
@@ -1028,8 +1028,8 @@ Transform:
   m_GameObject: {fileID: 7131695004687766556}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 4.61, z: 0.52}
-  m_LocalScale: {x: 0.22, y: 2.2, z: 0.22}
+  m_LocalPosition: {x: 0, y: 4.63, z: 0.52}
+  m_LocalScale: {x: 0.2, y: 2.24, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1539799612787156733}
@@ -1189,6 +1189,7 @@ MonoBehaviour:
   twin: {fileID: 0}
   gate: {fileID: 0}
   planeVisual: {fileID: 9132480956003491950}
+  showPlaneWhenShut: 0
   gridDoor: 1
   labyrinth: {fileID: 0}
   room: {fileID: 0}
@@ -1538,7 +1539,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1.73, y: 1.75, z: 0.52}
-  m_LocalScale: {x: 0.22, y: 3.5, z: 0.22}
+  m_LocalScale: {x: 0.2, y: 3.5, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1539799612787156733}
