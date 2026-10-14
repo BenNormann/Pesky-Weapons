@@ -27,6 +27,10 @@ namespace Pesky.Game
         [SerializeField] Renderer padRenderer;
         [SerializeField] Color idleColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color latchedColor = new Color(0.24f, 0.63f, 0.27f, 1f);
+        [Tooltip("Thin emissive trims around the pad's border. Soft gold while idle, green once held.")]
+        [OptionalRef][SerializeField] Renderer[] glowRenderers;
+        [ColorUsage(false, true)][SerializeField] Color glowIdle = new Color(0.9f, 0.68f, 0.2f, 1f);
+        [ColorUsage(false, true)][SerializeField] Color glowHeld = new Color(0.45f, 1.6f, 0.55f, 1f);
 
         readonly List<WeaponBody> _on = new List<WeaponBody>();
         MaterialPropertyBlock _mpb;
@@ -113,7 +117,12 @@ namespace Pesky.Game
 
         void Tint(Color c)
         {
-            if (padRenderer == null || _mpb == null) return;
+            if (_mpb == null) return;
+            bool held = c == latchedColor;
+            if (glowRenderers != null)
+                for (int i = 0; i < glowRenderers.Length; i++)
+                    GlowLook.SetEmission(glowRenderers[i], _mpb, held ? glowHeld : glowIdle);
+            if (padRenderer == null) return;
             padRenderer.GetPropertyBlock(_mpb);
             _mpb.SetColor("_BaseColor", c);
             _mpb.SetColor("_Color", c);

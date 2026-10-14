@@ -44,6 +44,10 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] Renderer handleRenderer;
         [SerializeField] Color offColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color onColor = new Color(0.24f, 0.63f, 0.27f, 1f);
+        [Tooltip("Thin emissive trims (base frame, handle tip). Soft gold while off, green while on.")]
+        [OptionalRef][SerializeField] Renderer[] glowRenderers;
+        [ColorUsage(false, true)][SerializeField] Color glowOff = new Color(0.9f, 0.68f, 0.2f, 1f);
+        [ColorUsage(false, true)][SerializeField] Color glowOn = new Color(0.45f, 1.6f, 0.55f, 1f);
 
         MaterialPropertyBlock _mpb;
         bool _on;
@@ -110,8 +114,12 @@ namespace Pesky.Game
         {
             if (handle != null)
                 handle.localRotation = Quaternion.Euler(Mathf.Lerp(offAngle, onAngle, _shown), 0f, 0f);
-            if (handleRenderer == null || _mpb == null) return;
+            if (_mpb == null) return;
             if (!force && !Mathf.Approximately(_shown, 0f) && !Mathf.Approximately(_shown, 1f)) return;
+            if (glowRenderers != null)
+                for (int i = 0; i < glowRenderers.Length; i++)
+                    GlowLook.SetEmission(glowRenderers[i], _mpb, Color.Lerp(glowOff, glowOn, _shown));
+            if (handleRenderer == null) return;
             Color c = Color.Lerp(offColor, onColor, _shown);
             handleRenderer.GetPropertyBlock(_mpb);
             _mpb.SetColor("_BaseColor", c);
