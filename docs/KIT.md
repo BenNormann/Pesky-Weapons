@@ -350,7 +350,7 @@ black). Additive only: the post and handle keep their own materials.
 
 **Sound (`Sfx`, round 29).** One-shot 3D clips from a pooled set of AudioSources (`Scripts/Game/Sfx.cs`), played by
 the state change every peer applies, so everybody hears it where it happened. Clips in `Assets/Audio/SFX/`:
-`plate_slide` (a plate's pad starting down, any press), `latch_flick` (the metal flick when a press becomes
+`plate_slide` (a plate's pad starting down: only under enough weight, the press IS the activation), `latch_flick` (the metal flick when a press becomes
 permanent, layered on the slide), `lever_clunk` (a lever flipping either way), `magic_crystal` (a CircuitBridge
 closing and the MagicBridge coming alive, full; quietly behind every plate press and lever flip, `magicVolume`
 0.2). Fields on `PressurePlate` (`pressSound`, `latchSound`, `magicSound`), `ImpactLever` (`flipSound`,

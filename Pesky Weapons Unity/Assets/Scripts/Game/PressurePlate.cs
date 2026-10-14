@@ -124,7 +124,9 @@ namespace Pesky.Game
         void Update()
         {
             if (pad == null) return;
-            bool pressed = _latched || _mass > 0.01f;
+            // The pad only goes down under ENOUGH weight: the press is the activation (a latching plate stays down; a hold
+            // plate comes back up when the weight leaves). A single Dagger on a 10 kg plate does nothing visible.
+            bool pressed = _latched || _mass >= massThreshold;
             if (pressed != _soundPressed)
             {
                 _soundPressed = pressed;
