@@ -44,10 +44,12 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] Renderer handleRenderer;
         [SerializeField] Color offColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color onColor = new Color(0.24f, 0.63f, 0.27f, 1f);
-        [Tooltip("Glow pieces: handle tip, floor halo, edge shells. Soft gold while off, green while on.")]
+        [Tooltip("Glow pieces: handle tip, floor halo, edge shells. The labyrinth's purple while off, surging brighter while on.")]
         [OptionalRef][SerializeField] Renderer[] glowRenderers;
-        [ColorUsage(false, true)][SerializeField] Color glowOff = new Color(1.6f, 0.95f, 0.28f, 1f);
-        [ColorUsage(false, true)][SerializeField] Color glowOn = new Color(0.45f, 1.4f, 0.5f, 1f);
+        [Tooltip("The floor halo: shown only when the lever stands on a floor (its up is the world's up). On a wall it looked wrong.")]
+        [OptionalRef][SerializeField] Renderer floorHalo;
+        [ColorUsage(false, true)][SerializeField] Color glowOff = new Color(0.7f, 0.42f, 1.8f, 1f);
+        [ColorUsage(false, true)][SerializeField] Color glowOn = new Color(1.5f, 1.2f, 2.8f, 1f);
 
         MaterialPropertyBlock _mpb;
         bool _on;
@@ -70,6 +72,8 @@ namespace Pesky.Game
             _mpb = new MaterialPropertyBlock();
             _on = startOn;
             _shown = _on ? 1f : 0f;
+            // The floor halo spills light across a floor; on a wall-mounted lever it hung in the air, so it is floor-only.
+            if (floorHalo != null) floorHalo.enabled = Vector3.Dot(transform.up, Vector3.up) > 0.9f;
             ApplyLook(true);
         }
 
@@ -118,7 +122,7 @@ namespace Pesky.Game
             if (!force && !Mathf.Approximately(_shown, 0f) && !Mathf.Approximately(_shown, 1f)) return;
             if (glowRenderers != null)
                 for (int i = 0; i < glowRenderers.Length; i++)
-                    GlowLook.SetEmission(glowRenderers[i], _mpb, Color.Lerp(glowOff, glowOn, _shown));
+                    GlowLook.Set(glowRenderers[i], _mpb, Color.Lerp(glowOff, glowOn, _shown), Mathf.Lerp(1f, GlowLook.ActiveLive, _shown));
             if (handleRenderer == null) return;
             Color c = Color.Lerp(offColor, onColor, _shown);
             handleRenderer.GetPropertyBlock(_mpb);

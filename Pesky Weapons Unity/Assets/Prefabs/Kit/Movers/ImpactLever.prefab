@@ -180,8 +180,9 @@ MonoBehaviour:
   - {fileID: 571883906709674613}
   - {fileID: 4662684553860768574}
   - {fileID: 6360286737349039538}
-  glowOff: {r: 1.6, g: 0.95, b: 0.28, a: 1}
-  glowOn: {r: 0.45, g: 1.4, b: 0.5, a: 1}
+  floorHalo: {fileID: 571883906709674613}
+  glowOff: {r: 0.7, g: 0.42, b: 1.8, a: 1}
+  glowOn: {r: 1.5, g: 1.2, b: 2.8, a: 1}
 --- !u!1 &1827491073083591798
 GameObject:
   m_ObjectHideFlags: 0
@@ -552,7 +553,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 6e696ba33a02d4ff8a39be48066fbbbc, type: 2}
+  - {fileID: 2100000, guid: c4806a8078864cd4cb57eb2e81b9d703, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

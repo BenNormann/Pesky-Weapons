@@ -35,6 +35,6 @@ Material:
     - _Pulse: 0.25
     - _PulseSpeed: 2.2
     m_Colors:
-    - _EmissionColor: {r: 1.6, g: 0.95, b: 0.28, a: 1}
+    - _EmissionColor: {r: 0.7, g: 0.42, b: 1.8, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
