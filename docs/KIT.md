@@ -343,7 +343,8 @@ becomes the **Winch**: turning on calls `RequestSetLift(thatLift, true)`. `rearm
 is one flip. A door follows a lever through the new `DoorCondition.Mode.LeverOn` (`Door_Lever.prefab`).
 **Tunables.** `minSpeed` 4, `latching` true, `startOn` false, `rearmSeconds` 0.5, handle `offAngle` -35 /
 `onAngle` 35 / `swingSeconds` 0.25. **Look.** Thin `M_ActionGlow` frame round the post foot (`GlowBase_*`), a band on the handle tip
-(`HandlePivot/GlowTip`) and a soft floor halo (`GlowHalo`, `Pesky/ActionGlow`): warm amber while off, green while on (`glowOff` / `glowOn`). **Host state.** on/off.
+(`HandlePivot/GlowTip`), a soft floor halo (`GlowHalo`, `Pesky/ActionGlow`) and a glowing-edge shell over the
+whole lever (`GlowShell_Post`, `HandlePivot/GlowShell_Handle`, `M_ActionGlowShell`): warm amber while off, green while on (`glowOff` / `glowOn`). **Host state.** on/off.
 **Place and wire.** World layer, NOT static. `id` (1801+), `authority`, and `lift` for a winch; register in
 `levers`. **Room 19's winch:** wire its `lift` to the Lift with id 1501 and leave `latching` on.
 
