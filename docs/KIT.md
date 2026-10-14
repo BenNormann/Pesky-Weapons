@@ -56,7 +56,7 @@ floor culler). See `docs/CLEANUP-AUDIT.md`.
 | `Door.prefab` + variants `Door_AlwaysOpen` / `Door_RoomCleared` / `Door_Plate` / `Door_Key` / `Door_Sealed` | Solid World-layer panel (blocks weapons and souls). Opens when its `DoorCondition` is satisfied; opening LATCHES. | `Door.openOffset` (3.1,0,0), `slideSeconds` 0.8; `DoorCondition.mode`, `room`, `plate`, **`keyId`** | open flag | Root on the doorway's floor centre. Wire `authority`; `room` / `plate` / `keyId` by mode. Register in `doors`. |
 | `DoorPrompt` (component, Trigger layer box in front of a door) | Sensor only: while a possessed weapon stands in it and the door is shut the HUD says what the door wants ("KEY 1  NEEDED"). | box size | none | Wire `authority`, `door`. |
 | `Key.prefab` (`KeyPickup`) | Touch pickup on the Pickup layer (weapons only, never a free soul). **Keys are party inventory by key id (int), never lost**; several can be held. `DoorCondition.PartyHasKey` asks for one `keyId`. HUD lists them ("KEY 1   KEY 2"). | **`keyId`**, spin / bob | taken flag; party key set in `WorldAuthority` (`HasKey(id)`, `HeldKeys`) | Wire `authority`, set `keyId`. Register in `keys`. Zone1: Room3 key = key 1, `Door_Key` = key 1. |
-| `Plate.prefab` (`PressurePlate`) | Sums the mass of slow weapons in its trigger; at the threshold it LATCHES. | `threshold` 10, `restSpeed` 1.5 | latched flag | Register in `plates`; point a `Door_Plate` at it. |
+| `Plate.prefab` (`PressurePlate`) | Sums the mass of slow weapons in its trigger; at the threshold it LATCHES. Glow, additive only (the pad keeps its own material): a short rising sheen off each edge (`Pad/GlowSheen_*`, sinks with the pad) and a soft floor halo (`GlowHalo`), both `Pesky/ActionGlow` in the labyrinth's purple with the magic's drifting specks and a slow breathing pulse; GONE once held (`glowHeld` is black: a done plate asks for nothing). | `threshold` 10, `restSpeed` 1.5 | latched flag | Register in `plates`; point a `Door_Plate` at it. |
 | `HammerStand.prefab`, `WeaponRack.prefab` (7 slots), `WeaponRack_NoOrb` (6), **`WeaponRack_Start`** (3: `Slot_1` Sword, `Slot_2` Dagger, `Slot_5` Mace) | `WeaponHomeSlot`s: a weapon is authored on its slot, is held kinematic there until first touched and respawns there 10 s after breaking. | `WeaponBody.respawnDelay` 10 | weapon HP / broken / modifiers | Place the weapon prefab under `Gameplay/Weapons`, wire `WeaponBody.homeSlot`, register in `weapons`. |
 | `Anvil.prefab` (`AnvilStation`) | Out of combat, hold E 2 s inside the trigger = full HP. | `chargeSeconds` 2 | none (HP is on the weapon) | Register in `anvils`. |
 | `RunePickup.prefab` | Touch = the `ModifierDef` attaches to THAT weapon (lost when it breaks). Can wait for a room to be cleared. | `modifier` | taken flag | Register in `runes`. |
@@ -342,7 +342,22 @@ care. `latching = false` toggles on every hit; `latching = true` turns on once, 
 becomes the **Winch**: turning on calls `RequestSetLift(thatLift, true)`. `rearmSeconds` 0.5 means one landing
 is one flip. A door follows a lever through the new `DoorCondition.Mode.LeverOn` (`Door_Lever.prefab`).
 **Tunables.** `minSpeed` 4, `latching` true, `startOn` false, `rearmSeconds` 0.5, handle `offAngle` -35 /
-`onAngle` 35 / `swingSeconds` 0.25. **Host state.** on/off.
+`onAngle` 35 / `swingSeconds` 0.25. **Look.** A soft floor halo (`GlowHalo`, `Pesky/ActionGlow`; `floorHalo`,
+drawn only when the lever stands upright AND a floor is right under its base, so a lever on a wall, upright or
+sideways, shows none) and a glowing-edge shell over the whole lever (`GlowShell_Post`, `HandlePivot/GlowShell_Handle`,
+`M_ActionGlowShell`): the labyrinth's purple with the magic's drifting specks while off, GONE while on (`glowOn` is
+black). Additive only: the post and handle keep their own materials.
+
+**Sound (`Sfx`, round 29).** One-shot 3D clips from a pooled set of AudioSources (`Scripts/Game/Sfx.cs`), played by
+the state change every peer applies, so everybody hears it where it happened. Clips in `Assets/Audio/SFX/`:
+`plate_slide` (a plate's pad starting down: only under enough weight, the press IS the activation), `latch_flick` (the metal flick when a press becomes
+permanent, layered on the slide), `lever_clunk` (a lever flipping either way), `magic_crystal` (a CircuitBridge
+closing and the MagicBridge coming alive, full; quietly behind every plate press and lever flip, `magicVolume`
+0.2). Fields on `PressurePlate` (`pressSound`, `latchSound`, `magicSound`), `ImpactLever` (`flipSound`,
+`magicSound`), `CircuitBridge` (`connectSound`), `MagicBridge` (`liveSound`), each with a volume. **Every other action piece glows the same purple, stateless** (the materials' own colour, no
+script): a glowing-edge shell on the Rope's cord, the CrackedWall's slab, the Anvil's top and the WoodBlock; a floor halo
+under the CircuitBridge's cradle, the Pot and each MassPan of the CounterweightPair. Doors, magnets and pickups keep
+their own looks. **Host state.** on/off.
 **Place and wire.** World layer, NOT static. `id` (1801+), `authority`, and `lift` for a winch; register in
 `levers`. **Room 19's winch:** wire its `lift` to the Lift with id 1501 and leave `latching` on.
 

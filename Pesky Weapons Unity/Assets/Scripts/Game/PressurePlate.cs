@@ -23,10 +23,26 @@ namespace Pesky.Game
         [SerializeField] float restSpeed = 1.5f;
         [Tooltip("The pad that sinks while the plate is pressed.")]
         [SerializeField] Transform pad;
-        [SerializeField] float pressDepth = 0.06f;
+        [SerializeField] float pressDepth = 0.14f;   // the pad's height less a centimetre: a held plate sits a hair above the floor, never flush (coplanar faces flicker)
         [SerializeField] Renderer padRenderer;
         [SerializeField] Color idleColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color latchedColor = new Color(0.24f, 0.63f, 0.27f, 1f);
+        [Tooltip("Glow pieces: floor halo, rising sheen (both additive: the pad itself keeps its own material). The labyrinth's purple with drifting specks while idle; gone once held (a done plate asks for nothing).")]
+        [OptionalRef][SerializeField] Renderer[] glowRenderers;
+        [ColorUsage(false, true)][SerializeField] Color glowIdle = new Color(0.7f, 0.42f, 1.8f, 1f);
+        [ColorUsage(false, true)][SerializeField] Color glowHeld = Color.black;
+
+        [Header("Sound")]
+        [Tooltip("The pad starting down under a weight: the wooden slide (any press, permanent or not).")]
+        [OptionalRef][SerializeField] AudioClip pressSound;
+        [Tooltip("The latch: the metal flick, layered on the slide when the press becomes permanent.")]
+        [OptionalRef][SerializeField] AudioClip latchSound;
+        [Tooltip("The labyrinth's magic, quietly behind every circuit piece.")]
+        [OptionalRef][SerializeField] AudioClip magicSound;
+        [Range(0f, 1f)][SerializeField] float pressVolume = 0.8f;
+        [Range(0f, 1f)][SerializeField] float latchVolume = 0.9f;
+        [Range(0f, 1f)][SerializeField] float magicVolume = 0.2f;
+        bool _soundPressed;
 
         readonly List<WeaponBody> _on = new List<WeaponBody>();
         MaterialPropertyBlock _mpb;
@@ -94,6 +110,8 @@ namespace Pesky.Game
                 {
                     _latched = true;
                     Tint(latchedColor);
+                    // Permanent: the flick that locks it, over the slide the pad's own descent plays.
+                    Sfx.Play(latchSound, transform.position, latchVolume);
                 }
                 return;
             }
@@ -106,14 +124,32 @@ namespace Pesky.Game
         void Update()
         {
             if (pad == null) return;
-            float target = (_latched || _mass > 0.01f) ? pressDepth : 0f;
+            // The pad only goes down under ENOUGH weight: the press is the activation (a latching plate stays down; a hold
+            // plate comes back up when the weight leaves). A single Dagger on a 10 kg plate does nothing visible.
+            bool pressed = _latched || _mass >= massThreshold;
+            if (pressed != _soundPressed)
+            {
+                _soundPressed = pressed;
+                // The pad starting down: the wooden slide, the magic quietly behind it. Coming back up is silent.
+                if (pressed)
+                {
+                    Sfx.Play(pressSound, transform.position, pressVolume);
+                    Sfx.Play(magicSound, transform.position, magicVolume);
+                }
+            }
+            float target = pressed ? pressDepth : 0f;
             Vector3 want = _padUp - Vector3.up * target;
             pad.localPosition = Vector3.MoveTowards(pad.localPosition, want, Time.deltaTime * 0.4f);
         }
 
         void Tint(Color c)
         {
-            if (padRenderer == null || _mpb == null) return;
+            if (_mpb == null) return;
+            bool held = c == latchedColor;
+            if (glowRenderers != null)
+                for (int i = 0; i < glowRenderers.Length; i++)
+                    GlowLook.Set(glowRenderers[i], _mpb, held ? glowHeld : glowIdle, held ? GlowLook.ActiveLive : 1f);
+            if (padRenderer == null) return;
             padRenderer.GetPropertyBlock(_mpb);
             _mpb.SetColor("_BaseColor", c);
             _mpb.SetColor("_Color", c);

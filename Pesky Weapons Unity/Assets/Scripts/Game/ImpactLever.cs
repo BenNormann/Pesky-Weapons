@@ -44,6 +44,20 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] Renderer handleRenderer;
         [SerializeField] Color offColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color onColor = new Color(0.24f, 0.63f, 0.27f, 1f);
+        [Tooltip("Glow pieces: floor halo, edge shells. The labyrinth's purple with drifting specks while off; gone while on (a done lever asks for nothing).")]
+        [OptionalRef][SerializeField] Renderer[] glowRenderers;
+        [Tooltip("The floor halo: shown only when the lever stands upright on a floor (its up is the world's up AND a floor is right under its base). A lever on a wall, upright or sideways, shows none.")]
+        [OptionalRef][SerializeField] Renderer floorHalo;
+        [ColorUsage(false, true)][SerializeField] Color glowOff = new Color(0.7f, 0.42f, 1.8f, 1f);
+        [ColorUsage(false, true)][SerializeField] Color glowOn = Color.black;
+
+        [Header("Sound")]
+        [Tooltip("The flip, either way: the reverberant metal clunk.")]
+        [OptionalRef][SerializeField] AudioClip flipSound;
+        [Tooltip("The labyrinth's magic, quietly behind every circuit piece.")]
+        [OptionalRef][SerializeField] AudioClip magicSound;
+        [Range(0f, 1f)][SerializeField] float flipVolume = 0.9f;
+        [Range(0f, 1f)][SerializeField] float magicVolume = 0.2f;
 
         MaterialPropertyBlock _mpb;
         bool _on;
@@ -60,6 +74,16 @@ namespace Pesky.Game
         public long OnMs { get { return _onMs; } }
         /// <summary>True while an impact would be ignored because the lever has only just flipped.</summary>
         public bool Rearming { get { return Time.time < _rearmAt; } }
+
+        void Start()
+        {
+            // The floor halo spills light across a floor. A lever on a wall, whether it stands upright on a bracket or
+            // sticks out sideways, has no floor under its base, so it shows none (the owner's review, twice).
+            if (floorHalo == null) return;
+            bool upright = Vector3.Dot(transform.up, Vector3.up) > 0.9f;
+            bool floorBelow = upright && Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, 0.35f, 1 << 8, QueryTriggerInteraction.Ignore);
+            floorHalo.enabled = floorBelow;
+        }
 
         void Awake()
         {
@@ -93,6 +117,11 @@ namespace Pesky.Game
         public void ApplySet(bool on)
         {
             if (on && !_on && clock != null) _onMs = clock.Ms;
+            if (on != _on)
+            {
+                Sfx.Play(flipSound, transform.position, flipVolume);
+                Sfx.Play(magicSound, transform.position, magicVolume);
+            }
             _on = on;
             _rearmAt = Time.time + rearmSeconds;
         }
@@ -110,8 +139,12 @@ namespace Pesky.Game
         {
             if (handle != null)
                 handle.localRotation = Quaternion.Euler(Mathf.Lerp(offAngle, onAngle, _shown), 0f, 0f);
-            if (handleRenderer == null || _mpb == null) return;
+            if (_mpb == null) return;
             if (!force && !Mathf.Approximately(_shown, 0f) && !Mathf.Approximately(_shown, 1f)) return;
+            if (glowRenderers != null)
+                for (int i = 0; i < glowRenderers.Length; i++)
+                    GlowLook.Set(glowRenderers[i], _mpb, Color.Lerp(glowOff, glowOn, _shown), Mathf.Lerp(1f, GlowLook.ActiveLive, _shown));
+            if (handleRenderer == null) return;
             Color c = Color.Lerp(offColor, onColor, _shown);
             handleRenderer.GetPropertyBlock(_mpb);
             _mpb.SetColor("_BaseColor", c);
