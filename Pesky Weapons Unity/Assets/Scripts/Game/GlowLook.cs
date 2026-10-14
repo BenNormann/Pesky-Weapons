@@ -4,7 +4,7 @@ namespace Pesky.Game
 {
     /// <summary>
     /// Shared view helper for the thin emissive border trims on action pieces (lever, pressure plate).
-    /// The trims use M_ActionGlow; the state colour is pushed per renderer through a property block.
+    /// Trims use M_ActionGlow, halo and sheen use Pesky/ActionGlow; the state colour is pushed per renderer through a property block.
     /// </summary>
     public static class GlowLook
     {

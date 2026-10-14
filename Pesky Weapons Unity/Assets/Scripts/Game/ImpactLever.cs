@@ -44,10 +44,10 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] Renderer handleRenderer;
         [SerializeField] Color offColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color onColor = new Color(0.24f, 0.63f, 0.27f, 1f);
-        [Tooltip("Thin emissive trims (base frame, handle tip). Soft gold while off, green while on.")]
+        [Tooltip("Glow pieces: base frame, handle tip, floor halo. Soft gold while off, green while on.")]
         [OptionalRef][SerializeField] Renderer[] glowRenderers;
-        [ColorUsage(false, true)][SerializeField] Color glowOff = new Color(0.9f, 0.68f, 0.2f, 1f);
-        [ColorUsage(false, true)][SerializeField] Color glowOn = new Color(0.45f, 1.6f, 0.55f, 1f);
+        [ColorUsage(false, true)][SerializeField] Color glowOff = new Color(1.6f, 0.95f, 0.28f, 1f);
+        [ColorUsage(false, true)][SerializeField] Color glowOn = new Color(0.45f, 1.4f, 0.5f, 1f);
 
         MaterialPropertyBlock _mpb;
         bool _on;
