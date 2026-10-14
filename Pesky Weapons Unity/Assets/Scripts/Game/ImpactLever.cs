@@ -44,12 +44,12 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] Renderer handleRenderer;
         [SerializeField] Color offColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color onColor = new Color(0.24f, 0.63f, 0.27f, 1f);
-        [Tooltip("Glow pieces: handle tip, floor halo, edge shells. The labyrinth's purple while off, surging brighter while on.")]
+        [Tooltip("Glow pieces: floor halo, edge shells. The labyrinth's purple with drifting specks while off; gone while on (a done lever asks for nothing).")]
         [OptionalRef][SerializeField] Renderer[] glowRenderers;
-        [Tooltip("The floor halo: shown only when the lever stands on a floor (its up is the world's up). On a wall it looked wrong.")]
+        [Tooltip("The floor halo: shown only when the lever stands upright on a floor (its up is the world's up AND a floor is right under its base). A lever on a wall, upright or sideways, shows none.")]
         [OptionalRef][SerializeField] Renderer floorHalo;
         [ColorUsage(false, true)][SerializeField] Color glowOff = new Color(0.7f, 0.42f, 1.8f, 1f);
-        [ColorUsage(false, true)][SerializeField] Color glowOn = new Color(1.5f, 1.2f, 2.8f, 1f);
+        [ColorUsage(false, true)][SerializeField] Color glowOn = Color.black;
 
         MaterialPropertyBlock _mpb;
         bool _on;
@@ -67,13 +67,21 @@ namespace Pesky.Game
         /// <summary>True while an impact would be ignored because the lever has only just flipped.</summary>
         public bool Rearming { get { return Time.time < _rearmAt; } }
 
+        void Start()
+        {
+            // The floor halo spills light across a floor. A lever on a wall, whether it stands upright on a bracket or
+            // sticks out sideways, has no floor under its base, so it shows none (the owner's review, twice).
+            if (floorHalo == null) return;
+            bool upright = Vector3.Dot(transform.up, Vector3.up) > 0.9f;
+            bool floorBelow = upright && Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, 0.35f, 1 << 8, QueryTriggerInteraction.Ignore);
+            floorHalo.enabled = floorBelow;
+        }
+
         void Awake()
         {
             _mpb = new MaterialPropertyBlock();
             _on = startOn;
             _shown = _on ? 1f : 0f;
-            // The floor halo spills light across a floor; on a wall-mounted lever it hung in the air, so it is floor-only.
-            if (floorHalo != null) floorHalo.enabled = Vector3.Dot(transform.up, Vector3.up) > 0.9f;
             ApplyLook(true);
         }
 

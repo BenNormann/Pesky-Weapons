@@ -27,10 +27,10 @@ namespace Pesky.Game
         [SerializeField] Renderer padRenderer;
         [SerializeField] Color idleColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color latchedColor = new Color(0.24f, 0.63f, 0.27f, 1f);
-        [Tooltip("Glow pieces: border trims, floor halo, rising sheen. The labyrinth's purple while idle, surging brighter once held.")]
+        [Tooltip("Glow pieces: floor halo, rising sheen (both additive: the pad itself keeps its own material). The labyrinth's purple with drifting specks while idle; gone once held (a done plate asks for nothing).")]
         [OptionalRef][SerializeField] Renderer[] glowRenderers;
         [ColorUsage(false, true)][SerializeField] Color glowIdle = new Color(0.7f, 0.42f, 1.8f, 1f);
-        [ColorUsage(false, true)][SerializeField] Color glowHeld = new Color(1.5f, 1.2f, 2.8f, 1f);
+        [ColorUsage(false, true)][SerializeField] Color glowHeld = Color.black;
 
         readonly List<WeaponBody> _on = new List<WeaponBody>();
         MaterialPropertyBlock _mpb;

@@ -21,6 +21,11 @@ Shader "Pesky/ActionGlow"
         _Falloff ("Halo: falloff sharpness", Float) = 2.2
         _Pulse ("Pulse amount", Range(0, 1)) = 0.25
         _PulseSpeed ("Pulse speed", Float) = 2.2
+        _SpeckColor ("Speck colour (the magic's stars)", Color) = (0.85, 0.76, 1.0, 1)
+        _SpeckStrength ("Speck strength", Float) = 1.6
+        _Scale ("Speck scale (cells per metre)", Float) = 6
+        _Speed ("Speck speed", Float) = 0.6
+        _Density ("Speck density", Range(0, 1)) = 0.14
     }
     SubShader
     {
@@ -50,13 +55,39 @@ Shader "Pesky/ActionGlow"
                 float _Cull;
                 float _Edge;
                 float _Fill;
+                float4 _SpeckColor;
+                float _SpeckStrength;
+                float _Scale;
+                float _Speed;
+                float _Density;
             CBUFFER_END
+
+            // The same drifting specks as Pesky/MagicFlow (world-space cells, one speck in a fraction of them, each on
+            // its own little orbit), so the glow reads as the labyrinth's magic spilling out, not a flat light.
+            float hash(float2 p)
+            {
+                p = frac(p * float2(123.34, 456.21));
+                p += dot(p, p + 45.32);
+                return frac(p.x * p.y);
+            }
+
+            float specks(float2 uv, float t)
+            {
+                float2 g = floor(uv);
+                float2 f = frac(uv);
+                float h = hash(g);
+                float on = step(1.0 - _Density, h);
+                float2 c = 0.5 + 0.33 * float2(sin(t * 1.3 + h * 40.0), cos(t * 0.9 + h * 70.0));
+                float d = length(f - c);
+                return on * smoothstep(0.2, 0.05, d);
+            }
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
             struct Varyings
             {
                 float4 positionHCS : SV_POSITION; float2 uv : TEXCOORD0; float2 sizeM : TEXCOORD1; float phase : TEXCOORD2;
                 float3 positionOS : TEXCOORD3; float3 normalOS : TEXCOORD4; float3 scaleOS : TEXCOORD5;
+                float3 positionWS : TEXCOORD6; float3 normalWS : TEXCOORD7;
             };
 
             Varyings vert(Attributes v)
@@ -72,6 +103,8 @@ Shader "Pesky/ActionGlow"
                 o.positionOS = v.positionOS.xyz;
                 o.normalOS = v.normalOS;
                 o.scaleOS = float3(o.sizeM, length(unity_ObjectToWorld._m02_m12_m22));
+                o.positionWS = TransformObjectToWorld(v.positionOS.xyz);
+                o.normalWS = TransformObjectToWorldNormal(v.normalOS);
                 return o;
             }
 
@@ -107,7 +140,14 @@ Shader "Pesky/ActionGlow"
                     a = up * up * up * ends;
                 }
                 float pulse = 1.0 + _Pulse * sin(_Time.y * _PulseSpeed + i.phase);
-                float3 c = _EmissionColor.rgb * (_Intensity * a * pulse);
+                // The stars: world-space specks on the surface, drifting, brightest where the glow is.
+                float3 n = abs(i.normalWS);
+                float2 suv = n.y > max(n.x, n.z) ? i.positionWS.xz : (n.x > n.z ? i.positionWS.zy : i.positionWS.xy);
+                float t = _Time.y * _Speed;
+                float s = specks(suv * _Scale + float2(t, 0.0), t)
+                        + 0.7 * specks(suv * _Scale * 1.7 + float2(-t * 0.6, t * 0.4), t * 1.4);
+                float3 glow = _EmissionColor.rgb + _SpeckColor.rgb * saturate(s) * _SpeckStrength;
+                float3 c = glow * (_Intensity * a * pulse);
                 return half4(c, 1.0);
             }
             ENDHLSL
