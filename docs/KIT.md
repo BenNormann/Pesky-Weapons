@@ -346,7 +346,15 @@ is one flip. A door follows a lever through the new `DoorCondition.Mode.LeverOn`
 drawn only when the lever stands upright AND a floor is right under its base, so a lever on a wall, upright or
 sideways, shows none) and a glowing-edge shell over the whole lever (`GlowShell_Post`, `HandlePivot/GlowShell_Handle`,
 `M_ActionGlowShell`): the labyrinth's purple with the magic's drifting specks while off, GONE while on (`glowOn` is
-black). Additive only: the post and handle keep their own materials. **Every other action piece glows the same purple, stateless** (the materials' own colour, no
+black). Additive only: the post and handle keep their own materials.
+
+**Sound (`Sfx`, round 29).** One-shot 3D clips from a pooled set of AudioSources (`Scripts/Game/Sfx.cs`), played by
+the state change every peer applies, so everybody hears it where it happened. Clips in `Assets/Audio/SFX/`:
+`plate_slide` (a plate's pad starting down, any press), `latch_flick` (the metal flick when a press becomes
+permanent, layered on the slide), `lever_clunk` (a lever flipping either way), `magic_crystal` (a CircuitBridge
+closing and the MagicBridge coming alive, full; quietly behind every plate press and lever flip, `magicVolume`
+0.2). Fields on `PressurePlate` (`pressSound`, `latchSound`, `magicSound`), `ImpactLever` (`flipSound`,
+`magicSound`), `CircuitBridge` (`connectSound`), `MagicBridge` (`liveSound`), each with a volume. **Every other action piece glows the same purple, stateless** (the materials' own colour, no
 script): a glowing-edge shell on the Rope's cord, the CrackedWall's slab, the Anvil's top and the WoodBlock; a floor halo
 under the CircuitBridge's cradle, the Pot and each MassPan of the CounterweightPair. Doors, magnets and pickups keep
 their own looks. **Host state.** on/off.

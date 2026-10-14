@@ -182,6 +182,10 @@ MonoBehaviour:
   floorHalo: {fileID: 571883906709674613}
   glowOff: {r: 0.7, g: 0.42, b: 1.8, a: 1}
   glowOn: {r: 0, g: 0, b: 0, a: 1}
+  flipSound: {fileID: 8300000, guid: f5f76f41060e02e469d01fc3c38014cb, type: 3}
+  magicSound: {fileID: 8300000, guid: cffb066c12078c1438454757b06e372c, type: 3}
+  flipVolume: 0.9
+  magicVolume: 0.2
 --- !u!1 &1827491073083591798
 GameObject:
   m_ObjectHideFlags: 0

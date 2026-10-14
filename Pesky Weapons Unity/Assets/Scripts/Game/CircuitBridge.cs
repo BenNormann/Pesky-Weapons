@@ -57,6 +57,11 @@ namespace Pesky.Game
         [Tooltip("Weapon layer.")]
         [SerializeField] LayerMask weaponMask = 1 << 9;
 
+        [Header("Sound")]
+        [Tooltip("The connection made: the crystal shimmer, at the break, when it closes.")]
+        [OptionalRef][SerializeField] AudioClip connectSound;
+        [Range(0f, 1f)][SerializeField] float connectVolume = 1f;
+
         static readonly int LiveId = Shader.PropertyToID("_Live");
         readonly List<WeaponBody> _in = new List<WeaponBody>();
         readonly Collider[] _near = new Collider[32];
@@ -180,6 +185,7 @@ namespace Pesky.Game
         {
             if (_closed == closed) return;
             _closed = closed;
+            if (closed && stubA != null && stubB != null) Sfx.Play(connectSound, (stubA.position + stubB.position) * 0.5f, connectVolume);
             Refresh();
         }
 

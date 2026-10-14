@@ -51,6 +51,14 @@ namespace Pesky.Game
         [ColorUsage(false, true)][SerializeField] Color glowOff = new Color(0.7f, 0.42f, 1.8f, 1f);
         [ColorUsage(false, true)][SerializeField] Color glowOn = Color.black;
 
+        [Header("Sound")]
+        [Tooltip("The flip, either way: the reverberant metal clunk.")]
+        [OptionalRef][SerializeField] AudioClip flipSound;
+        [Tooltip("The labyrinth's magic, quietly behind every circuit piece.")]
+        [OptionalRef][SerializeField] AudioClip magicSound;
+        [Range(0f, 1f)][SerializeField] float flipVolume = 0.9f;
+        [Range(0f, 1f)][SerializeField] float magicVolume = 0.2f;
+
         MaterialPropertyBlock _mpb;
         bool _on;
         float _shown;
@@ -109,6 +117,11 @@ namespace Pesky.Game
         public void ApplySet(bool on)
         {
             if (on && !_on && clock != null) _onMs = clock.Ms;
+            if (on != _on)
+            {
+                Sfx.Play(flipSound, transform.position, flipVolume);
+                Sfx.Play(magicSound, transform.position, magicVolume);
+            }
             _on = on;
             _rearmAt = Time.time + rearmSeconds;
         }

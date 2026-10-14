@@ -160,3 +160,5 @@ MonoBehaviour:
   circuit: {fileID: 0}
   deck: {fileID: 1660022948877177610}
   deckRenderer: {fileID: 867031165857374804}
+  liveSound: {fileID: 8300000, guid: cffb066c12078c1438454757b06e372c, type: 3}
+  liveVolume: 1

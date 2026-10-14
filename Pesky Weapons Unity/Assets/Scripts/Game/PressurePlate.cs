@@ -23,7 +23,7 @@ namespace Pesky.Game
         [SerializeField] float restSpeed = 1.5f;
         [Tooltip("The pad that sinks while the plate is pressed.")]
         [SerializeField] Transform pad;
-        [SerializeField] float pressDepth = 0.15f;   // the pad's whole height: a held plate sits flush with the floor
+        [SerializeField] float pressDepth = 0.14f;   // the pad's height less a centimetre: a held plate sits a hair above the floor, never flush (coplanar faces flicker)
         [SerializeField] Renderer padRenderer;
         [SerializeField] Color idleColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color latchedColor = new Color(0.24f, 0.63f, 0.27f, 1f);
@@ -31,6 +31,18 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] Renderer[] glowRenderers;
         [ColorUsage(false, true)][SerializeField] Color glowIdle = new Color(0.7f, 0.42f, 1.8f, 1f);
         [ColorUsage(false, true)][SerializeField] Color glowHeld = Color.black;
+
+        [Header("Sound")]
+        [Tooltip("The pad starting down under a weight: the wooden slide (any press, permanent or not).")]
+        [OptionalRef][SerializeField] AudioClip pressSound;
+        [Tooltip("The latch: the metal flick, layered on the slide when the press becomes permanent.")]
+        [OptionalRef][SerializeField] AudioClip latchSound;
+        [Tooltip("The labyrinth's magic, quietly behind every circuit piece.")]
+        [OptionalRef][SerializeField] AudioClip magicSound;
+        [Range(0f, 1f)][SerializeField] float pressVolume = 0.8f;
+        [Range(0f, 1f)][SerializeField] float latchVolume = 0.9f;
+        [Range(0f, 1f)][SerializeField] float magicVolume = 0.2f;
+        bool _soundPressed;
 
         readonly List<WeaponBody> _on = new List<WeaponBody>();
         MaterialPropertyBlock _mpb;
@@ -98,6 +110,8 @@ namespace Pesky.Game
                 {
                     _latched = true;
                     Tint(latchedColor);
+                    // Permanent: the flick that locks it, over the slide the pad's own descent plays.
+                    Sfx.Play(latchSound, transform.position, latchVolume);
                 }
                 return;
             }
@@ -110,7 +124,18 @@ namespace Pesky.Game
         void Update()
         {
             if (pad == null) return;
-            float target = (_latched || _mass > 0.01f) ? pressDepth : 0f;
+            bool pressed = _latched || _mass > 0.01f;
+            if (pressed != _soundPressed)
+            {
+                _soundPressed = pressed;
+                // The pad starting down: the wooden slide, the magic quietly behind it. Coming back up is silent.
+                if (pressed)
+                {
+                    Sfx.Play(pressSound, transform.position, pressVolume);
+                    Sfx.Play(magicSound, transform.position, magicVolume);
+                }
+            }
+            float target = pressed ? pressDepth : 0f;
             Vector3 want = _padUp - Vector3.up * target;
             pad.localPosition = Vector3.MoveTowards(pad.localPosition, want, Time.deltaTime * 0.4f);
         }

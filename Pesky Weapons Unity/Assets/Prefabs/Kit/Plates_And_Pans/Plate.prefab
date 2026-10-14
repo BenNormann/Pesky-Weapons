@@ -75,7 +75,7 @@ MonoBehaviour:
   metalOnly: 0
   restSpeed: 1.5
   pad: {fileID: 7386004737824694453}
-  pressDepth: 0.15
+  pressDepth: 0.14
   padRenderer: {fileID: 3660579455989139703}
   idleColor: {r: 0.63, g: 0.63, b: 0.67, a: 1}
   latchedColor: {r: 0.24, g: 0.63, b: 0.27, a: 1}
@@ -87,6 +87,12 @@ MonoBehaviour:
   - {fileID: 7207541294333956068}
   glowIdle: {r: 0.7, g: 0.42, b: 1.8, a: 1}
   glowHeld: {r: 0, g: 0, b: 0, a: 1}
+  pressSound: {fileID: 8300000, guid: 5da746b5c00686b45a726441e2bf3687, type: 3}
+  latchSound: {fileID: 8300000, guid: 517ccc68f357c984e872cfdc7411c6fb, type: 3}
+  magicSound: {fileID: 8300000, guid: cffb066c12078c1438454757b06e372c, type: 3}
+  pressVolume: 0.8
+  latchVolume: 0.9
+  magicVolume: 0.2
 --- !u!1 &3639642660311848244
 GameObject:
   m_ObjectHideFlags: 0

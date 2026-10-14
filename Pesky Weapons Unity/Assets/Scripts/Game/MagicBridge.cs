@@ -16,6 +16,10 @@ namespace Pesky.Game
         [SerializeField] Collider deck;
         [Tooltip("The slab's renderer (M_MagicFlow).")]
         [SerializeField] Renderer deckRenderer;
+        [Tooltip("The bridge coming alive: the crystal shimmer, along the deck.")]
+        [OptionalRef][SerializeField] AudioClip liveSound;
+        [Range(0f, 1f)][SerializeField] float liveVolume = 1f;
+        bool _applied;
 
         static readonly int LiveId = Shader.PropertyToID("_Live");
         MaterialPropertyBlock _mpb;
@@ -37,6 +41,9 @@ namespace Pesky.Game
 
         void Apply(bool live)
         {
+            // Alive from dead, after the first look (a bridge that starts alive is silent).
+            if (live && !_solid && _applied && deck != null) Sfx.Play(liveSound, deck.bounds.center, liveVolume);
+            _applied = true;
             _solid = live;
             if (deck != null) deck.enabled = live;
             if (deckRenderer == null || _mpb == null) return;

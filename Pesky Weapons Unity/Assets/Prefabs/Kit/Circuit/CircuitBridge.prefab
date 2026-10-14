@@ -5376,6 +5376,8 @@ MonoBehaviour:
   weaponMask:
     serializedVersion: 2
     m_Bits: 512
+  connectSound: {fileID: 8300000, guid: cffb066c12078c1438454757b06e372c, type: 3}
+  connectVolume: 1
 --- !u!1 &6895996127861489021
 GameObject:
   m_ObjectHideFlags: 0
