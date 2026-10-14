@@ -75,7 +75,7 @@ MonoBehaviour:
   metalOnly: 0
   restSpeed: 1.5
   pad: {fileID: 7386004737824694453}
-  pressDepth: 0.06
+  pressDepth: 0.15
   padRenderer: {fileID: 3660579455989139703}
   idleColor: {r: 0.63, g: 0.63, b: 0.67, a: 1}
   latchedColor: {r: 0.24, g: 0.63, b: 0.27, a: 1}

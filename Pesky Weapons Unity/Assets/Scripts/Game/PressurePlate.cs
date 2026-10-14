@@ -23,7 +23,7 @@ namespace Pesky.Game
         [SerializeField] float restSpeed = 1.5f;
         [Tooltip("The pad that sinks while the plate is pressed.")]
         [SerializeField] Transform pad;
-        [SerializeField] float pressDepth = 0.06f;
+        [SerializeField] float pressDepth = 0.15f;   // the pad's whole height: a held plate sits flush with the floor
         [SerializeField] Renderer padRenderer;
         [SerializeField] Color idleColor = new Color(0.63f, 0.63f, 0.67f, 1f);
         [SerializeField] Color latchedColor = new Color(0.24f, 0.63f, 0.27f, 1f);

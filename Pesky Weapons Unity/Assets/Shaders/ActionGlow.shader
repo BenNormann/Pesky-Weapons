@@ -146,7 +146,9 @@ Shader "Pesky/ActionGlow"
                 float t = _Time.y * _Speed;
                 float s = specks(suv * _Scale + float2(t, 0.0), t)
                         + 0.7 * specks(suv * _Scale * 1.7 + float2(-t * 0.6, t * 0.4), t * 1.4);
-                float3 glow = _EmissionColor.rgb + _SpeckColor.rgb * saturate(s) * _SpeckStrength;
+                // The stars belong to the glow: as the state colour fades to black (a plate held, a lever on) they go with it.
+                float live = saturate(max(_EmissionColor.r, max(_EmissionColor.g, _EmissionColor.b)) * 2.0);
+                float3 glow = _EmissionColor.rgb + _SpeckColor.rgb * saturate(s) * _SpeckStrength * live;
                 float3 c = glow * (_Intensity * a * pulse);
                 return half4(c, 1.0);
             }
