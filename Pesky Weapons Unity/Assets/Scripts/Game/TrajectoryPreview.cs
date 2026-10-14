@@ -97,7 +97,7 @@ namespace Pesky.Game
 
             Vector3 velocity;
             LaunchResult result = _motor.Evaluate(out velocity);
-            if (result != LaunchResult.Launched && result != LaunchResult.WallJumped)
+            if (result != LaunchResult.Launched && result != LaunchResult.WallJumped && result != LaunchResult.Climbed)
             {
                 line.enabled = false;
                 HideMarkers();

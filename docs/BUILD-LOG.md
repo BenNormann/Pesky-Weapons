@@ -2933,3 +2933,63 @@ rack, leaning on a wall) stands on its pommel instead of flipping end over end; 
 Rebuilt the two v4 rooms (the Chasm unchanged), BatTest re-applied, validator 0 problems. Watch: the pivot
 lift means a braced body can hop a little when it starts to turn on uneven ground; a Sword on its pommel is a
 shorter target than one on its point.
+
+## Round 29: the Gatehouse, a switch is a wire, dead portals, the climb, timber, no signs (2026-10-14)
+
+Owner's list: every teleport door made of the magic material with a visible wire powering it; every sign out
+of every room, with a hints file for stuck crews; the hallway gate room redesigned ("see how interesting the
+circuit room is"); the Well Room's platforming too hard: rework the wall jump for Sword and Dagger and make
+the wood obviously wood; the Circuit Room's exit with no sliding slab, just a deactivated portal. On the
+draft: no moat; EVERY lever and plate connected to a circuit line so it makes sense; decorate both sides of
+the gate; the gate bigger and thicker and the wall thicker still; still grey-box, no textures, decorations
+only where they are obstacles; and all work in a NEW Unity instance (another chat owns the main checkout's
+Editor). Branch `rooms-overhaul`, this worktree; the Editor ran on the worktree's own project copy.
+
+**A switch is a wire** (`PowerLine`, `PowerJunction`, KIT.md). A plate, a lever, a door, a circuit or a
+junction is the source of a run of M_MagicFlow rails that is live while the source is on; lines meet in a
+junction (OR). Pure views. The builder's `Line()` / `Junction()` wire them; `Conduit()` routes the rails.
+
+**Dead portals** (`MagicDoor.showPlaneWhenShut`, `DoorMagic()`). No exit hides behind a sliding slab any
+more: the portal plane stays in view, dark, driven by the room's line or circuit, and comes alive when the
+door opens; the gate's panel keeps its collider (solid to weapons and souls) and loses its renderer. Every
+builder exit. Both MagicDoor prefabs now wear M_MagicFlow on the plane (the grid one still had the old
+M_Magic) and carry the wire: strips up both jambs, a bar over the opening, a supply up the wall to 5.7 m
+turning into the wall at 5.6 (`SupplyY`); a room's own line ends there. Base `LabyrinthRoom.prefab` lost its
+`RoomSign` fixture, so the start room, the gate hall and every pool room lost their sign with it; the three
+builder signs are gone from the builder. Zero `Sign` components in Run. `docs/HINTS.md`: three escalating
+lines per room, for whoever is narrating until the narrator exists.
+
+**The Gatehouse** (`RoomsV3Builder.Gatehouse`, design `docs/level-design/rooms-v5-gatehouse.md` redraft 2,
+approved): 24 x 60 x 12, an 8 m thick gate wall with a 6 x 7 m passage shut by a 1 m thick portcullis (the
+Door prefab's panel grown and barred both sides, a carving NavMesh obstacle), a winch chamber inside the
+wall above the passage with a window on the front yard, reached by a goblin stair up the wall's face (any
+weapon) or a free-standing timber post (a blade, the climb). Hold plate (8 kg, held) in the front yard and
+pin lever in the chamber, each with a wire to the junction on the wall's face; the junction's line runs up
+the face, along the passage ceiling to the gate and into the winch drum, which lights; the gate (and a
+counterweight that drops as it rises) is up while plate held OR lever on. Behind: a watch platform with a
+goblin, a patroller on a route, a shelf and crate stacks hiding the weigh plate (10 kg, latching) whose line
+runs up the south wall into the exit's wire. A sleeper in the front yard. Decorations only as blockers
+(crates, barrels, a new `Deco_Cart`, the shelf); braziers, banners and the empty rack from the draft were
+struck by the owner. Room 3 is now `Room_03_Gatehouse`; `RoomV3_ArmoryGate.prefab` deleted.
+
+**The climb** (`WeaponBody.TickClimb`, `LaunchResult.Climbed`, tuning "Climb"). A blade stuck in a wooden
+wall that looks back at the timber and launches goes STRAIGHT UP the face and, once its rise is spent, probes
+sideways for the wood and stabs back in; it keeps probing while falling, so it never misses the top of a
+post. A Sword climbs 3.6 m a hop, a Dagger 4.9. Looking away still leaves the post. Sticking is more lenient
+(`stickMinSpeed` 4, `stickMaxAngleDeg` 70). **Timber**: `WoodBlock` wears the new flat orange-brown
+`M_Timber` (no texture), so stickable wood is unmistakable next to stone; M_Wood stays on grips and crates.
+
+**Rooms rebuilt** Gatehouse, Well Room (exit plate wired into the exit door), Porter Room (grate lever wired
+to the grate's wheel, exit lit by its own door), Circuit Room (dead run re-routed to end in the exit's supply
+wire; exit a dead portal; its shelf moved flush to the wall, it stood 0.25 m off). The Bat Room prefab was
+NOT rebuilt (a re-save would drop BatTest's overrides); it gets the door wire through the prefab, and its
+exit is always open; the builder code for its dead portal is in place for the next rebuild. Backups
+`Backups/rooms-v3/20261014-124109` and `20261014-124450`. Validator 0 problems. A bounds scan of the Gatehouse for
+slots between 5 cm and 1.5 m found and fixed three (shelf off the wall, crates near the weigh plate, the
+counterweight beside the chamber wall). Compile clean.
+
+Untested by me, as always. To try: a Sword into the Well Room's post point-first, then look at the post and
+launch (the hop and the stab); Q from the chamber window; the hold plate with a Hammer and a friend up the
+stair to the lever (watch the junction and the drum light); the counterweight's drop; the sleeper waking on
+a loud landing; the dead portals (do they read as "no power yet"?); the Porter Room wheel lighting when the
+inside lever is hit; the Circuit Room's exit coming alive on the seal with no slab.

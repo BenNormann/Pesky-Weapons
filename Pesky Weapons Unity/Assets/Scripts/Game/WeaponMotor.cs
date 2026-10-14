@@ -19,6 +19,8 @@ namespace Pesky.Game
     {
         Launched,
         WallJumped,
+        /// <summary>A blade stuck in a wooden wall launched straight up it to stab back in higher (round 29).</summary>
+        Climbed,
         RefusedCooldown,
         RefusedAirborne,
         RefusedWallJumpUsed,
@@ -92,22 +94,30 @@ namespace Pesky.Game
             if (weapon.IsGrounded)
             {
                 dir = LaunchAim.Grounded(_yawDeg, _pitchDeg, t);
+                result = LaunchResult.Launched;
                 if (weapon.IsStuck)
                 {
-                    // Stuck in wood: never launch into it. A wooden wall rebounds like a wall jump (without
-                    // using one up); a floor or ceiling just loses the part of the aim that points into it.
+                    // Stuck in wood: never launch into it. On a wooden WALL, looking back at the timber and launching CLIMBS
+                    // it: straight up along the face, and the blade stabs back in where it stops rising (WeaponBody.TickClimb);
+                    // looking away leaves it, and an aim that still points into the wall rebounds like a wall jump (without
+                    // using one up). A floor or ceiling just loses the part of the aim that points into it.
                     Vector3 n = weapon.StuckNormal;
                     float into = Vector3.Dot(dir, n);
                     if (Mathf.Abs(n.y) < t.wallNormalY)
                     {
-                        if (into < t.wallMinDot) dir = LaunchAim.WallJump(_yawDeg, _pitchDeg, n, t);
+                        Vector3 flatN = new Vector3(n.x, 0f, n.z).normalized;
+                        if (t.climbEnabled && Vector3.Dot(LaunchAim.Heading(_yawDeg), flatN) < -t.climbHeadingDot)
+                        {
+                            dir = Vector3.up;
+                            result = LaunchResult.Climbed;
+                        }
+                        else if (into < t.wallMinDot) dir = LaunchAim.WallJump(_yawDeg, _pitchDeg, n, t);
                     }
                     else if (into < 0f && (dir - n * into).sqrMagnitude > 1e-6f)
                     {
                         dir = (dir - n * into).normalized;
                     }
                 }
-                result = LaunchResult.Launched;
             }
             else if (weapon.IsTouchingWall)
             {
@@ -121,6 +131,7 @@ namespace Pesky.Game
             }
 
             float speed = weapon.Def.launchSpeed;
+            if (result == LaunchResult.Climbed) speed *= t.climbSpeedScale;
             ILaunchCurse curse = Curse;
             if (curse != null)
             {
@@ -139,8 +150,9 @@ namespace Pesky.Game
         {
             Vector3 velocity;
             LaunchResult result = Evaluate(out velocity);
-            if (result != LaunchResult.Launched && result != LaunchResult.WallJumped) return result;
+            if (result != LaunchResult.Launched && result != LaunchResult.WallJumped && result != LaunchResult.Climbed) return result;
 
+            Vector3 climbNormal = weapon.StuckNormal;   // read before Unstick: a climb hop probes for the timber it left
             weapon.Unstick();
             Rigidbody rb = weapon.Body;
             rb.WakeUp();
@@ -162,6 +174,7 @@ namespace Pesky.Game
                 _wallJumpsUsed++;
                 _lastWallJumpFixedTime = Time.fixedTime;
             }
+            else if (result == LaunchResult.Climbed) weapon.BeginClimb(climbNormal);
             return result;
         }
 

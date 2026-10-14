@@ -717,3 +717,60 @@ measuring that radius itself.
   Not yet built from the design: porter max-mass / lure / flee / respawn, the braced-bat numbers, the glowing
   wire (the circuit gaps tint instead), the 1 s circuit hold, the Door_Portcullis variant (bars are added to the
   standard panel), and the decorative chains are not static (validator noise, harmless).
+
+## Round 29 additions (2026-10-14): a switch is a wire, dead portals, the climb, timber
+
+### PowerLine + PowerJunction - `PowerLine.cs`, `PowerJunction.cs` (no prefabs; the builder's `Line()` / `Junction()`)
+**Rule.** Every pressure plate, lever and circuit is a SWITCH ON A WIRE: a `PowerLine` names one source (a
+`PressurePlate`, held or latched; an `ImpactLever`, on; a `Door`, open; a `Circuit`, whole; a `PowerJunction`,
+powered) and the `rails` it lights (M_MagicFlow renderers: conduit pieces, a doorway's portal and wire, a winch
+drum), and drives their `_Live` 1 / 0 through a property block while the source is on / off. A `PowerJunction`
+is where lines meet on a wall: `inputs` (PowerLines), OR by default (`requireAll` for AND), its `box` renderer
+lights with it, and it is itself a line's source. Both are pure views (the source carries the host state), so
+no wire change and nothing to sync. The builder routes rails with `Conduit()` as the Circuit Room does: along a
+floor at 0.13 m, along a wall 0.3 m off its face, ends half a rail past their points, buried in walls where
+they must pass through. Rooms: the Gatehouse (plate line and lever line into a junction, junction line to the
+winch; weigh plate line into the exit door), the Well Room (exit plate line into the exit door), the Porter
+Room (grate lever line to the grate's wheel; the exit door lit by its own Door). The Circuit Room's exit stays
+on its `Circuit`.
+
+### Dead portals - `MagicDoor.showPlaneWhenShut`, the builder's `DoorMagic()`
+**Rule.** A gated doorway no longer hides its plane behind a sliding slab: `showPlaneWhenShut` keeps the portal
+plane in view, its `_Live` driven dark by the room's PowerLine or Circuit, and it comes alive when the door
+opens. The `Door`'s panel keeps its collider (a dead portal is solid to weapons and to souls, the SoulBlock too)
+and the builder strips its MeshRenderer and MeshFilter (`DoorMagic()`), so the invisible slab still slides out
+of the way on open. `DoorMagic()` returns the doorway's magic renderers (`DoorMagicPieces`: `Plane`, `Feed_L`,
+`Feed_R`, `Feed_Top`, `Supply`, `Supply_In`) for the line or circuit to drive. Every builder exit uses it.
+
+### The door wire - `MagicDoor.prefab`, `MagicDoor_Grid.prefab`
+Both prefabs carry the portal plane on `M_MagicFlow` (the grid one wore the old M_Magic until this round) and a
+visible wire feeding it: `Feed_L` / `Feed_R` up the jambs (x +-1.73, 0.52 into the room, 0.22 square, 0..3.5 m),
+`Feed_Top` across the top of the opening at 3.61 m, `Supply` straight up the wall from there to 5.71 m, and
+`Supply_In` turning into the wall at 5.6 m (z 0.52 to -0.3). No colliders, static, World layer. A room's own
+line into a door ends at `SupplyY` (5.6, `RoomsV3Builder`) on the wall's rail line (0.3 off the face), which the
+`Supply_In` piece crosses. Live by default (an ungated doorway's wire glows); a gated doorway's pieces are
+driven by its line.
+
+### The climb - `WeaponBody.BeginClimb` / `TickClimb`, `WeaponMotor` `LaunchResult.Climbed`, `MovementTuning` "Climb"
+**Rule.** A bladed weapon stuck in a wooden WALL whose aim looks back at the timber (the heading's dot with the
+wall's inward direction over `climbHeadingDot` 0.2) launches STRAIGHT UP along the face at `climbSpeedScale`
+(1) x launch speed, and while the hop is in flight, once its upward speed is under `climbRestickBelowSpeed`
+(1.5 m/s), every physics step casts `climbReach` (1.2 m) along the wall's inward direction; the first
+stickable `WoodSurface` face it finds takes the blade: it is turned point-into-face, grip out, placed with its
+tip at the hit (`_zMax`, the measured point reach) and stuck through the shared `StickTo` (tip sunk
+`stickSinkDepth`). The probe keeps looking while the body falls, so a hop past the top of a post sticks at the
+top on the way down; stone under the probe, a landing on anything, a knockback-free Warp or a new launch ends
+the climb. A Sword (12 m/s) rises 3.6 m a hop, a Dagger (14) 4.9 m. Looking away from the timber still leaves
+it as before; an aim into a wooden floor or ceiling still just loses its into-surface part. No wire change (a
+re-stick raises the same `Stuck` event as a thrown stick). `climbEnabled` switches it off.
+
+### Timber - `M_Timber.mat`, `WoodBlock.prefab`
+The STICKABLE wood (`WoodBlock`: the Well Room's frames, the Gatehouse's climb post) wears `M_Timber`, a flat
+saturated orange-brown (URP Lit, no texture: grey-box, art later) that is unmistakably not stone next to the
+grey walls and the blue-grey ledges. `M_Wood` (muted brown) stays on grips, racks, crates, barrels and the
+Well Room's deck: wood you cannot stick in. Sticking itself is more lenient: `stickMinSpeed` 6 -> 4,
+`stickMaxAngleDeg` 60 -> 70.
+
+### Deco_Cart - `Kit/Deco/Deco_Cart.prefab`
+A goblin hand cart: a 1.2 x 1 x 2.2 grey box with a plain box collider, static, World. An obstacle (it hides
+the Gatehouse's hold plate from the entry), nothing else; art later. Same rules as the other Deco pieces.
