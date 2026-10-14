@@ -357,8 +357,10 @@ namespace Pesky.Editor
             const float pitX0 = -11.5f, pitX1 = -5.5f, pitZ0 = -14.5f, pitZ1 = -6.5f, pitDepth = 2.5f;
             DestroyChild(geo, "Floor");
             Block(geo, "Floor_North", new Vector3(0f, -0.25f, (pitZ1 + L / 2f) / 2f), new Vector3(W, 0.5f, L / 2f - pitZ1), MFloor);
-            Block(geo, "Floor_SouthEast", new Vector3((pitX1 + W / 2f) / 2f, -0.25f, (pitZ0 + pitZ1) / 2f), new Vector3(W / 2f - pitX1, 0.5f, pitZ1 - pitZ0), MFloor);
-            Block(geo, "Floor_SouthWest", new Vector3((pitX0 - W / 2f) / 2f, -0.25f, (pitZ0 + pitZ1) / 2f), new Vector3(pitX0 + W / 2f, 0.5f, pitZ1 - pitZ0), MFloor);
+            // East and west of the pit the floor runs all the way to the south wall (round 28: it stopped at the pit's south
+            // edge, leaving a half-metre slot along the wall in front of the exit door that weapons fell through).
+            Block(geo, "Floor_SouthEast", new Vector3((pitX1 + W / 2f) / 2f, -0.25f, (pitZ1 - L / 2f) / 2f), new Vector3(W / 2f - pitX1, 0.5f, pitZ1 + L / 2f), MFloor);
+            Block(geo, "Floor_SouthWest", new Vector3((pitX0 - W / 2f) / 2f, -0.25f, (pitZ1 - L / 2f) / 2f), new Vector3(pitX0 + W / 2f, 0.5f, pitZ1 + L / 2f), MFloor);
             Block(geo, "Floor_SouthStrip", new Vector3((pitX0 + pitX1) / 2f, -0.25f, (pitZ0 - L / 2f) / 2f), new Vector3(pitX1 - pitX0, 0.5f, pitZ0 + L / 2f), MFloor);
             Block(geo, "Pit_Floor", new Vector3((pitX0 + pitX1) / 2f, -pitDepth - 0.25f, (pitZ0 + pitZ1) / 2f), new Vector3(pitX1 - pitX0 + 1f, 0.5f, pitZ1 - pitZ0 + 1f), MFloor);
             Block(geo, "Pit_North", new Vector3((pitX0 + pitX1) / 2f, -pitDepth / 2f, pitZ1 + 0.25f), new Vector3(pitX1 - pitX0 + 1f, pitDepth, 0.5f), MWall);
