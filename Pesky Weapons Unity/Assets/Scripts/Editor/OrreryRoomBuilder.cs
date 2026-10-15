@@ -152,15 +152,17 @@ namespace Pesky.Editor
             float x0 = -W / 2f, depth = LoftFace - x0;   // 3.5 m deep
             Block(geo, "Loft", new Vector3(x0 + depth / 2f, LoftY - 0.25f, 0f), new Vector3(depth, 0.5f, 8f), MWood);
             Block(geo, "Loft_Lip", new Vector3(LoftFace - 0.06f, LoftY + 0.06f, 0f), new Vector3(0.12f, 0.12f, 8f), MKey);
-            Post(geo, "Loft_Post_N", new Vector3(LoftFace + 0.25f, 0f, 3.75f), LoftY - 0.5f);
-            Post(geo, "Loft_Post_S", new Vector3(LoftFace + 0.25f, 0f, -3.75f), LoftY - 0.5f);
+            // Posts stand UNDER the platform, flush with its edges: the outer face of each is the platform's edge.
+            Post(geo, "Loft_Post_N", new Vector3(LoftFace - 0.25f, 0f, 3.75f), LoftY - 0.5f);
+            Post(geo, "Loft_Post_S", new Vector3(LoftFace - 0.25f, 0f, -3.75f), LoftY - 0.5f);
+            Block(geo, "Loft_Beam", new Vector3(LoftFace - 0.25f, LoftY - 0.75f, 0f), new Vector3(0.5f, 0.5f, 8f), MWood);
             Stair(geo, "Loft_Stair", new Vector3(-8.5f, 0f, -1f), Vector3.left, 5, 0.5f, 0.8f, 2.5f);
 
             ImpactLever lever = Lever(play, "StarLever_Loft", new Vector3(-13.6f, LoftY, -3.0f), Quaternion.Euler(0f, 90f, 0f));
             Deco(geo, "Deco_Table", "Loft_Desk", new Vector3(-15.45f, LoftY, 1.8f), 90f);
             Deco(geo, "Deco_Stool", "Loft_Stool", new Vector3(-14.72f, LoftY, 2.0f), 0f);
             Deco(geo, "Deco_Crystal", "Loft_Crystal", new Vector3(-15.45f, LoftY, -1.4f), 70f);
-            Deco(geo, "Deco_Banner", "Loft_Banner", new Vector3(-W / 2f, 0f + 1.6f, -1.4f), 90f + 180f);
+            Deco(geo, "Deco_Banner", "Loft_Banner", new Vector3(-W / 2f, LoftY, -1.4f), 270f);   // hangs from the loft floor up the wall, not through the slab
             return lever;
         }
 
@@ -170,8 +172,9 @@ namespace Pesky.Editor
             float x1 = W / 2f, depth = x1 - ShelfFace;
             Block(geo, "Shelf", new Vector3(ShelfFace + depth / 2f, ShelfY - 0.25f, 1f), new Vector3(depth, 0.5f, 8f), MWood);
             Block(geo, "Shelf_Lip", new Vector3(ShelfFace + 0.06f, ShelfY + 0.06f, 1f), new Vector3(0.12f, 0.12f, 8f), MKey);
-            Post(geo, "Shelf_Post_N", new Vector3(ShelfFace - 0.25f, 0f, 4.75f), ShelfY - 0.5f);
-            Post(geo, "Shelf_Post_S", new Vector3(ShelfFace - 0.25f, 0f, -2.75f), ShelfY - 0.5f);
+            Post(geo, "Shelf_Post_N", new Vector3(ShelfFace + 0.25f, 0f, 4.75f), ShelfY - 0.5f);
+            Post(geo, "Shelf_Post_S", new Vector3(ShelfFace + 0.25f, 0f, -2.75f), ShelfY - 0.5f);
+            Block(geo, "Shelf_Beam", new Vector3(ShelfFace + 0.25f, ShelfY - 0.75f, 1f), new Vector3(0.5f, 0.5f, 8f), MWood);
 
             // up 15, out 5.5: a Sword thrown from the pad comes to rest about 1.4 m in from the shelf's face (play-tested)
             GameObject pad = Kit(PadPrefab, play, "Pad_Shelf", new Vector3(8.5f, 0f, 1f), Quaternion.Euler(0f, 90f, 0f));
@@ -180,8 +183,8 @@ namespace Pesky.Editor
             SetFloat(lp, "forwardSpeed", 5.5f);
 
             ImpactLever lever = Lever(play, "StarLever_Shelf", new Vector3(13.6f, ShelfY, -1.8f), Quaternion.Euler(0f, -90f, 0f));
-            Deco(geo, "Deco_Crystal", "Shelf_Crystal", new Vector3(15.5f, ShelfY, 4.3f), -30f);
-            Deco(geo, "Deco_Sacks", "Shelf_Sacks", new Vector3(15.65f, ShelfY, 1.4f), 90f);
+            Deco(geo, "Deco_Crystal", "Shelf_Crystal", new Vector3(15.35f, ShelfY, 4.3f), -30f);
+            Deco(geo, "Deco_Sacks", "Shelf_Sacks", new Vector3(15.5f, ShelfY, 1.4f), 90f);
             return lever;
         }
 
@@ -192,9 +195,9 @@ namespace Pesky.Editor
             float z0 = -W / 2f, depth = GalleryFace - z0;   // 4 m deep
             Block(geo, "Gallery", new Vector3(0f, GalleryY - 0.25f, z0 + depth / 2f), new Vector3(12f, 0.5f, depth), MWood);
             Block(geo, "Gallery_Lip", new Vector3(0f, GalleryY + 0.06f, GalleryFace - 0.06f), new Vector3(12f, 0.12f, 0.12f), MKey);
-            Post(geo, "Gallery_Post_W", new Vector3(-5.6f, 0f, GalleryFace - 0.25f), GalleryY - 0.5f);
-            Post(geo, "Gallery_Post_E", new Vector3(5.6f, 0f, GalleryFace - 0.25f), GalleryY - 0.5f);
-            Block(geo, "Gallery_Beam", new Vector3(0f, GalleryY - 0.75f, GalleryFace - 0.25f), new Vector3(11.7f, 0.5f, 0.5f), MWood);
+            Post(geo, "Gallery_Post_W", new Vector3(-5.75f, 0f, GalleryFace - 0.25f), GalleryY - 0.5f);   // outer face on the platform's side edge (x +-6)
+            Post(geo, "Gallery_Post_E", new Vector3(5.75f, 0f, GalleryFace - 0.25f), GalleryY - 0.5f);
+            Block(geo, "Gallery_Beam", new Vector3(0f, GalleryY - 0.75f, GalleryFace - 0.25f), new Vector3(12f, 0.5f, 0.5f), MWood);
 
             // up 18, out 8.8 from the dais (1 m up): clears the gallery's face high and comes to rest about 1.5 m in (play-tested)
             GameObject pad = Kit(PadPrefab, play, "Pad_Gallery", new Vector3(0f, DaisH, -2.6f), Quaternion.Euler(0f, 180f, 0f));
@@ -218,20 +221,20 @@ namespace Pesky.Editor
             Ring(c, "Ring_Inner", 7.2f, 0.16f);
             Ring(c, "Ring_Outer", 10.6f, 0.22f);
             // perch lines: the foot of each perch to the outer ring
-            Inlay(c, "Line_Loft", new Vector3(-11.95f, 0f, -3.75f), new Vector3(-9.92f, 0f, -3.75f));
-            Inlay(c, "Line_Shelf", new Vector3(11.95f, 0f, -2.75f), new Vector3(10.24f, 0f, -2.75f));
-            Inlay(c, "Line_Gallery_W", new Vector3(-5.6f, 0f, -11.95f), new Vector3(-5.6f, 0f, -9.0f));
-            Inlay(c, "Line_Gallery_E", new Vector3(5.6f, 0f, -11.95f), new Vector3(5.6f, 0f, -9.0f));
+            Inlay(c, "Line_Loft", new Vector3(LoftFace + 0.05f, 0f, -3.75f), new Vector3(-9.92f, 0f, -3.75f));
+            Inlay(c, "Line_Shelf", new Vector3(ShelfFace - 0.05f, 0f, -2.75f), new Vector3(10.24f, 0f, -2.75f));
+            Inlay(c, "Line_Gallery_W", new Vector3(-5.75f, 0f, -11.95f), new Vector3(-5.75f, 0f, -8.9f));
+            Inlay(c, "Line_Gallery_E", new Vector3(5.75f, 0f, -11.95f), new Vector3(5.75f, 0f, -8.9f));
             // the machine to the door: dais step to the threshold, then up both jambs and over the lintel
             Inlay(c, "Line_Exit", new Vector3(0f, 0f, -StepR - 0.05f), new Vector3(0f, 0f, -W / 2f + 0.05f));
             Rail(geo, "Jamb_W", new Vector3(-1.75f, 0f, -W / 2f + 0.3f), new Vector3(-1.75f, 3.75f, -W / 2f + 0.3f));
             Rail(geo, "Jamb_E", new Vector3(1.75f, 0f, -W / 2f + 0.3f), new Vector3(1.75f, 3.75f, -W / 2f + 0.3f));
             Rail(geo, "Lintel", new Vector3(-1.75f, 3.75f, -W / 2f + 0.3f), new Vector3(1.75f, 3.75f, -W / 2f + 0.3f));
             // and up the gallery posts to the lever's floor
-            Rail(geo, "Post_Line_W", new Vector3(-5.6f, 0f, GalleryFace + 0.05f), new Vector3(-5.6f, GalleryY - 0.5f, GalleryFace + 0.05f));
-            Rail(geo, "Post_Line_E", new Vector3(5.6f, 0f, GalleryFace + 0.05f), new Vector3(5.6f, GalleryY - 0.5f, GalleryFace + 0.05f));
-            Rail(geo, "Loft_Line", new Vector3(LoftFace + 0.55f, 0f, -3.75f), new Vector3(LoftFace + 0.55f, LoftY - 0.5f, -3.75f));
-            Rail(geo, "Shelf_Line", new Vector3(ShelfFace - 0.55f, 0f, -2.75f), new Vector3(ShelfFace - 0.55f, ShelfY - 0.5f, -2.75f));
+            Rail(geo, "Post_Line_W", new Vector3(-5.75f, 0f, GalleryFace + 0.05f), new Vector3(-5.75f, GalleryY - 0.5f, GalleryFace + 0.05f));
+            Rail(geo, "Post_Line_E", new Vector3(5.75f, 0f, GalleryFace + 0.05f), new Vector3(5.75f, GalleryY - 0.5f, GalleryFace + 0.05f));
+            Rail(geo, "Loft_Line", new Vector3(LoftFace + 0.05f, 0f, -3.75f), new Vector3(LoftFace + 0.05f, LoftY - 0.5f, -3.75f));
+            Rail(geo, "Shelf_Line", new Vector3(ShelfFace - 0.05f, 0f, -2.75f), new Vector3(ShelfFace - 0.05f, ShelfY - 0.5f, -2.75f));
         }
 
         /// <summary>Stone pilasters where the eight walls meet, and a brass band round the room at the shelf's height,
@@ -313,21 +316,21 @@ namespace Pesky.Editor
             g.transform.SetParent(geo, false);
             Transform t = g.transform;
             // the entry wall: banners either side of the way in, sacks and a pile of the last visitors
-            Deco(t, "Deco_Banner", "Banner_Entry_W", new Vector3(-2.35f, 0f, W / 2f), 0f);
-            Deco(t, "Deco_Banner", "Banner_Entry_E", new Vector3(2.35f, 0f, W / 2f), 0f);
-            Deco(t, "Deco_Sacks", "Sacks_Entry", new Vector3(3.6f, 0f, W / 2f - 0.35f), 180f);
-            Deco(t, "Deco_BonePile", "Bones_Entry", new Vector3(-3.7f, 0f, W / 2f - 0.5f), 160f);
+            Deco(t, "Deco_Banner", "Banner_Entry_W", new Vector3(-3.1f, 0f, W / 2f), 0f);
+            Deco(t, "Deco_Banner", "Banner_Entry_E", new Vector3(3.1f, 0f, W / 2f), 0f);
+            Deco(t, "Deco_Sacks", "Sacks_Entry", new Vector3(5.0f, 0f, W / 2f - 0.5f), 180f);   // 0.12 m of skirting stands off the wall: keep clear of it
+            Deco(t, "Deco_BonePile", "Bones_Entry", new Vector3(-5.0f, 0f, W / 2f - 0.55f), 160f);
             // the exit wall, under the gallery: banners framing the door
-            Deco(t, "Deco_Banner", "Banner_Exit_W", new Vector3(-2.35f, 0f, -W / 2f), 180f);
-            Deco(t, "Deco_Banner", "Banner_Exit_E", new Vector3(2.35f, 0f, -W / 2f), 180f);
+            Deco(t, "Deco_Banner", "Banner_Exit_W", new Vector3(-3.1f, 0f, -W / 2f), 180f);
+            Deco(t, "Deco_Banner", "Banner_Exit_E", new Vector3(3.1f, 0f, -W / 2f), 180f);
             // the east wall under the shelf: the cauldron the lenses are cast in
-            Deco(t, "Deco_Cauldron", "Cauldron", new Vector3(W / 2f - 0.6f, 0f, -5.4f), 0f);
+            Deco(t, "Deco_Cauldron", "Cauldron", new Vector3(15.3f, 0f, -4.6f), 0f);   // off the pilaster base at z -6.5 and the skirting at x 15.88
         }
 
         /// <summary>Four torches where the eye needs them, and one violet light from the sun. Six lights at most per room.</summary>
         static void Lighting(Transform fixtures)
         {
-            Vector3[] at = { new Vector3(-5f, 3.2f, W / 2f - 0.6f), new Vector3(0f, GalleryY + 2.4f, -W / 2f + 0.6f), new Vector3(-W / 2f + 0.6f, 5.2f, 2.6f), new Vector3(W / 2f - 0.6f, 2.6f, -3.6f) };
+            Vector3[] at = { new Vector3(-5f, 3.2f, W / 2f - 0.6f), new Vector3(0f, GalleryY + 2.4f, -W / 2f + 0.6f), new Vector3(-W / 2f + 0.6f, 5.2f, 2.6f), new Vector3(W / 2f - 0.6f, 2.6f, -4.6f) };
             string[] names = { "Torch_1", "Torch_2", "Torch_3", "Torch_4" };
             for (int i = 0; i < names.Length; i++) { Transform tr = fixtures.Find(names[i]); if (tr != null) tr.localPosition = at[i]; }
             GameObject sun = new GameObject("SunLight");

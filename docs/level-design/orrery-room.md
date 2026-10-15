@@ -48,6 +48,13 @@ mid-flight nudge to the gallery puts the body back on the floor.
 `Deco_Stool`, `Deco_Crystal` x 2, `Deco_Brazier` x 2, `Deco_Banner` x 5, `Deco_Sacks` x 2, `Deco_BonePile`,
 `Deco_Cauldron`. Every decoration is flush to a wall (or touching another piece) or 1.5 m clear of everything.
 
+**Alignment and clearance (review fix, PR #17).** Every perch stands on posts that sit UNDER its slab with their outer
+faces flush with the slab's edges (loft x -13.0..-12.5, shelf x 12.5..13.0, gallery x +-5.5..6.0 and z -12.5..-12.0), tied
+by a beam under the front edge. The lit lines that climb the posts follow them. A script check on the built room lists
+every prop whose bounds overlap anything else by more than 3 cm: all 15 are clear. The wall skirting stands 0.12 m off
+the wall and the corner pilasters 0.9 m, so props near a wall are placed 0.5 m off it and the cauldron sits 1.2 m clear
+of the pilaster at z -6.5.
+
 Lights: four torches (one at the entry, one over the scribe's desk, one over the cauldron, one on the wall above the
 gallery) and one violet point light at the sun. Five in all, under the six-per-room rule.
 
