@@ -151,11 +151,11 @@ namespace Pesky.Editor
         {
             float x0 = -W / 2f, depth = LoftFace - x0;   // 3.5 m deep
             Block(geo, "Loft", new Vector3(x0 + depth / 2f, LoftY - 0.25f, 0f), new Vector3(depth, 0.5f, 8f), MWood);
-            Block(geo, "Loft_Lip", new Vector3(LoftFace - 0.06f, LoftY + 0.06f, 0f), new Vector3(0.12f, 0.12f, 8f), MKey);
+            Block(geo, "Loft_Lip", new Vector3(LoftFace - 0.06f, LoftY + 0.06f, 0f), new Vector3(0.12f, 0.12f, 7.98f), MKey);
             // Posts stand UNDER the platform, flush with its edges: the outer face of each is the platform's edge.
             Post(geo, "Loft_Post_N", new Vector3(LoftFace - 0.25f, 0f, 3.75f), LoftY - 0.5f);
             Post(geo, "Loft_Post_S", new Vector3(LoftFace - 0.25f, 0f, -3.75f), LoftY - 0.5f);
-            Block(geo, "Loft_Beam", new Vector3(LoftFace - 0.25f, LoftY - 0.75f, 0f), new Vector3(0.5f, 0.5f, 8f), MWood);
+            Block(geo, "Loft_Beam", new Vector3(LoftFace - 0.25f, LoftY - 0.76f, 0f), new Vector3(0.46f, 0.5f, 7.96f), MWood);   // inset from the posts' faces and tops
             Stair(geo, "Loft_Stair", new Vector3(-8.5f, 0f, -1f), Vector3.left, 5, 0.5f, 0.8f, 2.5f);
 
             ImpactLever lever = Lever(play, "StarLever_Loft", new Vector3(-13.6f, LoftY, -3.0f), Quaternion.Euler(0f, 90f, 0f));
@@ -171,10 +171,10 @@ namespace Pesky.Editor
         {
             float x1 = W / 2f, depth = x1 - ShelfFace;
             Block(geo, "Shelf", new Vector3(ShelfFace + depth / 2f, ShelfY - 0.25f, 1f), new Vector3(depth, 0.5f, 8f), MWood);
-            Block(geo, "Shelf_Lip", new Vector3(ShelfFace + 0.06f, ShelfY + 0.06f, 1f), new Vector3(0.12f, 0.12f, 8f), MKey);
+            Block(geo, "Shelf_Lip", new Vector3(ShelfFace + 0.06f, ShelfY + 0.06f, 1f), new Vector3(0.12f, 0.12f, 7.98f), MKey);
             Post(geo, "Shelf_Post_N", new Vector3(ShelfFace + 0.25f, 0f, 4.75f), ShelfY - 0.5f);
             Post(geo, "Shelf_Post_S", new Vector3(ShelfFace + 0.25f, 0f, -2.75f), ShelfY - 0.5f);
-            Block(geo, "Shelf_Beam", new Vector3(ShelfFace + 0.25f, ShelfY - 0.75f, 1f), new Vector3(0.5f, 0.5f, 8f), MWood);
+            Block(geo, "Shelf_Beam", new Vector3(ShelfFace + 0.25f, ShelfY - 0.76f, 1f), new Vector3(0.46f, 0.5f, 7.96f), MWood);
 
             // up 15, out 5.5: a Sword thrown from the pad comes to rest about 1.4 m in from the shelf's face (play-tested)
             GameObject pad = Kit(PadPrefab, play, "Pad_Shelf", new Vector3(8.5f, 0f, 1f), Quaternion.Euler(0f, 90f, 0f));
@@ -194,10 +194,10 @@ namespace Pesky.Editor
         {
             float z0 = -W / 2f, depth = GalleryFace - z0;   // 4 m deep
             Block(geo, "Gallery", new Vector3(0f, GalleryY - 0.25f, z0 + depth / 2f), new Vector3(12f, 0.5f, depth), MWood);
-            Block(geo, "Gallery_Lip", new Vector3(0f, GalleryY + 0.06f, GalleryFace - 0.06f), new Vector3(12f, 0.12f, 0.12f), MKey);
+            Block(geo, "Gallery_Lip", new Vector3(0f, GalleryY + 0.06f, GalleryFace - 0.06f), new Vector3(11.98f, 0.12f, 0.12f), MKey);
             Post(geo, "Gallery_Post_W", new Vector3(-5.75f, 0f, GalleryFace - 0.25f), GalleryY - 0.5f);   // outer face on the platform's side edge (x +-6)
             Post(geo, "Gallery_Post_E", new Vector3(5.75f, 0f, GalleryFace - 0.25f), GalleryY - 0.5f);
-            Block(geo, "Gallery_Beam", new Vector3(0f, GalleryY - 0.75f, GalleryFace - 0.25f), new Vector3(12f, 0.5f, 0.5f), MWood);
+            Block(geo, "Gallery_Beam", new Vector3(0f, GalleryY - 0.76f, GalleryFace - 0.25f), new Vector3(11.96f, 0.5f, 0.46f), MWood);
 
             // up 18, out 8.8 from the dais (1 m up): clears the gallery's face high and comes to rest about 1.5 m in (play-tested)
             GameObject pad = Kit(PadPrefab, play, "Pad_Gallery", new Vector3(0f, DaisH, -2.6f), Quaternion.Euler(0f, 180f, 0f));
@@ -281,7 +281,9 @@ namespace Pesky.Editor
             {
                 float a = 45f * k, r = 9f, len = 2f * r * Mathf.Tan(22.5f * Mathf.Deg2Rad) + 0.5f;
                 Vector3 dir = Quaternion.Euler(0f, a, 0f) * Vector3.forward;
-                GameObject ring = Block(t, "RingBeam_" + k, dir * r + Vector3.up * (y - 0.35f), new Vector3(len, 0.35f, 0.35f), MWood, Quaternion.Euler(0f, a, 0f));
+                // Even beams are 0.35 deep, odd ones 0.31 and 1 cm higher, so where two overlap at a corner no two faces share a plane.
+                bool odd = (k & 1) == 1;
+                GameObject ring = Block(t, "RingBeam_" + k, dir * r + Vector3.up * (y - (odd ? 0.34f : 0.35f)), new Vector3(len, odd ? 0.31f : 0.35f, odd ? 0.33f : 0.35f), MWood, Quaternion.Euler(0f, a, 0f));
                 Object.DestroyImmediate(ring.GetComponent<Collider>());
             }
             // Constellations: each a short chain of stars (x, z on the roof), joined by faint lines.
@@ -300,11 +302,13 @@ namespace Pesky.Editor
                 for (int i = 0; i < fig.Length; i++)
                 {
                     float size = i == 0 ? 0.42f : 0.28f;
-                    Visual(t, "Star_" + n++, PrimitiveType.Cube, new Vector3(fig[i].x, H - 0.03f, fig[i].y), new Vector3(0f, 45f, 0f), new Vector3(size, 0.04f, size), MFlow);
+                    Static(Visual(t, "Star_" + n++, PrimitiveType.Cube, new Vector3(fig[i].x, H - 0.03f, fig[i].y), new Vector3(0f, 45f, 0f), new Vector3(size, 0.04f, size), MFlow));
                     if (i == 0) continue;
                     Vector3 from = new Vector3(fig[i - 1].x, H - 0.02f, fig[i - 1].y), to = new Vector3(fig[i].x, H - 0.02f, fig[i].y);
                     Vector3 d = to - from;
-                    Visual(t, "Line_" + n, PrimitiveType.Cube, (from + to) / 2f, Quaternion.LookRotation(d.normalized).eulerAngles, new Vector3(0.06f, 0.01f, d.magnitude), MKey);
+                    // Alternate lines sit 8 mm apart in height, so two that meet at a star do not share a plane.
+                    Vector3 mid = (from + to) / 2f - Vector3.up * ((n % 2) * 0.008f);
+                    Static(Visual(t, "Line_" + n, PrimitiveType.Cube, mid, Quaternion.LookRotation(d.normalized).eulerAngles, new Vector3(0.06f, 0.01f, d.magnitude), MKey));
                 }
             }
         }
@@ -347,7 +351,8 @@ namespace Pesky.Editor
         static Door ExitGate(GameObject room, List<ImpactLever> levers)
         {
             Transform doorways = room.transform.Find("Doorways");
-            GameObject go = Kit(DoorPrefab, doorways, "Gate_South", new Vector3(0f, 0f, -W / 2f), Quaternion.identity);
+            // 1 cm up: the slab's bottom and the frame jambs' bottoms otherwise share the floor plane (z-fight, shut and open).
+            GameObject go = Kit(DoorPrefab, doorways, "Gate_South", new Vector3(0f, 0.01f, -W / 2f), Quaternion.identity);
             Door gate = go.GetComponent<Door>();
             DoorCondition c = gate.Condition;
             SetInt(c, "mode", (int)DoorCondition.Mode.LeversOn);
@@ -526,7 +531,8 @@ namespace Pesky.Editor
             {
                 float h = k * rise;
                 Vector3 centre = foot + dir.normalized * ((k - 0.5f) * tread) + Vector3.up * (h / 2f);
-                Block(stair.transform, "Step_" + k, centre, alongZ ? new Vector3(width, h, tread) : new Vector3(tread, h, width), MWood);
+                float w = width - ((k & 1) == 0 ? 0.02f : 0f);
+                Block(stair.transform, "Step_" + k, centre, alongZ ? new Vector3(w, h, tread) : new Vector3(tread, h, w), MWood);
             }
         }
 
@@ -607,9 +613,10 @@ namespace Pesky.Editor
             return go;
         }
 
-        static void Static(GameObject go)
+        static GameObject Static(GameObject go)
         {
             GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.ContributeGI);
+            return go;
         }
 
         static void Paint(GameObject go, string materialPath)

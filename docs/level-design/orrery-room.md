@@ -55,6 +55,14 @@ every prop whose bounds overlap anything else by more than 3 cm: all 15 are clea
 the wall and the corner pilasters 0.9 m, so props near a wall are placed 0.5 m off it and the cauldron sits 1.2 m clear
 of the pilaster at z -6.5.
 
+**No coplanar faces (review fix, PR #17).** The scene validator on rooms-overhaul lists any two faces in the same plane that
+point the same way and overlap, because they z-fight. The room follows the same rules: the perch beams are inset from the
+posts (0.46 wide against 0.5, 7.96 against 8 m, 1 cm lower) and the lips 2 cm short; even stair steps are 2 cm narrower;
+alternate ring beams are 0.35 and 0.31 deep; alternate constellation lines sit 8 mm apart; the ceiling stars are static;
+the gate sits 1 cm up so its slab and the frame's jambs do not share the floor plane. Checked with that validator on this
+room: only the three warnings every single-room test scene has (no LabyrinthDirector). The exit is still a sliding slab
+here; making it a dead portal and wiring the levers needs rooms-overhaul's PowerLine, so that comes after it lands.
+
 Lights: four torches (one at the entry, one over the scribe's desk, one over the cauldron, one on the wall above the
 gallery) and one violet point light at the sun. Five in all, under the six-per-room rule.
 
