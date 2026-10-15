@@ -441,21 +441,21 @@ MonoBehaviour:
   - {fileID: 1416830818}
   enemies: []
   doors:
-  - {fileID: 837077471}
+  - {fileID: 970891853}
   plates: []
   circuitBridges: []
   keys: []
   runes: []
   anvils: []
   rooms:
-  - {fileID: 837077470}
+  - {fileID: 970891852}
   viewCamera: {fileID: 2137978954}
   speedMin: 3
   speedMax: 12
   hitCooldown: 0.35
   magicDoors:
-  - {fileID: 837077469}
-  - {fileID: 837077468}
+  - {fileID: 970891851}
+  - {fileID: 970891850}
   magnets: []
   lifts: []
   sessionRunner: {fileID: 790094385}
@@ -468,9 +468,9 @@ MonoBehaviour:
   ropes: []
   pots: []
   levers:
-  - {fileID: 837077467}
-  - {fileID: 837077466}
-  - {fileID: 837077465}
+  - {fileID: 970891856}
+  - {fileID: 970891855}
+  - {fileID: 970891854}
   counterweights: []
   scales: []
   lightningFields: []
@@ -832,224 +832,6 @@ MonoBehaviour:
   session: {fileID: 790094385}
   spawner: {fileID: 1578728416}
   authority: {fileID: 267765539}
---- !u!1001 &837077463
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1783976309}
-    m_Modifications:
-    - target: {fileID: 1060866145277905487, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: id
-      value: 401
-      objectReference: {fileID: 0}
-    - target: {fileID: 1060866145277905487, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: authority
-      value: 
-      objectReference: {fileID: 267765539}
-    - target: {fileID: 1302917435278646030, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: id
-      value: 1302
-      objectReference: {fileID: 0}
-    - target: {fileID: 1302917435278646030, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: authority
-      value: 
-      objectReference: {fileID: 267765539}
-    - target: {fileID: 1703055924845694256, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: id
-      value: 1802
-      objectReference: {fileID: 0}
-    - target: {fileID: 1703055924845694256, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: clock
-      value: 
-      objectReference: {fileID: 582680218}
-    - target: {fileID: 1703055924845694256, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: authority
-      value: 
-      objectReference: {fileID: 267765539}
-    - target: {fileID: 1715153543160665848, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: id
-      value: 1803
-      objectReference: {fileID: 0}
-    - target: {fileID: 1715153543160665848, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: clock
-      value: 
-      objectReference: {fileID: 582680218}
-    - target: {fileID: 1715153543160665848, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: authority
-      value: 
-      objectReference: {fileID: 267765539}
-    - target: {fileID: 3745031481533663083, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3873063827746863402, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_Name
-      value: Orrery
-      objectReference: {fileID: 0}
-    - target: {fileID: 4625173317004457775, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: id
-      value: 1301
-      objectReference: {fileID: 0}
-    - target: {fileID: 4625173317004457775, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: authority
-      value: 
-      objectReference: {fileID: 267765539}
-    - target: {fileID: 5474813545916338730, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: clock
-      value: 
-      objectReference: {fileID: 582680218}
-    - target: {fileID: 5474813545916338730, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: authority
-      value: 
-      objectReference: {fileID: 267765539}
-    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6842060100787719218, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: clock
-      value: 
-      objectReference: {fileID: 582680218}
-    - target: {fileID: 7044202023429876554, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7149500654704401812, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: id
-      value: 301
-      objectReference: {fileID: 0}
-    - target: {fileID: 8001827792176493538, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      propertyPath: id
-      value: 1201
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8524479130037101029, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-  m_SourcePrefab: {fileID: 100100000, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
---- !u!4 &837077464 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-  m_PrefabInstance: {fileID: 837077463}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &837077465 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1715153543160665848, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-  m_PrefabInstance: {fileID: 837077463}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0863c10088a30c44ea32abe215f34ea1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.ImpactLever
---- !u!114 &837077466 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1703055924845694256, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-  m_PrefabInstance: {fileID: 837077463}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0863c10088a30c44ea32abe215f34ea1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.ImpactLever
---- !u!114 &837077467 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5474813545916338730, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-  m_PrefabInstance: {fileID: 837077463}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0863c10088a30c44ea32abe215f34ea1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.ImpactLever
---- !u!114 &837077468 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1302917435278646030, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-  m_PrefabInstance: {fileID: 837077463}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1e4f11de09e08d9449ff78d4d7dc72b4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.MagicDoor
---- !u!114 &837077469 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4625173317004457775, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-  m_PrefabInstance: {fileID: 837077463}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1e4f11de09e08d9449ff78d4d7dc72b4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.MagicDoor
---- !u!114 &837077470 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7149500654704401812, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-  m_PrefabInstance: {fileID: 837077463}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 67af5dad7b096c14a8a9ad2d54f4ea25, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.RoomVolume
---- !u!114 &837077471 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1060866145277905487, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
-  m_PrefabInstance: {fileID: 837077463}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: caff9496beb1e09478887d1b1713cf0a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.Door
 --- !u!1 &847725097
 GameObject:
   m_ObjectHideFlags: 0
@@ -1207,6 +989,220 @@ MonoBehaviour:
   viewRoot: {fileID: 879032211}
   banishedMageTag: BANISHED - THE ARCH MAGE
   banishedWeaponTag: BANISHED - A WEAPON
+--- !u!1001 &970891848
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1783976309}
+    m_Modifications:
+    - target: {fileID: 1060866145277905487, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: id
+      value: 401
+      objectReference: {fileID: 0}
+    - target: {fileID: 1060866145277905487, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: authority
+      value: 
+      objectReference: {fileID: 267765539}
+    - target: {fileID: 1302917435278646030, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: id
+      value: 1302
+      objectReference: {fileID: 0}
+    - target: {fileID: 1302917435278646030, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: authority
+      value: 
+      objectReference: {fileID: 267765539}
+    - target: {fileID: 1703055924845694256, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: id
+      value: 1802
+      objectReference: {fileID: 0}
+    - target: {fileID: 1703055924845694256, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: clock
+      value: 
+      objectReference: {fileID: 582680218}
+    - target: {fileID: 1703055924845694256, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: authority
+      value: 
+      objectReference: {fileID: 267765539}
+    - target: {fileID: 1715153543160665848, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: id
+      value: 1803
+      objectReference: {fileID: 0}
+    - target: {fileID: 1715153543160665848, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: clock
+      value: 
+      objectReference: {fileID: 582680218}
+    - target: {fileID: 1715153543160665848, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: authority
+      value: 
+      objectReference: {fileID: 267765539}
+    - target: {fileID: 3745031481533663083, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3873063827746863402, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_Name
+      value: Orrery
+      objectReference: {fileID: 0}
+    - target: {fileID: 4625173317004457775, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: id
+      value: 1301
+      objectReference: {fileID: 0}
+    - target: {fileID: 4625173317004457775, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: authority
+      value: 
+      objectReference: {fileID: 267765539}
+    - target: {fileID: 5474813545916338730, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: clock
+      value: 
+      objectReference: {fileID: 582680218}
+    - target: {fileID: 5474813545916338730, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: authority
+      value: 
+      objectReference: {fileID: 267765539}
+    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6842060100787719218, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: clock
+      value: 
+      objectReference: {fileID: 582680218}
+    - target: {fileID: 7149500654704401812, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: id
+      value: 301
+      objectReference: {fileID: 0}
+    - target: {fileID: 8001827792176493538, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      propertyPath: id
+      value: 1201
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8524479130037101029, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+  m_SourcePrefab: {fileID: 100100000, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+--- !u!4 &970891849 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5997036606142417044, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+  m_PrefabInstance: {fileID: 970891848}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &970891850 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1302917435278646030, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+  m_PrefabInstance: {fileID: 970891848}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e4f11de09e08d9449ff78d4d7dc72b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.MagicDoor
+--- !u!114 &970891851 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4625173317004457775, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+  m_PrefabInstance: {fileID: 970891848}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e4f11de09e08d9449ff78d4d7dc72b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.MagicDoor
+--- !u!114 &970891852 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7149500654704401812, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+  m_PrefabInstance: {fileID: 970891848}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67af5dad7b096c14a8a9ad2d54f4ea25, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.RoomVolume
+--- !u!114 &970891853 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1060866145277905487, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+  m_PrefabInstance: {fileID: 970891848}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caff9496beb1e09478887d1b1713cf0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.Door
+--- !u!114 &970891854 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1715153543160665848, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+  m_PrefabInstance: {fileID: 970891848}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0863c10088a30c44ea32abe215f34ea1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.ImpactLever
+--- !u!114 &970891855 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1703055924845694256, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+  m_PrefabInstance: {fileID: 970891848}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0863c10088a30c44ea32abe215f34ea1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.ImpactLever
+--- !u!114 &970891856 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5474813545916338730, guid: 77a46044f96d642568e63e2ee30a90cc, type: 3}
+  m_PrefabInstance: {fileID: 970891848}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0863c10088a30c44ea32abe215f34ea1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.ImpactLever
 --- !u!1001 &1271259865
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1828,7 +1824,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 837077464}
+  - {fileID: 970891849}
   - {fileID: 444245603}
   - {fileID: 222555631}
   - {fileID: 598914140}
