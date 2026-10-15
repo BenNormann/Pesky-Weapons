@@ -305,7 +305,7 @@ the same C# event as before. Offline that round trip is synchronous inside the
 | Doors, plates, scales, counterweights, porter gates, magnets, lifts, lightning | host alone (its own physics and conditions) | KIT_STATE; a client never asks for these |
 | Keys, runes, ropes, pots, levers, cracked walls, anvils | the touching peer asks, host validates against its own scene (`IHostWorld.ValidateKit`: piece state, `CanCut` / `CanSmash` / `CanFlip` / `CanBreak` with the claimant's weapon as the host sees it, within 8 m) | KIT_REQ -> KIT_STATE |
 | The shove from an enemy hit or a bat | host decides the vector, **the target's owner applies it locally** (`WeaponBody.Knockback`); the host applies it for a loose weapon | WEAPON_DAMAGED.knock / BAT_EVENT |
-| Loose (unheld) weapons | **not synchronised**: every peer simulates them locally from the rest pose the releaser sent. They can drift apart; possession snaps them to the owner's POSE | WEAPON_OWNER(free, pose) |
+| Loose (unheld) weapons | **the host** (the peer that already reports their contacts). Every peer still simulates its own copy, for feel; the host streams where its copies are and a client pulls its copy onto that (`WeaponBody.FollowHost`): blend when near, snap when far, exact once the host's copy lies still | WEAPON_OWNER(free, pose) on release, then LOOSE_WEAPONS 10 Hz |
 | Level clock | host room clock | `LevelClock` re-bases onto `SessionRunner.LevelMs` (= room ms since `PhaseStartTick`) when more than 50 ms off; between re-bases it runs on Unity time so `FixedUpdate` still sees fixed steps |
 
 Two players can never hold one weapon: the host answers requests one at a time
@@ -327,6 +327,7 @@ Event starts `type u8 | tick u32` (so `TryEventTick` stays a fixed offset).
 | 0x20 | POSSESS_REQ | Intent | 3 | on E | `weaponId u16` |
 | 0x21 | RELEASE_REQ | Intent | 25 | on Q | `weaponId u16, pos, rot, vel` |
 | 0x22 | WEAPON_OWNER | Event | 31 | on change | `tick, weaponId u16, ownerSlot u8 (0xFF free), hasPose u8, pos, rot, vel` (pose = the loose weapon's rest pose) |
+| 0x2F | LOOSE_WEAPONS | State | 6 + 25 x rows | **10 Hz** (every 2 ticks), a row only when that weapon moved > 2 cm, turned > 2 deg, changed `LooseFlags` or 1 s passed | `tick u32` (the sample tick, for the whole batch), `count u8`, then rows: `weaponId u16, flags u8 (LooseFlags: 1 Asleep, 2 Stuck), pos f32x3, rot u32, vel i16x3`. Never sent for a held, racked, carried, broken or remote driven weapon. Overwrites `WeaponState.rest*`, so a snapshot carries the latest pose; does not bump `WorldSim.Rev` |
 | 0x23 | WEAPON_STATE | State | 2 + rows | when the host loads a level | `count u8` then rows: `weaponId u16, defId u8, flags u8 (1 Broken), ownerSlot u8, hp u16, maxHp u16, respawnTick u32, homeSlot u16, modCount u8, modifierId u8 x n` (16 + n each). On a row the sim already has, only hp / maxHp / modifiers are taken |
 | 0x24 | WEAPON_BROKEN | Event | 12 | on break | `tick, weaponId u16, cause u8 (BreakCause), respawnTick u32` |
 | 0x25 | WEAPON_RESPAWNED | Event | 7 | 10 s after a break | `tick, weaponId u16` |
@@ -461,9 +462,19 @@ Scenes wired and saved: `Zone1`, `Dev/FeelBox` (`_Managers/SessionRunner`,
 8. **`FloorActivator`** now keeps remote players' rooms enabled on every peer.
    Without that the host's goblins would see through disabled walls and loose
    weapons would fall through disabled floors; with it, more rooms render.
-9. **Loose weapons are per-peer physics.** They will drift. A client can
-   possess a weapon that is somewhere else on the host; the host accepts it and
-   everyone snaps to the owner's POSE.
+9. **Loose weapons follow the host** (LOOSE_WEAPONS, round 30). A client still
+   simulates its own copy, but `WorldAuthority.FixedUpdate` pulls each unheld one
+   toward the host's row, carried forward by the row's age (capped at 0.25 s).
+   More than 2.5 m off: snapped with the host's velocity. The host's copy lying
+   still (`Asleep`): put exactly there once it is 5 cm or 3 degrees off, so final
+   resting poses agree. Otherwise blended, 30 percent of the error per physics
+   step, with a 6 cm / 3 degree dead zone so a settled weapon does not jitter.
+   `Stuck` rows stick the local copy into whatever `WoodSurface` its blade is in
+   (and let go when the row says it is free); no wood there is a plain rest pose.
+   Known limits: a push a client gives a loose weapon reaches the host only
+   through the pusher's own streamed body (a kinematic copy on the host, which
+   does push), so it arrives one round trip late; and a client's copy is allowed
+   to be a little wrong between rows (10 Hz), by design.
 10. **Two machines have never met.** `TransportFactory` still has no desktop
     branch, so clients, puppets, remote views, snapshots of the new tables and
     late join are reasoned about only. Nothing loads the level on a client
@@ -478,6 +489,7 @@ clients; a HUD line for "host left" (only a `[net]` warning and
 `SessionRunner.HostLost`); position sync of loose weapons after release;
 host range check on possess; EditMode round-trip tests for the new messages;
 `FinalScore`; the six `Appearance` bytes are still ATCK's names.
+(Position sync of loose weapons was done in round 30: see S2.6 point 9.)
 
 ---
 

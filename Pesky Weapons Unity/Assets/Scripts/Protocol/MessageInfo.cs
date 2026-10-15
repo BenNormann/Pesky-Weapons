@@ -48,6 +48,7 @@ namespace Pesky.Protocol
             t[CurseReqMsg.Id] = CurseReqMsg.Kind;
             t[CurseEventMsg.Id] = CurseEventMsg.Kind;
             t[CurseRefusedMsg.Id] = CurseRefusedMsg.Kind;
+            t[LooseWeaponsMsg.Id] = LooseWeaponsMsg.Kind;
 
             t[SwapReqMsg.Id] = SwapReqMsg.Kind;
             t[CompassBendReqMsg.Id] = CompassBendReqMsg.Kind;

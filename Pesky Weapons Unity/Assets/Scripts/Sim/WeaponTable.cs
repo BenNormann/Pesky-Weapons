@@ -26,6 +26,12 @@ namespace Pesky.Sim
         public Vector3 restPos;
         public Quaternion restRot = Quaternion.identity;
         public Vector3 restVel;
+        /// <summary>The sim tick the rest pose was sampled at (LOOSE_WEAPONS); 0 for a pose from a release or a snapshot. Not serialised.</summary>
+        public uint restTick;
+        /// <summary>The host's copy is lying still. Not serialised.</summary>
+        public bool restAsleep;
+        /// <summary>The host's copy is stuck in wood. Not serialised.</summary>
+        public bool restStuck;
 
         public void Write(NetWriter w)
         {
@@ -50,6 +56,9 @@ namespace Pesky.Sim
             restPos = r.Pos();
             restRot = r.Quat();
             restVel = Vector3.zero;
+            restTick = 0;
+            restAsleep = false;
+            restStuck = false;
             mods.Clear();
             var n = r.U8();
             for (var i = 0; i < n && !r.Failed; i++) mods.Add(r.U8());

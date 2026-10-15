@@ -219,6 +219,9 @@ namespace Pesky.Sim
                     w.restPos = msg.pos;
                     w.restRot = msg.rot;
                     w.restVel = msg.vel;
+                    w.restTick = 0;          // a release pose, not a streamed one: no age to extrapolate over
+                    w.restAsleep = false;
+                    w.restStuck = false;
                 }
                 return;
             }
@@ -270,6 +273,33 @@ namespace Pesky.Sim
 
         /// <summary>A Mage's nudge keeps nothing in the sim: the target's owner applies it to its own body. Kept so the event reaches Game.</summary>
         public void Apply(in NudgeEventMsg msg) { }
+
+        /// <summary>
+        /// LOOSE_WEAPONS: where the host's unheld weapons are right now. It overwrites the weapon's rest pose, so a
+        /// late joiner's snapshot carries the latest one. A row for a held or broken weapon is dropped (an owner
+        /// event may have overtaken it), and so is one sampled before the weapon last broke (a stale in-flight
+        /// row must not pull a respawned weapon off its rack). Does NOT bump Rev: ten rows a second must not make
+        /// every client rebuild its weapons from the table (Rev means "the tables were replaced").
+        /// </summary>
+        public void Apply(in LooseWeaponsMsg msg)
+        {
+            if (msg.rows == null) return;
+            for (var i = 0; i < msg.rows.Count; i++)
+            {
+                var row = msg.rows[i];
+                var w = Weapons.Get(row.weaponId);
+                if (w == null || w.broken || w.ownerSlot != Wire.NoSlot) continue;
+                if (msg.tick < w.respawnTick) continue;
+                if (w.hasRest && w.restTick != 0 && msg.tick < w.restTick) continue;   // reordered: an older sample after a newer one
+                w.hasRest = true;
+                w.restPos = row.pos;
+                w.restRot = row.rot;
+                w.restVel = row.vel;
+                w.restTick = msg.tick == 0 ? 1u : msg.tick;
+                w.restAsleep = (row.flags & LooseFlags.Asleep) != 0;
+                w.restStuck = (row.flags & LooseFlags.Stuck) != 0;
+            }
+        }
 
         // ---- enemies ----
 

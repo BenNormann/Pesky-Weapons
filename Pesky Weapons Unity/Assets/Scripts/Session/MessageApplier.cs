@@ -31,6 +31,7 @@ namespace Pesky.Session
                 case MsgId.WeaponDamaged: { if (!WeaponDamagedMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.BatEvent: { if (!BatEventMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.NudgeEvent: { if (!NudgeEventMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
+                case MsgId.LooseWeapons: { if (!LooseWeaponsMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.EnemyState: { if (!EnemyStateMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.EnemyHealth: { if (!EnemyHealthMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }
                 case MsgId.KitState: { if (!KitStateMsg.TryDecode(payload, out var m)) return false; sim.Apply(m); return true; }

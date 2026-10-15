@@ -68,6 +68,8 @@ public static HostAuthority CreateDefault()
             authority.AddRule(new WeaponRule());
             // Enemy rows next: the Game-side brains are read after the weapon facts of this tick are out.
             authority.AddRule(new EnemyStateRule());
+            // Loose weapons right after: where the unheld bodies are, as this tick's contacts left them.
+            authority.AddRule(new LooseWeaponsRule());
             var clock = new ClockRule();
             authority.AddRule(clock);
             authority.SetValidator(MsgId.ClockPing, clock);
