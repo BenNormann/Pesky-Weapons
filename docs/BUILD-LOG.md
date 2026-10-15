@@ -2952,7 +2952,10 @@ sent as `abandoned`, from the scene closing or, for a closed tab, by the page it
 `index.html` (`PESKY_ANALYTICS_URL`), empty until the Sheet is deployed. Nothing is sent from the Editor or a
 `?debug=1` page unless `?analytics=1`.
 
-Checked: a clean compile in batch mode, the 8 new EditMode tests pass (`RunReportTests`). The two
-`ResonanceForgeTests` that expect four rooms and the banana on slot 7 still fail; they predate this round.
-Not checked: a WebGL build (the `.jslib` and the WebGL branches of `AnalyticsSender` are compiled only there),
-a real send to a Sheet, a three-player run.
+Checked: a clean compile in batch mode and a WebGL build (0 errors); the 9 new EditMode tests pass
+(`RunReportTests`). The two `ResonanceForgeTests` that expect four rooms and the banana on slot 7 still fail;
+they predate this round. End to end on a local build (served over https, three players on two machines through
+a local copy of the relay with `?relay=force`): a three-player run whose host left mid-way reached the Sheet as
+`abandoned`, and a run that started with two players was not recorded. That test also found that times were
+written as a float's binary value (74.09999847), now doubles rounded to a tenth. Not yet seen: a run that ends
+with its result (`ended` = `result`), and the tab-close path (`pagehide`).

@@ -25,8 +25,8 @@ namespace Pesky.Session.Analytics
             public int mages;
             public string outcome = "None";
             public string ended = "abandoned";
-            public float duration_s;
-            public float timer_s;
+            public double duration_s;
+            public double timer_s;
             public int rooms_total;
             public int rooms_reached;
             public int votes_called;
@@ -39,8 +39,8 @@ namespace Pesky.Session.Analytics
             public int index;
             public int room_id;
             public string room;
-            public float entered_s;
-            public float seconds;
+            public double entered_s;
+            public double seconds;
             public bool cleared;
         }
 
@@ -48,7 +48,7 @@ namespace Pesky.Session.Analytics
         public sealed class VoteRow
         {
             public int n;
-            public float at_s;
+            public double at_s;
             public int players;
             public string banished;
         }
@@ -184,10 +184,10 @@ namespace Pesky.Session.Analytics
             return JsonUtility.ToJson(wire);
         }
 
-        /// <summary>A tenth of a second is plenty, and keeps the Sheet readable.</summary>
-        static float Round(float seconds)
+        /// <summary>A tenth of a second is plenty, and keeps the Sheet readable. Double, because JsonUtility writes a float's binary value (74.1 as 74.09999847).</summary>
+        static double Round(double seconds)
         {
-            return Mathf.Round(Mathf.Max(0f, seconds) * 10f) / 10f;
+            return Math.Round(Math.Max(0.0, seconds), 1);
         }
     }
 }

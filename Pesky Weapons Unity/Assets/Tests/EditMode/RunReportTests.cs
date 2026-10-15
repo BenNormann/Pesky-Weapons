@@ -110,6 +110,14 @@ namespace Pesky.Tests
         }
 
         [Test]
+        public void TimesAreWrittenAsTenthsNotFloatNoise()
+        {
+            RunReport report = NewReport();
+            report.Abandon(3, 74.1f);
+            StringAssert.Contains("\"duration_s\":74.1,", report.ToJson(0f), "A float's binary value (74.09999847) must not reach the Sheet.");
+        }
+
+        [Test]
         public void TheJsonCarriesTheSheetsColumnNames()
         {
             RunReport report = NewReport();
