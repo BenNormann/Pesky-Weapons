@@ -72,3 +72,52 @@ run's timer started (a vote's pause is not counted).
 
 Changing `Code.gs` later: **Deploy > Manage deployments > edit > Version: New version** keeps the same URL.
 A **new deployment** makes a new URL, which then has to go into `index.html` again.
+
+## 4. How it is built
+
+| Piece | Where | What it does |
+|---|---|---|
+| `RunAnalyticsWatcher` | `Scripts/Session/Analytics/` | Host only. Observes the sim once a frame: the run timer starting (the 3+ check), the first time a living player enters each room (ghosts pass doors freely, so they do not count), each vote's result, ROUND_RESULT. Builds the report; sends nothing. |
+| `RunReport` | `Scripts/Session/Analytics/` | The three tabs' rows; JsonUtility, so its field names are the Sheet's columns. Tested in `Tests/EditMode/RunReportTests.cs`. |
+| `RunDirector` | `Scripts/Game/` | Owns the watcher on the host (it knows which room of the run a point is in); clients never create one. Leaving the run scene mid-run sends the run as abandoned. |
+| `AnalyticsSender` + `PeskyAnalytics.jslib` | `Scripts/Game/`, `Plugins/WebGL/` | `navigator.sendBeacon` to `window.PESKY_ANALYTICS_URL`, as `text/plain` (no CORS preflight). The run so far is held by the page and sent on `pagehide` if the tab closes mid-run. |
+| `Code.gs` | `tools/analytics/` | The Apps Script: appends the rows, ignores a run id it already has. |
+
+Changing what is recorded: add the field to the row class in `RunReport`, its column to `TABS` in `Code.gs`
+(at the END of the list, so old rows still line up), and bump both schema versions together.
+
+## 5. Testing it
+
+- **Editor, any player count:** the report is never sent; with 3+ players the finished run's JSON is printed
+  to the console (`[pesky] analytics: not sent ...`). With fewer: `analytics: run not recorded, 2 player(s)`.
+- **The Sheet, end to end:** open the published build in three browser windows with
+  `?debug=1&analytics=1&relay=force` (debug for the console lines, analytics to send anyway, the relay so
+  three windows on one network stay connected). Host, join twice, play into the first room, finish or let a
+  short timer run out. A `runs` row, its `rooms` rows and any `votes` rows appear in the Sheet within seconds.
+  Then close the host's tab mid-run in a second run: a row with `ended` = `abandoned` appears.
+- **Two players:** the same with two windows sends nothing.
+
+After testing, delete the test rows from the Sheet (or filter on `build`) before the playtest.
+
+## 6. Charts (in the Sheet)
+
+Each chart is a pivot table and a chart on it: **Insert > Pivot table** on the tab, then **Insert > Chart**
+with the pivot table selected. They update as runs arrive.
+
+| GDD metric | Tab | Pivot table | Chart |
+|---|---|---|---|
+| **Where runs stall** | `rooms` | Rows: `index` (or `room`). Values: `seconds` AVERAGE, `cleared` COUNTA and a filter on `cleared` = FALSE for "runs that ended here" | Column chart, one bar per room |
+| **How runs end** | `runs` | Rows: `outcome`. Columns: `players_start`. Values: `run_id` COUNTA. Filter `ended` = `result` | Stacked column, or a pie for all player counts together |
+| **Vote accuracy** | `votes` | Rows: `banished`. Values: `n` COUNTA (and `at_s` AVERAGE for when votes happen) | Pie; a histogram of `at_s` for timing |
+
+## 7. For the GDD
+
+**Methodology Used**
+
+1. Data Collection:
+   - The host's game records each run with 3 or more players (Unity C#, `RunAnalyticsWatcher`) and sends one
+     report when the run ends, through a Google Apps Script web app into a Google Sheet. Runs abandoned
+     mid-way are sent too and marked as such.
+   - Link to data collection: *(the Sheet's link)*
+2. Data Visualization:
+   - Google Sheets pivot tables and charts on the `runs`, `rooms` and `votes` tabs, updating as runs arrive.
