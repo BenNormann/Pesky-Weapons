@@ -2933,3 +2933,29 @@ rack, leaning on a wall) stands on its pommel instead of flipping end over end; 
 Rebuilt the two v4 rooms (the Chasm unchanged), BatTest re-applied, validator 0 problems. Watch: the pivot
 lift means a braced body can hop a little when it starts to turn on uneven ground; a Sword on its pommel is a
 shorter target than one on its point.
+
+## Round 29: playtest analytics (2026-10-15)
+
+Owner: the alpha GDD needs analytics, recorded only for runs with 3 or more players (`docs/ANALYTICS.md`).
+
+**The host records, nobody else.** `RunAnalyticsWatcher` observes the host's sim once a frame, from
+`RunDirector` (the one place that knows which room of the run a point is in). It reads state every peer
+already has (the run timer, the streamed poses, the vote's result, ROUND_RESULT) and changes nothing: no new
+message, no scene edit. The 3+ count is taken once, when the run's timer starts.
+
+**One report per run** (`RunReport`): a `runs` row, a `rooms` row per room anybody alive entered (time from the
+first entry to the first entry of the next room), a `votes` row per meeting. A run the host leaves mid-way is
+sent as `abandoned`, from the scene closing or, for a closed tab, by the page itself on `pagehide`.
+
+**Delivery** is `navigator.sendBeacon` (`PeskyAnalytics.jslib`) to a Google Apps Script web app
+(`tools/analytics/Code.gs`) that appends to a Google Sheet and ignores a run id it already has. The URL goes in
+`index.html` (`PESKY_ANALYTICS_URL`), empty until the Sheet is deployed. Nothing is sent from the Editor or a
+`?debug=1` page unless `?analytics=1`.
+
+Checked: a clean compile in batch mode and a WebGL build (0 errors); the 9 new EditMode tests pass
+(`RunReportTests`). The two `ResonanceForgeTests` that expect four rooms and the banana on slot 7 still fail;
+they predate this round. End to end on a local build (served over https, three players on two machines through
+a local copy of the relay with `?relay=force`): a three-player run whose host left mid-way reached the Sheet as
+`abandoned`, and a run that started with two players was not recorded. That test also found that times were
+written as a float's binary value (74.09999847), now doubles rounded to a tenth. Not yet seen: a run that ends
+with its result (`ended` = `result`), and the tab-close path (`pagehide`).
