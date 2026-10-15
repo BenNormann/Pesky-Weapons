@@ -2,6 +2,9 @@
 
 Playtest analytics for the GDD (alpha onward): what is recorded, where it goes, and how to set it up.
 
+**The Sheet:** https://docs.google.com/spreadsheets/d/1HmK-adKw-AqHhSZjBKzJXs6QMS5cL9FUVSBqQOgkQys/edit?usp=sharing
+(owned by Siddhant; the deployed script's URL is already in `index.html`).
+
 ## 1. What and when
 
 The **host** records each run and sends one report to a Google Sheet when it ends. Only the host does it:
@@ -118,6 +121,6 @@ with the pivot table selected. They update as runs arrive.
    - The host's game records each run with 3 or more players (Unity C#, `RunAnalyticsWatcher`) and sends one
      report when the run ends, through a Google Apps Script web app into a Google Sheet. Runs abandoned
      mid-way are sent too and marked as such.
-   - Link to data collection: *(the Sheet's link)*
+   - Link to data collection: https://docs.google.com/spreadsheets/d/1HmK-adKw-AqHhSZjBKzJXs6QMS5cL9FUVSBqQOgkQys/edit?usp=sharing
 2. Data Visualization:
    - Google Sheets pivot tables and charts on the `runs`, `rooms` and `votes` tabs, updating as runs arrive.
