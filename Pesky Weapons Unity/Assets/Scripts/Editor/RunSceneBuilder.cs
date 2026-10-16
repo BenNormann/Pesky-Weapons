@@ -32,6 +32,7 @@ namespace Pesky.Editor
         const string RunTutorialDefAsset = "Assets/Data/Run_Tutorial.asset";
         const string RunUxml = "Assets/UI/Run.uxml";
         const string RunUss = "Assets/UI/Run.uss";
+        const string ExitCompassPrefab = "Assets/Prefabs/UI/ExitCompass.prefab";
         const int LayerWorld = 8;
 
         // ------------------------------------------------------------------ 1. the two-door room
@@ -265,6 +266,7 @@ namespace Pesky.Editor
             // ---- UI
             DestroyChild(ui.transform, "LabyrinthHud");
             RunHud runHud = CreateRunHud(ui.transform, authority, runner, RunDefAsset, false);
+            CreateExitCompass(ui.transform, run, spawner, camera, runner);
 
             SetRef(nudge, "hud", null);
             SetRef(nudge, "runHud", runHud);
@@ -369,6 +371,46 @@ namespace Pesky.Editor
             SetRef(hud, "fallbackDef", AssetDatabase.LoadAssetAtPath<RunDef>(defPath));
             SetBool(hud, "startAsleep", asleep);
             return hud;
+        }
+
+        static void CreateExitCompass(Transform uiRoot, RunDirector run, PlayerSpawner spawner,
+            OrbitCamera camera, SessionRunner runner)
+        {
+            HudController hud = uiRoot.GetComponentInChildren<HudController>(true);
+            UIDocument document = hud != null ? hud.GetComponent<UIDocument>() : null;
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ExitCompassPrefab);
+            if (prefab == null || document == null || run == null || spawner == null || camera == null || runner == null)
+                throw new System.InvalidOperationException("Exit compass needs its prefab, HUD document, director, spawner, camera and session runner.");
+            DestroyChild(uiRoot, "ExitCompass");
+            GameObject go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, uiRoot);
+            go.name = "ExitCompass";
+            RunExitCompass compass = go.GetComponent<RunExitCompass>();
+            SetRef(compass, "document", document);
+            SetRef(compass, "run", run);
+            SetRef(compass, "spawner", spawner);
+            SetRef(compass, "orbitCamera", camera);
+            SetRef(compass, "sessionRunner", runner);
+        }
+
+        [MenuItem("Pesky/Run/6 Install Exit Compass In Open Run Scene")]
+        public static void InstallExitCompassInOpenRunScene()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            if (EditorApplication.isPlayingOrWillChangePlaymode || scene.path != RunScene)
+                throw new System.InvalidOperationException("Open Run.unity outside Play mode to install the exit compass.");
+            GameObject ui = FindRoot(scene, "_UI");
+            GameObject managers = FindRoot(scene, "_Managers");
+            OrbitCamera camera = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                camera = root.GetComponentInChildren<OrbitCamera>(true);
+                if (camera != null) break;
+            }
+            CreateExitCompass(ui.transform, managers.GetComponentInChildren<RunDirector>(true),
+                managers.GetComponentInChildren<PlayerSpawner>(true), camera,
+                managers.GetComponentInChildren<SessionRunner>(true));
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
         }
 
         static void InputActionAssetOf(MageNudge nudge, out Object controls)

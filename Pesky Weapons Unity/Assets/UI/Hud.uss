@@ -90,18 +90,50 @@
     align-items: flex-end;
 }
 
-.weapon-panel {
-    min-width: 280px;
+.hud-panel {
     background-color: rgba(10, 12, 16, 0.6);
     padding: 10px 14px;
     border-radius: 4px;
 }
 
+.weapon-panel {
+    min-width: 280px;
+}
+
+.hud-title,
 .weapon-name {
-    font-size: 24px;
+    font-size: 15px;
     -unity-font-style: bold;
     letter-spacing: 2px;
     color: rgb(238, 238, 234);
+}
+
+.weapon-name {
+    font-size: 24px;
+}
+
+.exit-compass {
+    display: none;
+    width: 168px;
+    flex-shrink: 0;
+    margin-right: 16px;
+    align-items: center;
+}
+
+.exit-compass-dial {
+    width: 116px;
+    height: 116px;
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+
+.exit-compass .hud-detail {
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.exit-compass.is-arrived .exit-compass-dial {
+    color: rgb(86, 176, 96);
 }
 
 .hp-track {
@@ -122,6 +154,7 @@
     background-color: rgb(199, 61, 41);
 }
 
+.hud-detail,
 .hp-text {
     font-size: 15px;
     margin-top: 4px;
