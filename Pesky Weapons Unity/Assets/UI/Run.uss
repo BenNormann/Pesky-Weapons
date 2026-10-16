@@ -619,3 +619,38 @@ Button.end-button:hover {
     background-color: rgb(238, 200, 100);
     border-color: rgb(238, 200, 100);
 }
+
+/* ---- the game chat, top right: the narrator's hints and what goblins say (NarratorChat, round 29c) ---- */
+
+.chat-root {
+    position: absolute;
+    top: 120px;
+    right: 16px;
+    width: 400px;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.chat-lines {
+    flex-direction: column;
+    align-items: flex-end;
+    width: 100%;
+}
+
+.chat-line {
+    background-color: rgba(10, 8, 18, 0.74);
+    color: rgb(228, 224, 238);
+    font-size: 14px;
+    padding: 6px 10px 6px 10px;
+    margin-top: 4px;
+    max-width: 400px;
+    white-space: normal;
+    border-left-width: 3px;
+    border-left-color: rgb(168, 108, 255);
+    -unity-text-align: upper-left;
+}
+
+.chat-line--goblin {
+    border-left-color: rgb(120, 190, 90);
+    color: rgb(214, 232, 204);
+}

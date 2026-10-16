@@ -60,6 +60,7 @@ namespace Pesky.Editor
             CheckEnemyRoles(all, problems);
             CheckLabyrinth(all, problems);            CheckDoorwayOpenings(all, problems);
             CheckSignFacing(all, problems);
+            CheckCoplanarFaces(all, problems);
 
             CheckRegistry(all, problems);
             CheckSceneSanity(all, problems);
@@ -467,6 +468,205 @@ namespace Pesky.Editor
 
 
         // ------------------------------------------------------------------ scene sanity
+
+        // ------------------------------------------------------------------ coplanar faces (z-fighting)
+
+        /// <summary>An oriented box in world space: the faces of a cube renderer.</summary>
+        struct Box
+        {
+            public Vector3 c;
+            public Vector3[] axis;
+            public float[] ext;
+            public Bounds aabb;
+            public string path;
+        }
+
+        const float CoplanarTolerance = 0.003f;   // planes closer than 3 mm with the same normal fight; 5 mm apart they do not
+        const float CoplanarMinOverlap = 0.02f;   // faces that merely abut (floor slabs, wall pieces) share an edge, not an area
+        const int CoplanarMaxReported = 40;
+
+        /// <summary>
+        /// Two box faces that lie in the SAME plane, point the SAME way and OVERLAP draw over each other and flicker
+        /// (round 29c: the raised portcullis against the gate wall's face; stair steps' sides; rails crossing at a
+        /// corner). Every enabled cube renderer that is not part of a Rigidbody (weapons, the lift's cargo) is a box;
+        /// every pair that can touch is checked face against face; and every Door's panel is checked a second time
+        /// at its OPEN offset, because that is where the gate flickered. Faces that abut edge to edge or point
+        /// opposite ways (a crate on a floor, a block against a wall) are fine. Fix by insetting one piece, giving
+        /// crossing pieces different thicknesses, or burying the overlap.
+        /// </summary>
+        static void CheckCoplanarFaces(List<GameObject> all, List<string> problems)
+        {
+            List<Box> boxes = new List<Box>();
+            for (int i = 0; i < all.Count; i++)
+            {
+                GameObject go = all[i];
+                if (!go.activeInHierarchy) continue;
+                MeshRenderer mr = go.GetComponent<MeshRenderer>();
+                MeshFilter mf = go.GetComponent<MeshFilter>();
+                if (mr == null || !mr.enabled || mf == null || mf.sharedMesh == null || mf.sharedMesh.name != "Cube") continue;
+                if (go.GetComponentInParent<Rigidbody>() != null) continue;
+                boxes.Add(MakeBox(go.transform, Vector3.zero, Path(go)));
+            }
+            // Doors in their open pose: the panel moved by its openOffset.
+            for (int i = 0; i < all.Count; i++)
+            {
+                Door door = all[i].GetComponent<Door>();
+                if (door == null || !all[i].activeInHierarchy) continue;
+                SerializedObject so = new SerializedObject(door);
+                SerializedProperty panelProp = so.FindProperty("panel");
+                SerializedProperty offsetProp = so.FindProperty("openOffset");
+                Transform panel = panelProp != null ? panelProp.objectReferenceValue as Transform : null;
+                if (panel == null || offsetProp == null) continue;
+                MeshRenderer mr = panel.GetComponent<MeshRenderer>();
+                MeshFilter mf = panel.GetComponent<MeshFilter>();
+                Vector3 delta = panel.parent != null ? panel.parent.TransformVector(offsetProp.vector3Value) : offsetProp.vector3Value;
+                if (mr != null && mr.enabled && mf != null && mf.sharedMesh != null && mf.sharedMesh.name == "Cube")
+                    boxes.Add(MakeBox(panel, delta, Path(panel.gameObject) + " (door OPEN)"));
+                // The bars and rails on a lattice gate ride the panel: they move with it too.
+                foreach (MeshRenderer child in panel.GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    if (child.transform == panel || !child.enabled) continue;
+                    MeshFilter cmf = child.GetComponent<MeshFilter>();
+                    if (cmf == null || cmf.sharedMesh == null || cmf.sharedMesh.name != "Cube") continue;
+                    boxes.Add(MakeBox(child.transform, delta, Path(child.gameObject) + " (door OPEN)"));
+                }
+            }
+
+            // Where a player can see: inside a room's volume. A clash below the floor or behind a doorway's alcove is nobody's.
+            List<Bounds> rooms = new List<Bounds>();
+            for (int i = 0; i < all.Count; i++)
+            {
+                RoomVolume rv = all[i].GetComponent<RoomVolume>();
+                Collider rc = rv != null ? all[i].GetComponent<Collider>() : null;
+                if (rc != null) rooms.Add(rc.bounds);
+            }
+
+            int found = 0;
+            for (int i = 0; i < boxes.Count; i++)
+            {
+                for (int j = i + 1; j < boxes.Count; j++)
+                {
+                    if (!boxes[i].aabb.Intersects(boxes[j].aabb)) continue;
+                    // The same piece against its own open pose, or an open piece against a closed one of the same door, is not a clash.
+                    if (SameDoorPiece(boxes[i].path, boxes[j].path)) continue;
+                    Vector3 at, n;
+                    string clash = CoplanarClash(boxes[i], boxes[j], out at, out n);
+                    if (clash == null) continue;
+                    // Only an EXPOSED overlap flickers: a hair in front of it must be open air inside a room, not the inside of
+                    // another block (a wall's underside in the floor slab) and not the void outside every room.
+                    Vector3 probe = at + n * 0.01f;
+                    if (!InsideAnyRoom(rooms, probe) || InsideAnyBox(boxes, probe, i, j)) continue;
+                    found++;
+                    if (found <= CoplanarMaxReported) problems.Add("Coplanar faces (z-fight) " + clash + ": " + boxes[i].path + " and " + boxes[j].path);
+                }
+            }
+            if (found > CoplanarMaxReported) problems.Add("Coplanar faces: " + (found - CoplanarMaxReported) + " more pair(s) not listed");
+        }
+
+        static bool SameDoorPiece(string a, string b)
+        {
+            const string tag = " (door OPEN)";
+            bool oa = a.EndsWith(tag), ob = b.EndsWith(tag);
+            if (oa == ob) return false;
+            string ra = oa ? a.Substring(0, a.Length - tag.Length) : a;
+            string rb = ob ? b.Substring(0, b.Length - tag.Length) : b;
+            // Same door: both paths share the panel's path prefix (the panel itself or something under it).
+            int cut = ra.LastIndexOf("/Panel");
+            int cutB = rb.LastIndexOf("/Panel");
+            if (cut < 0 || cutB < 0) return false;
+            return ra.Substring(0, cut) == rb.Substring(0, cutB);
+        }
+
+        static Box MakeBox(Transform t, Vector3 worldDelta, string path)
+        {
+            Box b = new Box();
+            b.c = t.position + worldDelta;
+            b.axis = new[] { t.right.normalized, t.up.normalized, t.forward.normalized };
+            Vector3 s = t.lossyScale;
+            b.ext = new[] { Mathf.Abs(s.x) * 0.5f, Mathf.Abs(s.y) * 0.5f, Mathf.Abs(s.z) * 0.5f };
+            Vector3 r = Vector3.zero;
+            for (int k = 0; k < 3; k++) r += new Vector3(Mathf.Abs(b.axis[k].x), Mathf.Abs(b.axis[k].y), Mathf.Abs(b.axis[k].z)) * b.ext[k];
+            b.aabb = new Bounds(b.c, r * 2f + Vector3.one * 0.02f);
+            b.path = path;
+            return b;
+        }
+
+        /// <summary>A face of A and a face of B in the same plane, same normal, overlapping in area: a description (and the
+        /// overlap's centre and normal), else null.</summary>
+        static string CoplanarClash(Box a, Box b, out Vector3 at, out Vector3 normal)
+        {
+            at = Vector3.zero; normal = Vector3.up;
+            for (int ka = 0; ka < 3; ka++)
+            {
+                for (int sa = -1; sa <= 1; sa += 2)
+                {
+                    Vector3 n = a.axis[ka] * sa;
+                    Vector3 fa = a.c + n * a.ext[ka];
+                    for (int kb = 0; kb < 3; kb++)
+                    {
+                        Vector3 centre;
+                        if (Vector3.Dot(n, b.axis[kb]) > 0.999f) { if (!Coplanar(a, ka, fa, n, b, kb, 1, out centre)) continue; }
+                        else if (Vector3.Dot(n, b.axis[kb]) < -0.999f) { if (!Coplanar(a, ka, fa, n, b, kb, -1, out centre)) continue; }
+                        else continue;
+                        at = centre; normal = n;
+                        return "normal " + Dir(n) + " at " + Vector3.Dot(fa, n).ToString("0.00") + " m";
+                    }
+                }
+            }
+            return null;
+        }
+
+        static bool Coplanar(Box a, int ka, Vector3 fa, Vector3 n, Box b, int kb, int sb, out Vector3 centre)
+        {
+            centre = fa;
+            Vector3 fb = b.c + b.axis[kb] * sb * b.ext[kb];
+            if (Mathf.Abs(Vector3.Dot(fb - fa, n)) > CoplanarTolerance) return false;
+            // Overlap of the two rectangles, measured along A's in-plane axes.
+            int u = (ka + 1) % 3, v = (ka + 2) % 3;
+            float bu = 0f, bv = 0f;
+            for (int k = 0; k < 3; k++)
+            {
+                if (k == kb) continue;
+                bu += Mathf.Abs(Vector3.Dot(a.axis[u], b.axis[k])) * b.ext[k];
+                bv += Mathf.Abs(Vector3.Dot(a.axis[v], b.axis[k])) * b.ext[k];
+            }
+            Vector3 d = fb - fa;
+            float du = Vector3.Dot(d, a.axis[u]), dv = Vector3.Dot(d, a.axis[v]);
+            float minU = Mathf.Max(-a.ext[u], du - bu), maxU = Mathf.Min(a.ext[u], du + bu);
+            float minV = Mathf.Max(-a.ext[v], dv - bv), maxV = Mathf.Min(a.ext[v], dv + bv);
+            if (maxU - minU <= CoplanarMinOverlap || maxV - minV <= CoplanarMinOverlap) return false;
+            centre = fa + a.axis[u] * ((minU + maxU) * 0.5f) + a.axis[v] * ((minV + maxV) * 0.5f);
+            return true;
+        }
+
+        static bool InsideAnyRoom(List<Bounds> rooms, Vector3 p)
+        {
+            for (int i = 0; i < rooms.Count; i++) if (rooms[i].Contains(p)) return true;
+            return rooms.Count == 0;   // a scene without room volumes: everything counts
+        }
+
+        static bool InsideAnyBox(List<Box> boxes, Vector3 p, int skipA, int skipB)
+        {
+            for (int i = 0; i < boxes.Count; i++)
+            {
+                if (i == skipA || i == skipB) continue;
+                Box b = boxes[i];
+                if (!b.aabb.Contains(p)) continue;
+                Vector3 d = p - b.c;
+                bool inside = true;
+                for (int k = 0; k < 3 && inside; k++) if (Mathf.Abs(Vector3.Dot(d, b.axis[k])) > b.ext[k] - 0.002f) inside = false;
+                if (inside) return true;
+            }
+            return false;
+        }
+
+        static string Dir(Vector3 n)
+        {
+            if (Mathf.Abs(n.y) > 0.9f) return n.y > 0f ? "+Y" : "-Y";
+            if (Mathf.Abs(n.x) > 0.9f) return n.x > 0f ? "+X" : "-X";
+            if (Mathf.Abs(n.z) > 0.9f) return n.z > 0f ? "+Z" : "-Z";
+            return n.ToString("0.00");
+        }
 
         static void CheckSceneSanity(List<GameObject> all, List<string> problems)
         {

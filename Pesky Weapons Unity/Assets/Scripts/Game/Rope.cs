@@ -108,6 +108,10 @@ namespace Pesky.Game
             if (cutEnds != null) cutEnds.SetActive(true);
             for (int i = 0; i < segments.Length; i++)
                 if (segments[i] != null) segments[i].gameObject.SetActive(false);
+            // A cut rope is GONE: every renderer under it that is not one of the loose ends goes too (the glow shell the glow
+            // round hung beside the cord stayed behind as a bare purple rod; owner, round 29c).
+            foreach (Renderer r in GetComponentsInChildren<Renderer>(true))
+                if (cutEnds == null || !r.transform.IsChildOf(cutEnds.transform)) r.enabled = false;
         }
     }
 }

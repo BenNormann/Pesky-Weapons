@@ -59,6 +59,9 @@ namespace Pesky.Game
         Quaternion _stuckLocalRot = Quaternion.identity;
         Vector3 _stuckNormal = Vector3.up;
         float _stickRearmAt;
+        // CLIMB (round 29): after a climb hop the blade probes for the timber it left and stabs back in where it stops rising.
+        bool _climbing;
+        Vector3 _climbNormal;
         bool _carried;
         [Tooltip("A loose weapon that stands up by itself and takes a bat: the Bat Room test scene's bot Dagger. Nobody's, so the host bats it directly.")]
         [SerializeField] bool autoBrace;
@@ -128,6 +131,8 @@ namespace Pesky.Game
         public bool IsHeldAtHome { get { return _held; } }
         /// <summary>True while a bladed weapon is held in a WoodSurface. It counts as grounded meanwhile.</summary>
         public bool IsStuck { get { return _stuck; } }
+        /// <summary>True between a climb hop's launch and its re-stick (or its landing).</summary>
+        public bool IsClimbing { get { return _climbing; } }
         /// <summary>The wood's surface normal at the point the weapon stuck (points out of the wood).</summary>
         public Vector3 StuckNormal { get { return _stuckNormal; } }
         /// <summary>World direction from the grip to the point (WeaponDef.tipAxis).</summary>
@@ -344,6 +349,8 @@ void FixedUpdate()
                 return;
             }
 
+            if (_climbing && TickClimb()) return;
+
             // A sleeping body gets no OnCollisionStay, so a settled weapon keeps the contact state it fell asleep with.
             if (body.IsSleeping())
             {
@@ -402,6 +409,7 @@ public void Teleport(Vector3 position, Quaternion rotation)
 
         void ForgetContacts()
         {
+            _climbing = false;
             _lastGroundTime = -999f;
             _lastWallTime = -999f;
             _stepGrounded = _stepWall = _restGrounded = _restWall = false;
@@ -608,6 +616,7 @@ public void Teleport(Vector3 position, Quaternion rotation)
         /// <summary>The motor calls this on every launch.</summary>
         public void MarkLaunched()
         {
+            _climbing = false;
             _lastLaunchTime = Time.time;
             MarkAnimated();
         }
@@ -684,15 +693,54 @@ public void Teleport(Vector3 position, Quaternion rotation)
                 if (Vector3.Dot(tip, -c.normal) < cosMax) continue;                 // not point-first
                 if (Vector3.Dot(c.point - com, tip) <= 0f) continue;                // the grip end hit, not the point
                 if (Mathf.Abs(Vector3.Dot(relative, c.normal)) < tuning.stickMinSpeed * 0.5f) continue; // a glancing slide
-                Stick(wood, collision, c.normal);
+                StickTo(wood, collision.collider, c.normal);
                 return true;
             }
             return false;
         }
 
-        void Stick(WoodSurface wood, Collision collision, Vector3 normal)
+        /// <summary>The motor launched a climb hop: straight up the wooden wall the blade was stuck in. Until the body sticks
+        /// again or lands, every physics step past the top of the hop probes sideways for that timber and stabs back in.</summary>
+        public void BeginClimb(Vector3 wallNormal)
         {
-            Transform host = collision.rigidbody != null ? collision.rigidbody.transform : collision.collider.transform;
+            Vector3 flat = new Vector3(wallNormal.x, 0f, wallNormal.z);
+            if (flat.sqrMagnitude < 1e-6f) return;
+            _climbing = true;
+            _climbNormal = flat.normalized;
+        }
+
+        /// <summary>A climb hop in flight (round 29): once the rise is spent, look along the wall's inward direction for the timber
+        /// and stab back in, point into the face, grip out. Keeps probing while it falls, so a hop that overshoots the top of a
+        /// post sticks at the top on the way down. Ends when the body sticks, lands on anything, or finds stone instead of wood.
+        /// Returns true when it stuck this step.</summary>
+        bool TickClimb()
+        {
+            if (_broken || _held || _carried || body == null || body.isKinematic || def == null || !def.bladed) { _climbing = false; return false; }
+            if (Time.time - _lastLaunchTime < 0.1f) return false;
+            if (Time.fixedTime - _lastGroundTime <= tuning.groundedGrace) { _climbing = false; return false; }   // landed: the hop is over
+            if (body.linearVelocity.y > tuning.climbRestickBelowSpeed) return false;                             // still rising
+            RaycastHit hit;
+            int mask = tuning.groundMask.value | tuning.wallMask.value;
+            if (!Physics.Raycast(body.worldCenterOfMass, -_climbNormal, out hit, tuning.climbReach, mask, QueryTriggerInteraction.Ignore)) return false;
+            if (Mathf.Abs(hit.normal.y) >= tuning.wallNormalY) return false;                                      // not a face: keep looking
+            WoodSurface wood = hit.collider.GetComponentInParent<WoodSurface>();
+            if (wood == null || !wood.Stickable) { _climbing = false; return false; }                              // stone: a plain fall from here
+            // The stab: the point into the face at the hit, the grip straight out along its normal; StickTo sinks the tip.
+            Vector3 n = hit.normal;
+            Quaternion rot = Quaternion.LookRotation(-n, Vector3.up);
+            Vector3 p = hit.point + n * _zMax;
+            body.rotation = rot;
+            body.position = p;
+            transform.SetPositionAndRotation(p, rot);
+            StickTo(wood, hit.collider, n);
+            return true;
+        }
+
+        /// <summary>Holds the weapon in the wood it just hit: kinematic at the contact pose, the tip sunk stickSinkDepth in.</summary>
+        void StickTo(WoodSurface wood, Collider on, Vector3 normal)
+        {
+            Transform host = on.attachedRigidbody != null ? on.attachedRigidbody.transform : on.transform;
+            _climbing = false;
             body.linearVelocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
             body.isKinematic = true;
@@ -702,7 +750,7 @@ public void Teleport(Vector3 position, Quaternion rotation)
 
             _stuck = true;
             _stuckTo = host;
-            _stuckFollows = collision.rigidbody != null;
+            _stuckFollows = on.attachedRigidbody != null;
             _stuckLocalPos = host.InverseTransformPoint(p);
             _stuckLocalRot = Quaternion.Inverse(host.rotation) * body.rotation;
             _stuckNormal = normal;
