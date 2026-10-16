@@ -3123,3 +3123,53 @@ a local copy of the relay with `?relay=force`): a three-player run whose host le
 `abandoned`, and a run that started with two players was not recorded. That test also found that times were
 written as a float's binary value (74.09999847), now doubles rounded to a tenth. Not yet seen: a run that ends
 with its result (`ended` = `result`), and the tab-close path (`pagehide`).
+
+## Round 30: the action glow made right, sounds, the well's skirt (2026-10-14, PR #14; logged after rounds 29 and 29b)
+
+On the contributor's lever-and-plate glow PR, from the owner's reviews:
+
+- **Only a glow.** The opaque trims (plate edge bands, lever tip ring) went; everything left is additive, in the
+  labyrinth's purple with MagicFlow's drifting specks (`Pesky/ActionGlow` carries them), and it goes out when
+  the piece is done (`glowHeld` / `glowOn` black; the specks scale with the state colour so they go too).
+- **Halo only on floors.** `ImpactLever.floorHalo` is gated in Start by upright AND a World-layer floor within
+  0.35 m under the base. The first attempt (orientation only) let an upright lever on a wall bracket through.
+- **Other action pieces**: shells on the CrackedWall's slab and the Anvil's top, halos under the
+  CircuitBridge's cradle, the Pot and each MassPan. The WoodBlock got one and lost it again: the wood you
+  stick into is not magic. The Rope's glow is built at Awake (`Rope.glowMaterial`, `AddGlow`): a sleeve round
+  every cord mesh, the prefab's own and each builder-made segment's, as a child of the mesh, so it covers the
+  whole rope and goes with the cut (the first static sleeve covered only the prefab's cord and outlived it).
+- **Plates** sink only under enough weight (the press is the activation) and stop a centimetre above the floor:
+  NOTHING IS EVER EXACTLY ALIGNED (coplanar faces flicker; the rule is in CLAUDE.md now).
+- **Sounds** (`Sfx`, `Assets/Audio/SFX`): plate_slide on a plate's press, latch_flick layered on it when the press
+  becomes permanent, lever_clunk on every flip, magic_crystal on a CircuitBridge closing and the MagicBridge
+  coming alive, quietly (0.2) behind every plate press and lever flip.
+- **Under the well's platform.** Swung down, the platform's underside made a wedge with the floor; a weapon that slid off
+  the side ended up under it and every launch hit the deck ("stuck on the dropped elevator, it stops letting you
+  jump"), and the kinematic sweep could squeeze a weapon through the floor. First answer, a 6 x 2.4 m skirt block
+  under the deck's low end: the owner's verdict was "REMOVE THIS FAT BOX", so it is gone. Instead `DropRamp` shoves
+  any weapon caught under its deck within 2.5 m of the underside toward the hinge (Swing; out of the nearer side for
+  Drop) at 10 m/s from the first moment of the fall on, so a body in the sweep is pushed clear and one that wanders
+  under the landed low end is pushed back to where it can launch (`deck` wired on the prefab); and every weapon's
+  `maxDepenetrationVelocity` is 12, so a kinematic mover squeezing it against a floor overlaps it for a moment instead
+  of firing it through. New menu `Pesky/Rooms/Rebuild Well Room` rebuilds only that room; `BackupBeforeBuild` now
+  refuses to run in Play mode (a rebuild there regenerated the prefab and then threw on OpenScene).
+
+Not in this PR: the Armory Gate's hold plate keeps glowing after the pin lever has made it pointless (offered).
+
+**The circuit that played its sound forever (2026-10-15).** A Sword solidly in the pit break lit the next stretch, the
+connect sound repeated every tenth of a second, and the gallery break could not be closed. Cause: main's `Run.unity`
+was merged as text from three PRs (#16, #18, #20) and came out with DUPLICATE SCENE IDS (the two Circuit Room breaks
+both 2502, the Porter's new goblin and the Chasm's near goblin both 507, two spawn points 1212) and stale authority
+registries (empty enemy and circuit slots, the Chasm's goblins unregistered). `WorldAuthority.Index` kept the first
+piece per id and silently dropped the second, so both breaks reported under one id every physics step, one true and
+one false: the kit state flickered, the sound fired on every re-close, and the second break could never be the one that
+closed. Fixed by the builder's install pass (ids reassigned, registries rebuilt) on the Well Room rebuild; `Index` now
+logs an error on a duplicate id so this is loud next time. Hardening on top: a break settles 8 physics steps before it
+counts as closed and 24 before it counts as open again (no flicker from a jolt), the cradle's snap leaves a weapon that
+already spans the stubs alone and damps a slow one so it settles, and `ResolveOverlaps` only pushes a real overlap
+(over 4 cm), not the centimetre a resting contact sits in, which had been hopping cradle-resting weapons every half
+second. A scene merged as text must be validated before it is played: `Pesky/Validate Open Scenes` catches all of it.
+**Coplanar faces, the new validator rule.** The Porter Room still tripped it: the gate panel's bottom shared the
+jambs' plane (closed and slid open) and its grate's rails shared the bars' front plane (the prefab predated the rails'
+inset). The Door and PorterGate panels now sink a centimetre into the floor, and the Porter Room was rebuilt with the
+current lattice. Validator 0 problems on Run.unity.

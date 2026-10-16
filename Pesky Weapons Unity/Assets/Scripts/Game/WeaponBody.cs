@@ -255,6 +255,9 @@ public void HoldAtHome()
             body.linearDamping = def.linearDrag;
             body.angularDamping = def.angularDrag;
             body.useGravity = true;
+            // A kinematic mover (a falling platform, a closing gate) that squeezes the body against a floor may not fling it
+            // out at any speed PhysX likes: capped, the body is overlapped for a moment and pushed clear, not shot through the floor.
+            body.maxDepenetrationVelocity = 12f;
             body.isKinematic = false;
             body.constraints = RigidbodyConstraints.None;
             body.interpolation = RigidbodyInterpolation.Interpolate;
@@ -599,7 +602,7 @@ public void Teleport(Vector3 position, Quaternion rotation)
                     Collider mine = _colliders[j];
                     if (mine == null || mine.isTrigger || !mine.enabled) continue;
                     Vector3 dir; float dist;
-                    if (Physics.ComputePenetration(mine, mine.transform.position, mine.transform.rotation, other, other.transform.position, other.transform.rotation, out dir, out dist) && dist > 0.005f)
+                    if (Physics.ComputePenetration(mine, mine.transform.position, mine.transform.rotation, other, other.transform.position, other.transform.rotation, out dir, out dist) && dist > 0.04f)   // a resting contact sits a centimetre in; only a real overlap is pushed
                     {
                         push += dir * dist;
                         hits++;

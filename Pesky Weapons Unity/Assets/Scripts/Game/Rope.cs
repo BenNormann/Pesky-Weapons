@@ -37,6 +37,11 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] DropRamp ramp;
         [Tooltip("Further runs of the same rope: RopeSegments with their own solid collider pointing back here. A hit on any of them is this rope's cut, and they vanish with it. Optional.")]
         [OptionalRef][SerializeField] RopeSegment[] segments = new RopeSegment[0];
+        [Header("Look")]
+        [Tooltip("The action glow (M_ActionGlowShell): at Awake every cord mesh, the rope's own and each segment's, gets a glowing sleeve built round it, so a rope the builder laid out glows exactly where it runs, and the sleeve goes with the cord when it is cut.")]
+        [OptionalRef][SerializeField] Material glowMaterial;
+        [Tooltip("How much wider than the cord the sleeve is.")]
+        [SerializeField] float glowSleeve = 1.8f;
 
         bool _cut;
         long _cutMs;
@@ -53,6 +58,34 @@ namespace Pesky.Game
         void Awake()
         {
             if (cutEnds != null) cutEnds.SetActive(false);
+            if (glowMaterial != null)
+            {
+                if (taut != null) AddGlow(taut.transform);
+                for (int i = 0; i < segments.Length; i++) if (segments[i] != null) AddGlow(segments[i].transform);
+            }
+        }
+
+        /// <summary>A glowing sleeve round every cord mesh under `root`, a child of the mesh so it moves, hides and goes with it.</summary>
+        void AddGlow(Transform root)
+        {
+            foreach (MeshFilter mf in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (mf.sharedMesh == null || mf.name.StartsWith("GlowShell") || mf.GetComponent<Renderer>() == null) continue;
+                Bounds b = mf.sharedMesh.bounds;
+                GameObject shell = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                shell.name = "GlowShell";
+                Destroy(shell.GetComponent<Collider>());
+                shell.transform.SetParent(mf.transform, false);
+                shell.transform.localPosition = b.center;
+                shell.transform.localRotation = Quaternion.identity;
+                // Wider than the cord across, a hair longer along it (a cord runs along its own local Y).
+                shell.transform.localScale = new Vector3(b.size.x * glowSleeve, b.size.y * 1.01f, b.size.z * glowSleeve);
+                shell.layer = mf.gameObject.layer;
+                MeshRenderer r = shell.GetComponent<MeshRenderer>();
+                r.sharedMaterial = glowMaterial;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.receiveShadows = false;
+            }
         }
 
         /// <summary>True when this weapon, at this speed, is allowed to cut the rope. Pure.</summary>

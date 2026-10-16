@@ -29,6 +29,8 @@ namespace Pesky.Game
         [SerializeField] Transform stubA;
         [SerializeField] Transform stubB;
         [SerializeField] float tolerance = 0.12f;
+        [Tooltip("Physics steps a weapon must span the stubs before the break counts as closed, and three times as many with nothing spanning before it counts as open again: a jolt or a hop does not flicker it (and its sound).")]
+        [SerializeField] int settleSteps = 8;
 
         [Header("Wiring")]
         [Tooltip("Where the fed conduit ends: the outer face of stub A. The builder runs the conduit exactly to this point.")]
@@ -72,6 +74,8 @@ namespace Pesky.Game
         bool _sparking;
         bool _sealed;
         float _glow = 1f;
+        int _spanStreak, _gapStreak;
+        bool _bridged;
 
         public int SceneId { get { return id; } }
         /// <summary>World point where the fed conduit ends: the outer face of stub A (the stub itself if the prefab has no attach point).</summary>
@@ -136,14 +140,18 @@ namespace Pesky.Game
         void FixedUpdate()
         {
             Snap();
-            bool bridged = false;
+            bool spans = false;
             for (int i = _in.Count - 1; i >= 0; i--)
             {
                 WeaponBody w = _in[i];
                 if (w == null || w.IsBroken) { _in.RemoveAt(i); continue; }
-                if (Spans(w)) { bridged = true; break; }
+                if (Spans(w)) { spans = true; break; }
             }
-            if (authority != null) authority.ReportCircuitBridge(id, bridged || _sealed);
+            // Settle before reporting either way: closed after settleSteps spanning, open after three times that with none.
+            if (spans) { _spanStreak++; _gapStreak = 0; } else { _gapStreak++; _spanStreak = 0; }
+            if (!_bridged && _spanStreak >= settleSteps) _bridged = true;
+            else if (_bridged && _gapStreak >= settleSteps * 3) _bridged = false;
+            if (authority != null) authority.ReportCircuitBridge(id, _bridged || _sealed);
         }
 
         /// <summary>The small magnet: every metal weapon this peer simulates within snapRange of the cradle is drawn toward
@@ -166,12 +174,17 @@ namespace Pesky.Game
                 if (w == null || w.IsBroken || w.Def == null || (metalOnly && !w.Def.metal)) continue;
                 if (w.IsHeldAtHome || w.IsCarried || w.IsStuck || w.IsBraced || _pulled.Contains(w)) continue;
                 _pulled.Add(w);
+                // Already across both stubs: leave it be (pulling a placed weapon about only unsettles it).
+                if (Spans(w)) continue;
                 Vector3 to = centre - rb.worldCenterOfMass;
                 float d = to.magnitude;
                 if (d < 0.02f) continue;
                 Vector3 dir = to / d;
                 float k = 1f - Mathf.Clamp01(d / snapRange);
-                if (Vector3.Dot(rb.linearVelocity, dir) < snapMaxSpeed) rb.AddForce(dir * (snapPull * k), ForceMode.Acceleration);
+                Vector3 vel = rb.linearVelocity;
+                if (Vector3.Dot(vel, dir) < snapMaxSpeed) rb.AddForce(dir * (snapPull * k), ForceMode.Acceleration);
+                // A little damping on a slow body so it settles on the centre instead of swinging about it.
+                if (vel.sqrMagnitude < 9f) rb.AddForce(-vel * (3f * k), ForceMode.Acceleration);
                 // The long axis (local +Z, the blade or the head) along the cradle, whichever end is nearer.
                 Vector3 longAxis = rb.transform.forward;
                 Vector3 want = Vector3.Dot(longAxis, axis) >= 0f ? axis : -axis;

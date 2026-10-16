@@ -156,6 +156,10 @@ namespace Pesky.Game
                 T item = source[i];
                 if (item == null) continue;
                 if (!target.ContainsKey(item.SceneId)) target.Add(item.SceneId, item);
+                else if (!ReferenceEquals(target[item.SceneId], item))
+                    // Two kit pieces with one id: the second is invisible to the host and both report under the first's id
+                    // (a circuit break that flickers and plays its sound forever, round 30). A merged scene does this.
+                    Debug.LogError("[WorldAuthority] duplicate scene id " + item.SceneId + ": " + target[item.SceneId] + " and " + item + ". Run Pesky/Run/Assign Scene Ids (open scene) and rebuild the registries.", item as UnityEngine.Object);
             }
         }
 
