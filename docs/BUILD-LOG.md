@@ -3173,3 +3173,25 @@ second. A scene merged as text must be validated before it is played: `Pesky/Val
 jambs' plane (closed and slid open) and its grate's rails shared the bars' front plane (the prefab predated the rails'
 inset). The Door and PorterGate panels now sink a centimetre into the floor, and the Porter Room was rebuilt with the
 current lattice. Validator 0 problems on Run.unity.
+
+## Round 31: the analytics dashboard; run length and stale poses (2026-10-16)
+
+Owner: a one-page dashboard for the analytics, and why the first playtest's median run was 8:21 on an 8:00 timer.
+
+**The dashboard** (`WebGLTemplates/Pesky/dashboard.html`, `docs/ANALYTICS.md` section 8) ships with every build and
+reads the Sheet through a new `GET ?format=json` on the Apps Script. Plain SVG, no libraries.
+
+**Run length counted the votes.** `RunRule.Finish` emits ROUND_RESULT and SESSION_END on the same tick, and the
+phase change resets `PauseState`; by the frame the watcher saw the result, `GameTick()` had forgotten every
+meeting's pause, so `duration_s` included them (a timed-out run came in at 500.6 s). The watcher now keeps the
+pause bookkeeping of the last Playing frame and reads game time from that.
+
+**Stale poses.** A second run in a session starts with everybody's last pose where the last run left them (the
+Exit room) until their first new pose: one run recorded "reached the Exit" at 0 s and lost all its rooms. A pose
+now counts only once it has changed since the run began, and a first entry must be the next room (doors join room
+k to k + 1 only). The run timer's own "someone left the start room" reads the same poses: whether a second run's
+timer starts at once is worth checking in the game.
+
+Checked: 4 new watcher tests against a real WorldSim (13 analytics tests pass; the two `ResonanceForgeTests`
+still fail as before), the dashboard against sample data and the live Sheet in a browser. Runs already in the Sheet
+keep their inflated `duration_s`.
