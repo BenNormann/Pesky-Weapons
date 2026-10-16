@@ -134,6 +134,103 @@ namespace Pesky.Game
             Warp(position, rotation, velocity, Vector3.zero);
         }
 
+        // ---- following the host (LOOSE_WEAPONS) ----
+
+        // Closer than this, in metres and degrees, the local copy is left to its own physics.
+        const float FollowDeadZone = 0.06f;
+        const float FollowDeadAngle = 3f;
+        // Each physics step removes this fraction of the remaining error (about 100 ms to settle at 50 Hz).
+        const float FollowBlend = 0.3f;
+        const float FollowVelocityBlend = 0.1f;
+        // A weapon the host has lying still is put exactly there once it is further off than this.
+        const float FollowRestDistance = 0.05f;
+        const float FollowRestAngle = 3f;
+
+        /// <summary>
+        /// Client only: pulls this UNHELD weapon toward where the host's copy is (the host simulates loose weapons;
+        /// every client simulates its own for feel and is held to the host's by this). Far off: snap. Lying still on
+        /// the host: put exactly there, so the final resting poses agree. Otherwise blend, so a bounce does not
+        /// stutter. Stuck in wood on the host: stick too, when there is wood where the host's blade is.
+        /// target is already carried forward by the age of the host's row.
+        /// </summary>
+        public void FollowHost(Vector3 position, Quaternion rotation, Vector3 velocity, bool asleep, bool stuck, float snapDistance)
+        {
+            if (_broken || _remoteDriven || _carried || body == null || _possessor != null) return;
+            // The host's copy is loose, so it has left its rack: this one has too.
+            if (_held) ReleaseHold();
+            if (_stuck && !stuck) Unstick();
+            if (stuck)
+            {
+                if (_stuck) return;
+                if (StickAtPose(position, rotation)) return;
+            }
+            if (body.isKinematic) return;   // anything else kinematic here (a carry, a frozen body) is not ours to move
+
+            float distance = (position - body.position).magnitude;
+            float angle = Quaternion.Angle(rotation, body.rotation);
+            if (distance > snapDistance)
+            {
+                Warp(position, rotation, velocity, Vector3.zero);
+                return;
+            }
+            if (asleep)
+            {
+                if (distance > FollowRestDistance || angle > FollowRestAngle) Warp(position, rotation, Vector3.zero, Vector3.zero);
+                return;
+            }
+            if (distance <= FollowDeadZone && angle <= FollowDeadAngle) return;
+            Vector3 p = Vector3.Lerp(body.position, position, FollowBlend);
+            Quaternion q = Quaternion.Slerp(body.rotation, rotation, FollowBlend);
+            body.position = p;
+            body.rotation = q;
+            body.linearVelocity = Vector3.Lerp(body.linearVelocity, velocity, FollowVelocityBlend);
+            body.WakeUp();
+        }
+
+        /// <summary>Puts the body at the host's stuck pose and sticks it into whatever wood its blade is in. False when there is none.</summary>
+        bool StickAtPose(Vector3 position, Quaternion rotation)
+        {
+            if (def == null || !def.bladed) return false;
+            Warp(position, rotation, Vector3.zero, Vector3.zero);
+            Collider[] own = GetComponentsInChildren<Collider>();
+            if (own.Length == 0) return false;
+            Bounds box = own[0].bounds;
+            for (int i = 1; i < own.Length; i++) box.Encapsulate(own[i].bounds);
+            Collider[] hits = Physics.OverlapBox(box.center, box.extents + Vector3.one * 0.15f, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                Collider c = hits[i];
+                if (c.attachedRigidbody == body) continue;
+                WoodSurface wood = c.GetComponentInParent<WoodSurface>();
+                if (wood == null || !wood.Stickable) continue;
+                MirrorStick(wood, c, -TipDirection);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Holds the weapon in the wood where it already is (the host's copy is stuck here, with the tip already sunk):
+        /// the same state a fresh hit sets in Stick, without the sink. Kept beside FollowHost rather than shared with
+        /// Stick so the two cannot be edited into each other's way; if Stick gains state, add it here too.
+        /// </summary>
+        void MirrorStick(WoodSurface wood, Collider on, Vector3 normal)
+        {
+            Rigidbody hostBody = on.attachedRigidbody;
+            Transform host = hostBody != null ? hostBody.transform : on.transform;
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            body.isKinematic = true;
+            _stuck = true;
+            _stuckTo = host;
+            _stuckFollows = hostBody != null;
+            _stuckLocalPos = host.InverseTransformPoint(body.position);
+            _stuckLocalRot = Quaternion.Inverse(host.rotation) * body.rotation;
+            _stuckNormal = normal;
+            _lastGroundTime = Time.fixedTime;
+            if (Stuck != null) Stuck(this, wood);
+        }
+
         /// <summary>Runs first in FixedUpdate. True = a remote driven body: nothing else in FixedUpdate applies to it.</summary>
         bool NetFixedUpdate()
         {

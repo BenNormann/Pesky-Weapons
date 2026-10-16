@@ -11,7 +11,7 @@ namespace Pesky.Protocol
     public static class Wire
     {
         /// <summary>Bump when any layout in Messages/ changes, or when an existing field gains a value older peers would simulate differently. JOIN_REQUEST and SESSION_INFO carry it.</summary>
-                public const ushort ProtocolVersion = 9;   // 9: KitKind.Circuit (round 22)
+                public const ushort ProtocolVersion = 10;  // 10: LOOSE_WEAPONS 0x2F (the host streams loose weapons); 9: KitKind.Circuit (round 22)
 
         /// <summary>A slot meaning nobody: no killer, no repairer, no issuer.</summary>
         public const byte NoSlot = 0xFF;

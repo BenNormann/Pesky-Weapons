@@ -260,7 +260,7 @@ namespace Pesky.Game
                 bool wasFree = w.IsFree;
                 ReconcileOwner(w, row.ownerSlot);
                 if (row.ownerSlot == Wire.NoSlot && row.hasRest && wasFree)
-                    w.PlaceAtRest(row.restPos, row.restRot, Vector3.zero);
+                    w.PlaceAtRest(row.restPos, row.restRot, row.restVel);
             }
 
             IReadOnlyList<KitEntry> kit = sim.Kit.Rows;
@@ -1104,6 +1104,107 @@ void OnNetReply(byte id, byte[] payload)
                 dirty |= changed;
             }
             return dirty;
+        }
+
+        // ---- loose weapons (LOOSE_WEAPONS) ----
+
+        /// <summary>What the host last told everybody about one loose weapon.</summary>
+        struct LooseSent
+        {
+            public Vector3 pos;
+            public Quaternion rot;
+            public LooseFlags flags;
+            public float time;
+        }
+
+        readonly Dictionary<WeaponBody, LooseSent> _looseSent = new Dictionary<WeaponBody, LooseSent>();
+        const float LooseMoveEpsilon = 0.02f;
+        const float LooseRotEpsilonDeg = 2f;
+        const float LooseKeepaliveSeconds = 1f;
+        // A weapon this slow, both ways, counts as lying still.
+        const float LooseRestSpeedSq = 0.05f * 0.05f;
+        const float LooseRestSpinSq = 0.1f * 0.1f;
+
+        /// <summary>
+        /// Host only: the loose weapons whose pose changed since the last row, plus a keepalive once a second.
+        /// Loose = free (nobody holds it), not broken, not racked, not carried by a porter, not another player's
+        /// kinematic stand-in. A weapon that stopped being loose is forgotten, so its next release sends at once.
+        /// </summary>
+        public void CollectLooseWeaponRows(List<LooseWeaponsMsg.Row> into)
+        {
+            float now = Time.time;
+            for (int i = 0; i < weapons.Length; i++)
+            {
+                WeaponBody w = weapons[i];
+                if (w == null) continue;
+                Rigidbody rb = w.Body;
+                bool stuck = w.IsStuck;
+                bool loose = rb != null && !w.IsBroken && w.IsFree && !w.IsRemoteDriven && !w.IsHeldAtHome && !w.IsCarried
+                    && (stuck || !rb.isKinematic);
+                if (!loose)
+                {
+                    _looseSent.Remove(w);
+                    continue;
+                }
+
+                LooseFlags flags = LooseFlags.None;
+                if (stuck) flags |= LooseFlags.Stuck;
+                else if (rb.linearVelocity.sqrMagnitude < LooseRestSpeedSq && rb.angularVelocity.sqrMagnitude < LooseRestSpinSq) flags |= LooseFlags.Asleep;
+
+                Vector3 pos = rb.position;
+                Quaternion rot = rb.rotation;
+                LooseSent last;
+                bool known = _looseSent.TryGetValue(w, out last);
+                bool due = !known
+                    || flags != last.flags
+                    || (pos - last.pos).sqrMagnitude > LooseMoveEpsilon * LooseMoveEpsilon
+                    || Quaternion.Angle(rot, last.rot) > LooseRotEpsilonDeg
+                    || now - last.time >= LooseKeepaliveSeconds;
+                if (!due) continue;
+
+                LooseWeaponsMsg.Row row = new LooseWeaponsMsg.Row();
+                row.weaponId = (ushort)w.Id;
+                row.flags = flags;
+                row.pos = pos;
+                row.rot = rot;
+                row.vel = stuck || rb.isKinematic ? Vector3.zero : rb.linearVelocity;
+                into.Add(row);
+                last.pos = pos;
+                last.rot = rot;
+                last.flags = flags;
+                last.time = now;
+                _looseSent[w] = last;
+            }
+        }
+
+        // The followers' tuning: how far a blend may go before it is a snap, and how hard each step pulls.
+        const float LooseSnapDistance = 2.5f;
+        const float LooseMaxExtrapolateSeconds = 0.25f;
+
+        /// <summary>
+        /// Client only, every physics step: pull every unheld weapon this peer simulates toward where the host says
+        /// it is. The host's row is a few tens of milliseconds old by the time it lands, so it is carried forward by
+        /// its age (capped) along its velocity first. Held, racked, carried and remote driven weapons are left to
+        /// their own rules (the owner's POSE, the rack, the porter).
+        /// </summary>
+        void FixedUpdate()
+        {
+            if (_session == null || _session.Sim == null || _session.IsHost || IsPaused) return;
+            WorldSim sim = _session.Sim;
+            for (int i = 0; i < weapons.Length; i++)
+            {
+                WeaponBody w = weapons[i];
+                if (w == null || w.IsBroken || w.IsRemoteDriven || w.IsCarried) continue;
+                WeaponState row = sim.Weapons.Get((ushort)w.Id);
+                if (row == null || !row.hasRest || row.broken || row.ownerSlot != Wire.NoSlot || row.restTick == 0) continue;
+                if (!w.IsFree) continue;
+
+                float age = 0f;
+                if (sim.Tick > row.restTick) age = Mathf.Min((sim.Tick - row.restTick) / (float)Pesky.Protocol.Tick.PerSecond, LooseMaxExtrapolateSeconds);
+                Vector3 target = row.restPos;
+                if (!row.restAsleep && !row.restStuck) target += row.restVel * age;
+                w.FollowHost(target, row.restRot, row.restVel, row.restAsleep, row.restStuck, LooseSnapDistance);
+            }
         }
 
         /// <summary>

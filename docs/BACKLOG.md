@@ -17,7 +17,6 @@ Agreed work not yet built, in rough order. Update when something lands.
 - What is behind the rack room's RESERVED door
 - Curse draft at checkpoints; the shop-window epilogue
 - Player death: nothing calls ReportPlayerDown yet; nothing awards legend
-- Loose (unheld) weapons are not position-synced after release
 - Voice chat as the discussion during a vote meeting (the pause is built; the voice control is
   dormant)
 - The pause does not freeze loose weapons or broken-weapon respawns (VOTING.md section 3)
@@ -46,6 +45,11 @@ Agreed work not yet built, in rough order. Update when something lands.
 - Tutorial: teach the two-player verbs once a second local player is possible
 
 ## Done
+- **Loose weapons follow the host**, 2026-10-15: after release the host streams where every unheld weapon is
+  (LOOSE_WEAPONS 0x2F, 10 Hz, only what moved) and a client pulls its own copy onto it: blend, snap when far,
+  exact when the host's copy is lying still, stuck-in-wood mirrored. Protocol version 10. Tested: message
+  round trip, sim rules, and the follower's snap / rest / blend / rack / stick cases in play mode. **Not run
+  between two machines.** See NETCODE-STATUS S2.2 and S2.6 point 9.
 - **Voting + the pause state**, 2026-10-01: V calls a 25 s meeting that freezes everybody (inputs,
   bodies, remote views, goblins, the level clock and the run timer); one final vote each, public
   tallies, the plurality banishes (a tie or SKIP on top: nobody); the banished player's body breaks,

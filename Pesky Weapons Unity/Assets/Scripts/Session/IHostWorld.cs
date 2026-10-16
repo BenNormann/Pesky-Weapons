@@ -19,6 +19,13 @@ namespace Pesky.Session
         bool CollectEnemyRows(List<EnemyStateMsg.Row> into, bool intervalDue);
 
         /// <summary>
+        /// Fill <paramref name="into"/> with the loose (unheld, unracked, uncarried) weapons whose pose is worth
+        /// sending: the ones that moved, turned or changed state since the last row, plus a one second keepalive.
+        /// Called at 10 Hz by LooseWeaponsRule; only the host calls it.
+        /// </summary>
+        void CollectLooseWeaponRows(List<LooseWeaponsMsg.Row> into);
+
+        /// <summary>
         /// A client claims its weapon changed a kit piece. Check it against the scene (the piece exists, is
         /// not already in that state, the claimant's weapon is the right kind and near enough) and fill in
         /// value and clockMs. False refuses the claim.

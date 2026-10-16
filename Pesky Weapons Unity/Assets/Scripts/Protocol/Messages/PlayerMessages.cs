@@ -23,6 +23,78 @@ namespace Pesky.Protocol
         }
     }
 
+    /// <summary>The state bits of one loose weapon (LOOSE_WEAPONS). Append only.</summary>
+    [System.Flags]
+    public enum LooseFlags : byte
+    {
+        None = 0,
+        /// <summary>Lying still: the followers snap to the exact pose instead of blending.</summary>
+        Asleep = 1,
+        /// <summary>Stuck in wood: its pose is the stuck pose.</summary>
+        Stuck = 2,
+    }
+
+    /// <summary>
+    /// 0x2F LOOSE_WEAPONS, state: where the host's loose (unheld) weapons are. The host simulates them (it is the
+    /// peer that reports their contacts), the clients simulate their own copies for feel and are pulled onto this.
+    /// type u8 | tick u32 | count u8 | rows. Row (25 bytes): weaponId u16 | flags u8 | pos f32 x3 | rot u32 |
+    /// vel i16 x3. `tick` is the sim tick the rows were sampled at (the one for the whole batch), so a follower can
+    /// extrapolate over the time the message took. A row is only sent when that weapon moved, turned or changed
+    /// state, with a one second keepalive; a held, racked, carried, broken or remote driven weapon is never sent.
+    /// </summary>
+    public struct LooseWeaponsMsg
+    {
+        public const byte Id = MsgId.LooseWeapons;
+        public const MsgKind Kind = MsgKind.State;
+        public const int RowSize = 25;
+
+        public struct Row
+        {
+            public ushort weaponId;
+            public LooseFlags flags;
+            public Vector3 pos;
+            public Quaternion rot;
+            public Vector3 vel;
+        }
+
+        public uint tick;
+        public List<Row> rows;
+
+        public byte[] Encode()
+        {
+            var count = Wire.BatchCount(rows);
+            var w = new NetWriter(Id, 6 + count * RowSize);
+            w.U32(tick).U8(count);
+            for (var i = 0; i < count; i++)
+            {
+                var row = rows[i];
+                w.U16(row.weaponId).U8((byte)row.flags).Pos(row.pos).Quat(row.rot).Vel3(row.vel);
+            }
+            return w.ToArray();
+        }
+
+        public static bool TryDecode(byte[] payload, out LooseWeaponsMsg msg)
+        {
+            msg = default;
+            if (!Wire.HasId(payload, Id)) return false;
+            var r = new NetReader(payload);
+            msg.tick = r.U32();
+            var count = r.U8();
+            msg.rows = new List<Row>(count);
+            for (var i = 0; i < count && !r.Failed; i++)
+            {
+                var row = new Row();
+                row.weaponId = r.U16();
+                row.flags = (LooseFlags)r.U8();
+                row.pos = r.Pos();
+                row.rot = r.Quat();
+                row.vel = r.Vel3();
+                msg.rows.Add(row);
+            }
+            return !r.Failed;
+        }
+    }
+
     /// <summary>
     /// 0x21 RELEASE_REQ, intent: "I am leaving this weapon, here is where it is".
     /// 25 bytes: type u8 | weaponId u16 | pos f32 x3 | rot u32 | vel i16 x3.

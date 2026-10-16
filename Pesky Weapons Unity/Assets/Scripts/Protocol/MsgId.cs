@@ -48,7 +48,8 @@ namespace Pesky.Protocol
         public const byte CurseReq = 0x2C;
         public const byte CurseEvent = 0x2D;
         public const byte CurseRefused = 0x2E;
-        // 0x2F unused.
+        // Where the loose (unheld) weapons are, host to everybody, 10 Hz: the host simulates them, the clients follow.
+        public const byte LooseWeapons = 0x2F;
 
         // The labyrinth, 0x30-0x3F. Two of them are Replies, which is how a
         // secret reaches one player and nobody else.
