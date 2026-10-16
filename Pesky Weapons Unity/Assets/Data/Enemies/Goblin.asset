@@ -19,7 +19,7 @@ MonoBehaviour:
   moveSpeed: 3
   angularSpeed: 720
   acceleration: 20
-  maxHp: 30
+  maxHp: 45
   aggroRange: 8
   wanderSpeed: 1.1
   wanderRadius: 4
@@ -37,7 +37,7 @@ MonoBehaviour:
   strikeSeconds: 0.25
   strikeHalfAngleDeg: 80
   strikeReach: 1.7
-  attackDamage: 15
+  attackDamage: 20
   attackKnockback: 8
   attackCooldown: 1.2
   knockbackPerDamage: 0.25

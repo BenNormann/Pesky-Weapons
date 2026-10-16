@@ -121,6 +121,17 @@ namespace Pesky.Editor
             Debug.Log("[RoomsV3] rebuilt the Circuit Room and the Chasm (v4) and reinstalled them as rooms " + (FirstRoomId + 3) + " and " + (FirstRoomId + 4) + ".");
         }
 
+        [MenuItem("Pesky/Rooms/Rebuild Porter Room")]
+        public static void RebuildPorter()
+        {
+            if (!BackupBeforeBuild()) return;
+            PorterRoom();
+            AssetDatabase.SaveAssets();
+            Scene scene = EditorSceneManager.OpenScene(RunScene, OpenSceneMode.Single);
+            InstallIntoOpenRunScene(scene, new[] { 2 });
+            Debug.Log("[RoomsV3] rebuilt the Porter Room and reinstalled it as room " + (FirstRoomId + 2) + ".");
+        }
+
         static bool Wanted(int[] only, int i) { return only == null || System.Array.IndexOf(only, i) >= 0; }
 
         public static void CreateAllPrefabs()
@@ -432,7 +443,7 @@ namespace Pesky.Editor
 // ------------------------------------------------------------------ Room 3: PORTER ROOM
         static void PorterRoom()
         {
-            // An open hall with two goblins to kill. Behind it a wall with a big grate door into the guard room.
+            // An open hall with three goblins to kill. Behind it a wall with a big grate door into the guard room.
             // Bang the bars and the porter comes over from the OTHER side: a Dagger it pulls through the bars
             // and carries to its stand; anything heavier it refuses ("a shame I can only fit a dagger...").
             // The grate opens for good from the lever inside; the exit opens once the hall is cleared.
@@ -531,7 +542,7 @@ namespace Pesky.Editor
             Deco(geo, DecoCrate, "Store_Crate_7", new Vector3(2f, 0f, -22.5f), 0f);
             Deco(geo, DecoCrate, "Store_Crate_8", new Vector3(2f, 1f, -22.5f), 0f);
 
-            // Two goblins in the hall; their volume clears the exit. The guard room is the porter's own volume.
+            // Three goblins in the hall; their volume clears the exit. The guard room is the porter's own volume.
             GameObject hallGo = Kit(RoomVolumePrefab, play, "HallVolume", new Vector3(0f, H / 2f, (partitionZ + L / 2f) / 2f), Quaternion.identity);
             BoxCollider hallBox = hallGo.GetComponent<BoxCollider>();
             if (hallBox != null) { hallBox.center = Vector3.zero; hallBox.size = new Vector3(W, H, L / 2f - partitionZ); }
@@ -539,9 +550,13 @@ namespace Pesky.Editor
             SetString(hall, "roomName", "Hall");
             GameObject gobA = Kit(GoblinPrefab, play, "Goblin_A", new Vector3(-4f, 0f, -10f), Quaternion.identity);   // the inspectors start behind the counter
             GameObject gobB = Kit(GoblinPrefab, play, "Goblin_B", new Vector3(3f, 0f, -12f), Quaternion.identity);
-            SetArray(hall, "enemies", new List<GoblinBrain> { gobA.GetComponent<GoblinBrain>(), gobB.GetComponent<GoblinBrain>() });
+            GameObject gobC = Kit(GoblinPrefab, play, "Goblin_C", new Vector3(5f, 0f, -8f), Quaternion.identity);   // east gap around the counter
+            SetArray(hall, "enemies", new List<GoblinBrain> {
+                gobA.GetComponent<GoblinBrain>(), gobB.GetComponent<GoblinBrain>(), gobC.GetComponent<GoblinBrain>()
+            });
             SetRef(gobA.GetComponent<GoblinBrain>(), "room", hall);
             SetRef(gobB.GetComponent<GoblinBrain>(), "room", hall);
+            SetRef(gobC.GetComponent<GoblinBrain>(), "room", hall);
             GameObject guardGo = Kit(RoomVolumePrefab, play, "GuardRoomVolume", new Vector3(0f, H / 2f, (partitionZ - L / 2f) / 2f), Quaternion.identity);
             BoxCollider guardBox = guardGo.GetComponent<BoxCollider>();
             if (guardBox != null) { guardBox.center = Vector3.zero; guardBox.size = new Vector3(W, H, L / 2f + partitionZ); }
@@ -559,7 +574,7 @@ namespace Pesky.Editor
             grateRails.Add(Conduit(geo, "Grate_1", new Vector3(-3.6f, 4f, gz), new Vector3(-0.5f, 4f, gz)));
             grateRails.Add(wheel.GetComponent<Renderer>());
             Line(play, "Line_Grate", lDoor, grateRails);
-            Profile(room, "porter_room", Names[2], "Kill the two goblins, bang the grate, play dead as the Dagger so the porter pulls you through the bars, then pull the lever inside.", 3);
+            Profile(room, "porter_room", Names[2], "Kill the three goblins, bang the grate, play dead as the Dagger so the porter pulls you through the bars, then pull the lever inside.", 3);
             SaveRoom(room, PrefabPath(2));
         }
 
