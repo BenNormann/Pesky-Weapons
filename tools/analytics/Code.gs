@@ -44,9 +44,29 @@ function doPost(e) {
   }
 }
 
-// A browser opening the web app URL sees this: a quick way to check the deployment is live.
-function doGet() {
-  return reply('Pesky Weapons analytics endpoint, schema v' + SCHEMA_VERSION + '. POST a run report here.');
+// GET ?format=json: the three tabs as JSON for the dashboard (WebGLTemplates/Pesky/dashboard.html). The data is
+// anonymous (run ids, timings, outcomes), so it is readable by anybody with the URL. Without the parameter: a
+// line saying the deployment is live, the quick check after deploying.
+function doGet(e) {
+  if (!e || !e.parameter || e.parameter.format !== 'json') {
+    return reply('Pesky Weapons analytics endpoint, schema v' + SCHEMA_VERSION + '. POST a run report here.');
+  }
+  var book = SpreadsheetApp.getActiveSpreadsheet();
+  var data = { v: SCHEMA_VERSION, generated_at: new Date().toISOString() };
+  Object.keys(TABS).forEach(function (name) { data[name] = rows(book.getSheetByName(name)); });
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// A tab as one object per row, keyed by its header row; a missing tab is no rows.
+function rows(sheet) {
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  var values = sheet.getDataRange().getValues();
+  var header = values[0];
+  return values.slice(1).map(function (row) {
+    var o = {};
+    for (var i = 0; i < header.length; i++) o[header[i]] = row[i];
+    return o;
+  });
 }
 
 function tab(book, name) {

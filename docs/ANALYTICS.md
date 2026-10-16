@@ -74,6 +74,8 @@ run's timer started (a vote's pause is not counted).
    `window.PESKY_ANALYTICS_URL = '<that URL>'`, then build and publish as usual (`docs/WEB-BUILD.md`).
 
 Changing `Code.gs` later: **Deploy > Manage deployments > edit > Version: New version** keeps the same URL.
+(`<URL>?format=json` returns the three tabs as JSON, which the dashboard reads; it needs the version of
+`Code.gs` that has it deployed.)
 A **new deployment** makes a new URL, which then has to go into `index.html` again.
 
 ## 4. How it is built
@@ -124,3 +126,35 @@ with the pivot table selected. They update as runs arrive.
    - Link to data collection: https://docs.google.com/spreadsheets/d/1HmK-adKw-AqHhSZjBKzJXs6QMS5cL9FUVSBqQOgkQys/edit?usp=sharing
 2. Data Visualization:
    - Google Sheets pivot tables and charts on the `runs`, `rooms` and `votes` tabs, updating as runs arrive.
+
+## 8. The dashboard
+
+`WebGLTemplates/Pesky/dashboard.html` ships with every build, next to the game:
+**https://bennormann.github.io/Pesky-Weapons-Build/dashboard.html** once a build that has it is published.
+
+It reads the Sheet through the Apps Script (`<URL>?format=json`, so the deployment must be on a version of
+`Code.gs` that has it) and refreshes every minute. What it shows:
+
+- **Headline numbers:** runs recorded, how often the crew escaped, the median run length, and the Mage twice:
+  **runs where the Mage was caught** (of the runs that held a vote: is the Mage balanced?) and **votes that hit
+  the Mage** (of all votes: can players read the Mage, or do they guess?). A run can hold several votes and the
+  Mage is caught at most once, so the two differ. Each says what it is out of: with a handful of runs a
+  percentage swings a lot.
+- **Where runs stall:** average time in each room (cleared rooms only), and how many runs ended in each room,
+  plus an **Exit room** column for runs that reached the Exit room but did not all escape before the time ran out.
+- **How runs end** by player count, **who the votes banished**, and **when votes happen**.
+- A **runs table** under the charts.
+
+**Filters:** the build (the game's version string, `Application.version`: bump it in Player Settings for each
+milestone build so a fix can be compared with the build before it) and whether to include runs the host left
+mid-way (off by default: they have no outcome).
+
+**Testing it without the Sheet:** `dashboard.html?src=<a JSON file>` reads that file instead (same shape as the
+`?format=json` answer: `runs`, `rooms`, `votes` arrays of row objects).
+
+Like the game's reports, the page's request to `script.google.com` is blocked by Brave Shields and some ad
+blockers: the page says so when it cannot load.
+
+For the GDD, the dashboard's charts can stand in for the Sheet's pivot charts (section 6) as the "images of
+actual results" on each metric page, and the Data Visualization line can read: *a dashboard page published
+with the game (plain HTML/SVG) reads the Sheet and charts each metric, updating as runs arrive*.

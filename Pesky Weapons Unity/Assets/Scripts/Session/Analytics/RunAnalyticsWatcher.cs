@@ -27,6 +27,14 @@ namespace Pesky.Session.Analytics
         bool _live;
         uint _startTick;
         uint _lastVoteEnd;
+        readonly uint[] _poseAtStart = new uint[Wire.MaxPlayers];
+
+        // The pause bookkeeping as of the last frame the round was Playing. SESSION_END lands on the same tick as
+        // ROUND_RESULT and a phase change resets PauseState, so by the frame the result is seen, GameTick() has
+        // forgotten every vote's pause and a run's length would count its meetings.
+        uint _pausedTicks;
+        bool _paused;
+        uint _pauseStart;
 
         /// <summary>The run's report so far, held for a page that closes mid-run. Raised whenever it changed.</summary>
         public event Action<string> Changed;
@@ -52,6 +60,12 @@ namespace Pesky.Session.Analytics
         public void Observe(WorldSim sim)
         {
             if (sim == null) return;
+            if (sim.Phase == SessionPhase.Playing)
+            {
+                _pausedTicks = sim.Pause.PausedTotalTicks;
+                _paused = sim.Pause.Paused;
+                _pauseStart = sim.Pause.PauseStartTick;
+            }
             RunState run = sim.Run;
             bool live = sim.Phase == SessionPhase.Playing && run.Started;
             bool started = live && (!_live || run.StartTick != _startTick);
@@ -62,7 +76,7 @@ namespace Pesky.Session.Analytics
                 if (sim.Labyrinth.Outcome != RoundOutcome.None)
                 {
                     _report.Finish(sim.Labyrinth.Outcome.ToString(), Bits(sim.Labyrinth.MageMask), Present(sim),
-                        SecondsAt(sim, sim.Pause.GameTick(sim.Labyrinth.OutcomeTick)));
+                        SecondsAt(sim, GameTickAt(sim.Labyrinth.OutcomeTick)));
                     Raise(Finished, _report.ToJson(0f));
                     return;
                 }
@@ -78,6 +92,9 @@ namespace Pesky.Session.Analytics
             if (!started || sim.Labyrinth.Outcome != RoundOutcome.None) return;
             _startTick = run.StartTick;
             _lastVoteEnd = sim.Vote.HasResult ? sim.Vote.LastEndGameTick : 0u;
+            // A pose from before the run (where the last run left everybody, the Exit room) says nothing about this one.
+            for (int i = 0; i < _poseAtStart.Length && i < sim.Players.Count; i++)
+                _poseAtStart[i] = sim.Players[i] != null ? sim.Players[i].poseCount : 0u;
             int players = Present(sim);
             if (players < MinPlayers)
             {
@@ -110,10 +127,13 @@ namespace Pesky.Session.Analytics
             for (int i = 0; i < sim.Players.Count; i++)
             {
                 PlayerState p = sim.Players[i];
-                // A ghost passes the doors freely (docs/VOTING.md), so only the living say how far the run got.
-                if (p == null || !p.present || p.poseCount == 0 || sim.Vote.IsBanished(i)) continue;
+                // A ghost passes the doors freely (docs/VOTING.md), so only the living say how far the run got; and
+                // only a pose streamed since the run began.
+                if (p == null || !p.present || p.poseCount <= _poseAtStart[i] || sim.Vote.IsBanished(i)) continue;
                 int at = _positionAt != null ? _positionAt(p.pos) : -1;
-                if (at < 0 || at + 1 <= _report.Run.rooms_reached) continue;
+                // Doors join room k to room k + 1 only, so the next first entry is always the next position; a
+                // jump further (a stale pose in the Exit room) is not a place anybody walked to.
+                if (at != _report.Run.rooms_reached) continue;
                 int roomId = at < sim.Run.Count ? sim.Run.RoomAt(at) : -1;
                 _report.Entered(at, roomId, roomId >= 0 && _labelOf != null ? _labelOf(roomId) : "Exit", now);
             }
@@ -134,7 +154,14 @@ namespace Pesky.Session.Analytics
 
         float Now(WorldSim sim)
         {
-            return SecondsAt(sim, sim.Pause.GameTick(sim.Tick));
+            return SecondsAt(sim, GameTickAt(sim.Tick));
+        }
+
+        /// <summary>The game tick at a sim tick, from the pause bookkeeping of the last Playing frame (see _pausedTicks).</summary>
+        uint GameTickAt(uint tick)
+        {
+            if (_paused && tick > _pauseStart) tick = _pauseStart;
+            return tick > _pausedTicks ? tick - _pausedTicks : 0u;
         }
 
         float SecondsAt(WorldSim sim, uint gameTick)
