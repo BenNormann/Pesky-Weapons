@@ -159,10 +159,7 @@ namespace Pesky.Editor
             Stair(geo, "Loft_Stair", new Vector3(-8.5f, 0f, -1f), Vector3.left, 5, 0.5f, 0.8f, 2.5f);
 
             ImpactLever lever = Lever(play, "StarLever_Loft", new Vector3(-13.6f, LoftY, -3.0f), Quaternion.Euler(0f, 90f, 0f));
-            Deco(geo, "Deco_Table", "Loft_Desk", new Vector3(-15.45f, LoftY, 1.8f), 90f);
-            Deco(geo, "Deco_Stool", "Loft_Stool", new Vector3(-14.72f, LoftY, 2.0f), 0f);
-            Deco(geo, "Deco_Crystal", "Loft_Crystal", new Vector3(-15.45f, LoftY, -1.4f), 70f);
-            Deco(geo, "Deco_Banner", "Loft_Banner", new Vector3(-W / 2f, LoftY, -1.4f), 270f);   // hangs from the loft floor up the wall, not through the slab
+            Deco(geo, "Deco_Table", "Loft_Desk", new Vector3(-15.45f, LoftY, 1.8f), 90f);   // the one prop on the loft: it says "this is where the astronomers work"
             return lever;
         }
 
@@ -183,8 +180,6 @@ namespace Pesky.Editor
             SetFloat(lp, "forwardSpeed", 5.5f);
 
             ImpactLever lever = Lever(play, "StarLever_Shelf", new Vector3(13.6f, ShelfY, -1.8f), Quaternion.Euler(0f, -90f, 0f));
-            Deco(geo, "Deco_Crystal", "Shelf_Crystal", new Vector3(15.35f, ShelfY, 4.3f), -30f);
-            Deco(geo, "Deco_Sacks", "Shelf_Sacks", new Vector3(15.5f, ShelfY, 1.4f), 90f);
             return lever;
         }
 
@@ -316,19 +311,14 @@ namespace Pesky.Editor
         /// <summary>What the goblins left lying about. Every piece flush to a wall, 1.5 m or more from anything else.</summary>
         static void Dressing(Transform geo)
         {
+            // Nothing here is decoration for its own sake: the two banners mark the exit, so the eye finds the door from the
+            // entry. The room's other props are the loft's desk (a reason for the perch) and the gallery's braziers (they
+            // light the highest lever); everything else that was here was cut in review.
             GameObject g = new GameObject("Dressing");
             g.transform.SetParent(geo, false);
             Transform t = g.transform;
-            // the entry wall: banners either side of the way in, sacks and a pile of the last visitors
-            Deco(t, "Deco_Banner", "Banner_Entry_W", new Vector3(-3.1f, 0f, W / 2f), 0f);
-            Deco(t, "Deco_Banner", "Banner_Entry_E", new Vector3(3.1f, 0f, W / 2f), 0f);
-            Deco(t, "Deco_Sacks", "Sacks_Entry", new Vector3(5.0f, 0f, W / 2f - 0.5f), 180f);   // 0.12 m of skirting stands off the wall: keep clear of it
-            Deco(t, "Deco_BonePile", "Bones_Entry", new Vector3(-5.0f, 0f, W / 2f - 0.55f), 160f);
-            // the exit wall, under the gallery: banners framing the door
             Deco(t, "Deco_Banner", "Banner_Exit_W", new Vector3(-3.1f, 0f, -W / 2f), 180f);
             Deco(t, "Deco_Banner", "Banner_Exit_E", new Vector3(3.1f, 0f, -W / 2f), 180f);
-            // the east wall under the shelf: the cauldron the lenses are cast in
-            Deco(t, "Deco_Cauldron", "Cauldron", new Vector3(15.3f, 0f, -4.6f), 0f);   // off the pilaster base at z -6.5 and the skirting at x 15.88
         }
 
         /// <summary>Four torches where the eye needs them, and one violet light from the sun. Six lights at most per room.</summary>

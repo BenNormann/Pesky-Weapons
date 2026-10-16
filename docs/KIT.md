@@ -302,6 +302,13 @@ braced, and off once sealed.
 `Deco_Crate` (1 m), `Deco_Barrel`, `Deco_Shelf`, `Deco_Pillar` (4 m), `Deco_Rubble`: grey boxes with plain box
 colliders, static, placed by the builder's `Deco()`.
 
+**Props with a job (2026-10-15, with the Orrery).** `Deco_Table` (2 x 1 m, a mug and a plate on it), `Deco_Banner` (a purple
+hanging with a magic sigil, **no collider**: put its root on the wall face with its +Z into the wall) and `Deco_Brazier`
+(0.6 m, an `M_Torch` flame and **no Light**, so it costs nothing against the 6-lights rule). Same shape as the boxes above:
+a static World-layer root, collider-less visuals and ONE plain `BoxCollider` child (`Collider`, `P_World`). They are not a
+set to dress rooms with: use one only where it does a job (mark a door, light a goal, say what a perch is). Anything
+purely for looks was cut in review.
+
 ### LaunchPad — `Kit/Movers/LaunchPad.prefab`, `LaunchPad.cs` (2026-10-14)
 **Rule.** A purple rune in the floor that throws ANY weapon touching it (bladed, blunt, metal, wooden) along a
 fixed arc: `upSpeed` straight up plus `forwardSpeed` along the pad's forward (its silver chevron). It is a

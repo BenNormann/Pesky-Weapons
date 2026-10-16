@@ -44,27 +44,28 @@ mid-flight nudge to the gallery puts the body back on the floor.
 ## Kit used
 
 `Spinner` (as the orrery's arm; its rotor also carries the axle, the planets and the sun, collider-less above the hub),
-`LaunchPad` x 2, `ImpactLever` x 3, `Door` (LeversOn), and decoration from the workshop set: `Deco_Table`,
-`Deco_Stool`, `Deco_Crystal` x 2, `Deco_Brazier` x 2, `Deco_Banner` x 5, `Deco_Sacks` x 2, `Deco_BonePile`,
-`Deco_Cauldron`. Every decoration is flush to a wall (or touching another piece) or 1.5 m clear of everything.
+`LaunchPad` x 2, `ImpactLever` x 3, `Door` (LeversOn), and five props, each there for a reason (review on #16 / #17: no art
+for the sake of it): `Deco_Brazier` x 2 on the gallery (they light and frame the hardest lever), `Deco_Banner` x 2 (they
+mark the exit, so the eye finds the door from the entry) and `Deco_Table` x 1 on the loft (it says "this is where the
+astronomers work" and sits beside the lever). An earlier cut also had a cauldron, sacks, a bone pile, a stool, two
+crystals and three more banners; none of them did anything and they are gone. Every prop is flush to a wall or 1.5 m clear.
 
 **Alignment and clearance (review fix, PR #17).** Every perch stands on posts that sit UNDER its slab with their outer
 faces flush with the slab's edges (loft x -13.0..-12.5, shelf x 12.5..13.0, gallery x +-5.5..6.0 and z -12.5..-12.0), tied
 by a beam under the front edge. The lit lines that climb the posts follow them. A script check on the built room lists
-every prop whose bounds overlap anything else by more than 3 cm: all 15 are clear. The wall skirting stands 0.12 m off
-the wall and the corner pilasters 0.9 m, so props near a wall are placed 0.5 m off it and the cauldron sits 1.2 m clear
-of the pilaster at z -6.5.
+every prop whose bounds overlap anything else by more than 3 cm: all are clear. The wall skirting stands 0.12 m off
+the wall and the corner pilasters 0.9 m, so props near a wall are placed 0.5 m off it.
 
-**No coplanar faces (review fix, PR #17).** The scene validator on rooms-overhaul lists any two faces in the same plane that
+**No coplanar faces (review fix, PR #17).** The scene validator (from the rooms overhaul, now on main) lists any two faces in the same plane that
 point the same way and overlap, because they z-fight. The room follows the same rules: the perch beams are inset from the
 posts (0.46 wide against 0.5, 7.96 against 8 m, 1 cm lower) and the lips 2 cm short; even stair steps are 2 cm narrower;
 alternate ring beams are 0.35 and 0.31 deep; alternate constellation lines sit 8 mm apart; the ceiling stars are static;
 the gate sits 1 cm up so its slab and the frame's jambs do not share the floor plane. Checked with that validator on this
 room: only the three warnings every single-room test scene has (no LabyrinthDirector). The exit is still a sliding slab
-here; making it a dead portal and wiring the levers needs rooms-overhaul's PowerLine, so that comes after it lands.
+in this PR; the wiring (a dead portal, a line per lever) is the next PR, on top of this one.
 
-Lights: four torches (one at the entry, one over the scribe's desk, one over the cauldron, one on the wall above the
-gallery) and one violet point light at the sun. Five in all, under the six-per-room rule.
+Lights: four torches (one at the entry, one over the scribe's desk, one low on the east wall under the shelf, one on the
+wall above the gallery) and one violet point light at the sun. Five in all, under the six-per-room rule.
 
 ## Numbers (play-tested in OrreryTest)
 
