@@ -86,6 +86,9 @@ way. So:
   (the recipe is in the round 23 to 28 history of this session's BUILD-LOG entries) and re-run
   `WireSceneReferences`, `RebuildSceneRegistries` (private statics on the builder, via reflection) and
   `RunSceneBuilder.AssignSceneIds`. The spawner must point at `Environment/SpawnPoint`, not the room's own.
+- `Assets/Scenes/Dev/CircuitTest.unity` is the Circuit Room alone (no teleports, no goblins, a rack of Sword, Staff,
+  Dagger, Hammer, Mace, Sword, Dagger, spawn by the pit). `Pesky/Dev/Make Circuit Test Scene` remakes it from BatTest
+  and the current prefab; run it after any Circuit Room rebuild instead of re-applying overrides by hand.
 - NavMeshData is saved as `Assets/Scenes/Run/NavMesh-Environment.asset`; embedded it turns the scene binary.
 
 ## Editor and MCP gotchas

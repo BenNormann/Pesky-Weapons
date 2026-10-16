@@ -175,6 +175,83 @@ namespace Pesky.Editor
 
 
 
+        const string BatTestScene = "Assets/Scenes/Dev/BatTest.unity";
+        const string CircuitTestScene = "Assets/Scenes/Dev/CircuitTest.unity";
+
+        /// <summary>A dev scene for the circuit kit (round 31): BatTest's managers, camera, lighting and HUD, copied; the Circuit
+        /// Room at the origin with its teleports off (scripts and planes) and its goblins off, the gate and the circuit live; the
+        /// test rack on the floor by the north wall with Sword, Staff, Dagger, Hammer, Mace, Sword, Dagger; the spawn north of
+        /// the pit, facing it. Re-run after a Circuit Room rebuild: a prefab re-save drops an instance's overrides.</summary>
+        [MenuItem("Pesky/Dev/Make Circuit Test Scene")]
+        public static void MakeCircuitTest()
+        {
+            if (EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[RoomsV3] stop Play mode first."); return; }
+            for (int i = 0; i < EditorSceneManager.sceneCount; i++) if (EditorSceneManager.GetSceneAt(i).isDirty) { Debug.LogError("[RoomsV3] the open scene is dirty: save or discard it first."); return; }
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(CircuitTestScene) != null) AssetDatabase.DeleteAsset(CircuitTestScene);
+            if (!AssetDatabase.CopyAsset(BatTestScene, CircuitTestScene)) { Debug.LogError("[RoomsV3] could not copy " + BatTestScene); return; }
+            Scene scene = EditorSceneManager.OpenScene(CircuitTestScene, OpenSceneMode.Single);
+            GameObject environment = FindRoot(scene, "Environment");
+            GameObject managers = FindRoot(scene, "_Managers");
+            if (environment == null || managers == null) { Debug.LogError("[RoomsV3] the copied scene has no Environment or _Managers."); return; }
+
+            // The room: the Chasm out, the Circuit Room in, at the origin.
+            foreach (LabyrinthRoom old in environment.GetComponentsInChildren<LabyrinthRoom>(true)) Object.DestroyImmediate(old.gameObject);
+            GameObject room = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath(3)), environment.transform);
+            room.name = "CircuitRoom";
+            room.transform.SetAsFirstSibling();
+            room.transform.localPosition = Vector3.zero;
+            // Overrides: no teleports (the scripts and the portal planes), no goblins; the room's own spawn point yields to the scene's.
+            foreach (MagicDoor d in room.GetComponentsInChildren<MagicDoor>(true))
+            {
+                d.enabled = false;
+                Transform plane = d.transform.Find("Plane");
+                if (plane != null) plane.gameObject.SetActive(false);
+            }
+            foreach (GoblinBrain g in room.GetComponentsInChildren<GoblinBrain>(true)) g.gameObject.SetActive(false);
+            Transform roomSpawn = room.transform.Find("SpawnPoint");
+            if (roomSpawn != null) roomSpawn.gameObject.SetActive(false);
+
+            // The spawn: on the floor north of the pit, facing south toward it.
+            Transform spawn = environment.transform.Find("SpawnPoint");
+            if (spawn == null) { spawn = new GameObject("SpawnPoint").transform; spawn.SetParent(environment.transform, false); }
+            spawn.localPosition = new Vector3(-4f, 0.6f, 2f);
+            spawn.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            PlayerSpawner spawner = managers.GetComponentInChildren<PlayerSpawner>(true);
+            if (spawner != null) SetArray(spawner, "spawnPoints", new List<Transform> { spawn });
+
+            // The rack by the north wall, the circuit's own set on it.
+            Transform rack = environment.transform.Find("TestRack");
+            if (rack != null) { rack.localPosition = new Vector3(0f, 0f, 11f); rack.localRotation = Quaternion.identity; }
+            Transform weapons = environment.transform.Find("Weapons");
+            if (weapons == null) { weapons = new GameObject("Weapons").transform; weapons.SetParent(environment.transform, false); }
+            for (int i = weapons.childCount - 1; i >= 0; i--) Object.DestroyImmediate(weapons.GetChild(i).gameObject);
+            string[] set = { "Sword", "Staff", "Dagger", "Hammer", "Mace", "Sword", "Dagger" };
+            for (int i = 0; i < set.Length; i++)
+            {
+                Transform slot = rack != null ? rack.Find("Slot_" + (i + 1)) : null;
+                GameObject w = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Weapons/" + set[i] + ".prefab"), weapons);
+                w.name = set[i] + "_" + (i + 1);
+                WeaponBody body = w.GetComponent<WeaponBody>();
+                if (slot != null)
+                {
+                    w.transform.SetPositionAndRotation(slot.position, slot.rotation);
+                    SetRef(body, "homeSlot", slot.GetComponent<WeaponHomeSlot>());
+                }
+                SetBool(body, "restAtHome", true);
+            }
+
+            WorldAuthority authority = managers.GetComponentInChildren<WorldAuthority>(true);
+            LevelClock clock = managers.GetComponentInChildren<LevelClock>(true);
+            WireSceneReferences(room, authority, null, clock, Names[3]);
+            RebuildSceneRegistries(scene, environment.transform, authority, null, null);
+            RunSceneBuilder.AssignSceneIds(scene);
+            BakeNavMesh(environment, scene);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[RoomsV3] made " + CircuitTestScene + ": the Circuit Room, no teleports, no goblins, " + set.Length + " weapons on the rack. Play it in the Editor.");
+        }
+
         static bool Wanted(int[] only, int i) { return only == null || System.Array.IndexOf(only, i) >= 0; }
 
         public static void CreateAllPrefabs()
@@ -1033,6 +1110,11 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
             SetArray(authority, "magnets", ComponentsInScene<MagnetZone>(scene));
             SetArray(authority, "lifts", ComponentsInScene<Lift>(scene));
             SetArray(authority, "anvils", ComponentsInScene<AnvilStation>(scene));
+            // The rest of the kit too (round 31: a dev scene copied from another kept that scene's pots and cracked walls as nulls).
+            SetArray(authority, "pots", ComponentsInScene<Pot>(scene));
+            SetArray(authority, "crackedWalls", ComponentsInScene<CrackedWall>(scene));
+            SetArray(authority, "keys", ComponentsInScene<KeyPickup>(scene));
+            SetArray(authority, "runes", ComponentsInScene<RunePickup>(scene));
         }
 
         // ------------------------------------------------------------------ room shell

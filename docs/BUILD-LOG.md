@@ -3283,3 +3283,10 @@ stair's the south wall: walking down, the last step dropped you against a wall f
 to 3 m short of the east wall (16 steps, tread 0.56), and those 3 m of floor are its landing. The watch stair's foot is
 3 m off the south wall (z -27), its platform 17 m long from the stair's top to 5.2 m short of the gate wall; the watcher
 and the sleeper moved with the east wall. Rebuilt with `Rebuild Gatehouse`.
+
+**CircuitTest, a dev scene for the circuit kit (2026-10-16).** `Pesky/Dev/Make Circuit Test Scene` makes
+`Assets/Scenes/Dev/CircuitTest.unity` from BatTest (its managers, camera, lighting and HUD, copied): the Circuit Room at
+the origin with its teleports off (the MagicDoor scripts and their portal planes) and its goblins off, the gate and the
+circuit live; the test rack by the north wall with Sword, Staff, Dagger, Hammer, Mace, Sword, Dagger; the spawn at
+(-4, 0.6, 2) facing the pit. Wired, registered, ids assigned, NavMesh baked, saved. Re-run it after a Circuit Room
+rebuild: a prefab re-save drops an instance's overrides, and the menu makes the scene again from scratch.
