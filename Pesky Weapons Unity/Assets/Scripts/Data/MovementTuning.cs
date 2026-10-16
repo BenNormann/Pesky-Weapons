@@ -82,6 +82,18 @@ namespace Pesky.Data
         [Tooltip("No turning below this speed in m/s.")]
         public float bladeAlignMinSpeed = 3f;
 
+        [Header("Climb (a blade stuck in a wooden wall hops up it; round 29)")]
+        [Tooltip("On: a blade stuck in a wooden WALL whose aim looks back at the timber launches STRAIGHT UP along it and stabs back in where it stops rising, so a post is climbed hop by hop. Off: the old rebound only.")]
+        public bool climbEnabled = true;
+        [Tooltip("The aim's horizontal heading has to point this much INTO the wall (dot with the inward direction) for the launch to be a climb; looking away leaves the post as before.")]
+        [Range(0f, 1f)] public float climbHeadingDot = 0.2f;
+        [Tooltip("Fraction of the weapon's launch speed a climb hop leaves at. The rise is v^2 / 2g: a Sword at 12 m/s climbs 3.6 m a hop, a Dagger at 14 m/s 4.9 m.")]
+        public float climbSpeedScale = 1f;
+        [Tooltip("The hop stabs back in once its upward speed has dropped under this (m/s); the probe keeps looking while it falls, so the top of a post is never missed.")]
+        public float climbRestickBelowSpeed = 1.5f;
+        [Tooltip("How far from the body's centre the probe looks for the timber, along the wall's inward direction (m).")]
+        public float climbReach = 1.2f;
+
 
 
     }

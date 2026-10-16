@@ -100,4 +100,5 @@ BatRoom prefab (a re-save drops the instance's overrides).
 and crates on the goblins' bank. No pillars (owner, round 27).
 
 ## Not yet built from this doc
-Narrator hints (signs are gone from these two rooms only for now). Art for the Deco prefabs.
+Art for the Deco prefabs. (Round 29: signs are gone from every room and `docs/HINTS.md` is the narrator for
+now; the Circuit Room's exit is a dead portal with no sliding slab, fed by its own door wire.)

@@ -52,8 +52,9 @@ crashlytics-build.properties
 Thumbs.db
 desktop.ini
 
-# Claude Code local state
-.claude/
+# Claude Code local state (the project's slash commands under .claude/commands ARE tracked: /check-ship-pr)
+.claude/*
+!.claude/commands/
 
 # Written by the Performance Testing package on every build; not ours
 Pesky Weapons Unity/Assets/Resources/PerformanceTestRun*

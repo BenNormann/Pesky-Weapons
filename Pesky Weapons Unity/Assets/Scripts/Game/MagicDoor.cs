@@ -34,6 +34,8 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] Door gate;
         [Tooltip("The glowing plane. Hidden while the gate is closed.")]
         [SerializeField] GameObject planeVisual;
+        [Tooltip("Keep the plane in view while the gate is shut: a DEAD portal (its material driven dark by a PowerLine or a Circuit) that comes alive when its line is live, instead of a slab that slides away (round 29). Off = the plane hides behind the shut gate.")]
+        [SerializeField] bool showPlaneWhenShut;
 
         [Header("Grid doorway (labyrinth)")]
         [Tooltip("On: this is one of a labyrinth room's four doorways and its far side is whatever room the grid table currently puts next door. The serialized twin above is then ignored.")]
@@ -121,12 +123,12 @@ namespace Pesky.Game
         {
             if (_soulBlock == null) { Transform sb = transform.Find("SoulBlock"); if (sb != null) _soulBlock = sb.GetComponent<Collider>(); }
             _previous.Clear();
-            ShowPlane(GateOpen);
+            ShowPlane(GateOpen || showPlaneWhenShut);
         }
 
         void Update()
         {
-            bool open = GateOpen;
+            bool open = GateOpen || showPlaneWhenShut;
             if (open != _planeShown) ShowPlane(open);
         }
 
