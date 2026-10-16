@@ -301,15 +301,6 @@ braced, and off once sealed.
 ### Deco - `Kit/Deco/`
 `Deco_Crate` (1 m), `Deco_Barrel`, `Deco_Shelf`, `Deco_Pillar` (4 m), `Deco_Rubble`: grey boxes with plain box
 colliders, static, placed by the builder's `Deco()`.
-**Goblin-workshop set (2026-10-14).** `Deco_Table` (2 x 1 m, a mug and a plate on it), `Deco_Stool` (0.46 m),
-`Deco_Cauldron` (1.1 m, an `M_MagicFlow` brew), `Deco_Crystal` (a purple `M_MagicFlow` crystal cluster on a
-rock, 1 x 1.4 x 0.9 m), `Deco_Brazier` (0.6 m, an `M_Torch` flame and **no Light**, so it costs nothing against
-the 6-lights rule), `Deco_BonePile` (1 x 0.8 m, low), `Deco_Sacks` (1.15 x 0.6 m) and `Deco_Banner` (a purple
-hanging with a magic sigil, **no collider**: put its root on the wall face with its +Z into the wall). Every
-one is the same shape as the boxes above: a static World-layer root, collider-less visual children and ONE
-plain `BoxCollider` child (`Collider`, `P_World`) around the whole silhouette, so nothing has a gap a weapon
-can wedge in. Rule: flush against something or at least 1.5 m clear of
-walls and each other, so no weapon wedges. Swap the art per prefab and every room follows.
 
 ### LaunchPad — `Kit/Movers/LaunchPad.prefab`, `LaunchPad.cs` (2026-10-14)
 **Rule.** A purple rune in the floor that throws ANY weapon touching it (bladed, blunt, metal, wooden) along a
@@ -506,7 +497,6 @@ All under `Environment/DevBox/Gameplay/KitTest` in the 30 x 30 dev box, wired to
 | `NewKit/Spinner` | (7.5,0,-0.5) | 6 s a turn; clear 3.7 m round it. Played: it turns. |
 | `NewKit/BankLever_1..3` (ids 1803-1805) + `Door_LeverBank` (id 403) | levers (-9.5,0,-2), (-5,0,0.5), (-0.5,0,-2); door (-5,0,-3.2) | Played: the door stayed shut after one and two levers and opened on the third. |
 | `NewKit/LaunchPad` + `PadLedge` | pad (-8.5,0,13) facing west; ledge x -15..-11.5, z 11.5..15, 4 m high | up 14, forward 5. Played: a Sword dropped on the pad came to rest on top of the ledge. |
-| `NewKit/Deco/*` | the workshop set along the north wall (z 15) and the east wall (x 15) | Static, flush to the walls, 1.5 m+ apart. |
 | `ScalesLock` (id 2001) | (-6,0,-6) | Pans at y 1.0: light / medium / heavy left to right. |
 | `LightningField` (id 2101) | (0,0,-10) | 12 x 10 x 12; 6 s period, 1 s glow, 40 damage. |
 | `CrackedWall` (id 2201) | (-11,0,1) | Only the Mace or the Hammer at 6 m/s or more. |
