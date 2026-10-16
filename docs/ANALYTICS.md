@@ -135,8 +135,11 @@ with the pivot table selected. They update as runs arrive.
 It reads the Sheet through the Apps Script (`<URL>?format=json`, so the deployment must be on a version of
 `Code.gs` that has it) and refreshes every minute. What it shows:
 
-- **Headline numbers:** runs recorded, how often the crew escaped, the median run length, how often a vote
-  caught the Mage. Each says how many runs it is out of: with a handful of runs a percentage swings a lot.
+- **Headline numbers:** runs recorded, how often the crew escaped, the median run length, and the Mage twice:
+  **runs where the Mage was caught** (of the runs that held a vote: is the Mage balanced?) and **votes that hit
+  the Mage** (of all votes: can players read the Mage, or do they guess?). A run can hold several votes and the
+  Mage is caught at most once, so the two differ. Each says what it is out of: with a handful of runs a
+  percentage swings a lot.
 - **Where runs stall:** average time in each room (cleared rooms only), and how many runs ended in each room,
   plus an **Exit room** column for runs that reached the Exit room but did not all escape before the time ran out.
 - **How runs end** by player count, **who the votes banished**, and **when votes happen**.

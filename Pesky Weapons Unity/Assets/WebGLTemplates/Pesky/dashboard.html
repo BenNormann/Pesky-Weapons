@@ -147,7 +147,8 @@
     <div class="tile"><div class="label">Runs recorded</div><div class="value" id="t-runs">–</div><div class="n" id="t-runs-n"></div></div>
     <div class="tile"><div class="label">Crew escaped</div><div class="value" id="t-escape">–</div><div class="n" id="t-escape-n"></div></div>
     <div class="tile"><div class="label">Typical run length</div><div class="value" id="t-length">–</div><div class="n" id="t-length-n"></div></div>
-    <div class="tile"><div class="label">A vote caught the Mage</div><div class="value" id="t-caught">–</div><div class="n" id="t-caught-n"></div></div>
+    <div class="tile"><div class="label">Runs where the Mage was caught</div><div class="value" id="t-caught">–</div><div class="n" id="t-caught-n"></div></div>
+    <div class="tile"><div class="label">Votes that hit the Mage</div><div class="value" id="t-hit">–</div><div class="n" id="t-hit-n"></div></div>
   </section>
 
   <section class="grid">
@@ -279,7 +280,7 @@
     var votes = data.votes.filter(function (v) { return ids[v.run_id]; });
     var finished = runs.filter(function (r) { return r.ended === 'result'; });
 
-    tiles(runs, finished);
+    tiles(runs, finished, votes);
     roomCharts(rooms, runs);
     outcomeChart(finished);
     voteCharts(votes);
@@ -299,7 +300,7 @@
     return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
   }
 
-  function tiles(runs, finished) {
+  function tiles(runs, finished, votes) {
     var abandoned = runs.length - finished.length;
     $('t-runs').textContent = runs.length;
     $('t-runs-n').textContent = plural(finished.length, 'finished run') + (abandoned ? ', ' + abandoned + ' left mid-way' : '');
@@ -316,6 +317,11 @@
     var caught = voted.filter(function (r) { return bool(r.mage_banished); }).length;
     $('t-caught').textContent = pct(caught, voted.length);
     $('t-caught-n').textContent = caught + ' of ' + plural(voted.length, 'run') + ' that held a vote';
+
+    // Per vote, not per run: a run can hold several votes and the Mage is caught at most once.
+    var hits = votes.filter(function (v) { return v.banished === 'mage'; }).length;
+    $('t-hit').textContent = pct(hits, votes.length);
+    $('t-hit-n').textContent = hits + ' of ' + plural(votes.length, 'vote');
   }
 
   // Rooms are grouped by name, in run order (their typical position in the run).
