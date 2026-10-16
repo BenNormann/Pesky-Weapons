@@ -73,6 +73,11 @@ namespace Pesky.Editor
         /// </summary>
         static bool BackupBeforeBuild()
         {
+            if (EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogError("[RoomsV3] the Editor is in Play mode: a rebuild regenerates prefabs but cannot reinstall them into the scene (OpenScene throws). Stop Play mode first; nothing was built.");
+                return false;
+            }
             Scene open = SceneManager.GetActiveScene();
             if (open.isDirty)
             {
@@ -130,6 +135,18 @@ namespace Pesky.Editor
             Scene scene = EditorSceneManager.OpenScene(RunScene, OpenSceneMode.Single);
             InstallIntoOpenRunScene(scene, new[] { 2 });
             Debug.Log("[RoomsV3] rebuilt the Porter Room and reinstalled it as room " + (FirstRoomId + 2) + ".");
+        }
+
+        /// <summary>Only the Well Room (index 1): its prefab and instance, nothing else touched.</summary>
+        [MenuItem("Pesky/Rooms/Rebuild Well Room")]
+        public static void RebuildWell()
+        {
+            if (!BackupBeforeBuild()) return;
+            WellRoom();
+            AssetDatabase.SaveAssets();
+            Scene scene = EditorSceneManager.OpenScene(RunScene, OpenSceneMode.Single);
+            InstallIntoOpenRunScene(scene, new[] { 1 });
+            Debug.Log("[RoomsV3] rebuilt the Well Room and reinstalled it as room " + (FirstRoomId + 1) + ".");
         }
 
         static bool Wanted(int[] only, int i) { return only == null || System.Array.IndexOf(only, i) >= 0; }
@@ -374,6 +391,9 @@ namespace Pesky.Editor
             DecoMoving(rampGo.transform, DecoCrate, "Cargo_Crate_5", new Vector3(-side, 0f, 16f), 0f);
             DecoMoving(rampGo.transform, DecoBarrel, "Cargo_Barrel_3", new Vector3(-side, 0f, 2.5f), 0f);
             DecoMoving(rampGo.transform, DecoBarrel, "Cargo_Barrel_4", new Vector3(-side, 0f, 3.3f), 0f);
+
+            // No skirt under the deck (the owner: a fat box). The wedge under the swung deck is handled by the ramp itself:
+            // DropRamp shoves any weapon caught under its deck toward the hinge, where the gap stays tall (round 30).
 
             // Guide frames on the platform's four edge midpoints (blades stick in the uprights and climb them).
             float frameH = balconyY + 4f;   // tall posts: a blade climbs well past the platform and the ledge

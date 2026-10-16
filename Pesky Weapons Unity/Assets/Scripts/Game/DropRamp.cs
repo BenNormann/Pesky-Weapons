@@ -32,6 +32,13 @@ namespace Pesky.Game
         [SerializeField] float fallSeconds = 1.2f;
         [Tooltip("Ease in and out instead of a constant rate, so it settles instead of snapping.")]
         [SerializeField] bool smooth = true;
+        [Header("Under the deck")]
+        [Tooltip("The deck's collider. Once the ramp has started to fall, a weapon caught under the deck within reach of its underside is shoved toward the hinge (Swing: where the gap stays tall) or out of the side (Drop), instead of being squeezed through the floor or left in a pocket.")]
+        [OptionalRef][SerializeField] Collider deck;
+        [Tooltip("How far under the deck's underside the shove reaches, metres.")]
+        [SerializeField] float shoveReach = 2.5f;
+        [SerializeField] float shoveSpeed = 10f;
+        readonly Collider[] _hits = new Collider[32];
 
         Vector3 _homePosition;
         Quaternion _homeRotation;
@@ -73,7 +80,43 @@ namespace Pesky.Game
 
         void FixedUpdate()
         {
-            ApplyPose(ProgressAt(clock != null ? clock.Ms : 0L));
+            float k = ProgressAt(clock != null ? clock.Ms : 0L);
+            ApplyPose(k);
+            if (k > 0f) ShoveFromUnderDeck();
+        }
+
+        /// <summary>Every weapon this peer simulates that sits under the deck, within shoveReach of its underside, is sent
+        /// toward the hinge (Swing) or out of the nearer side (Drop). Runs from the first moment of the fall on: a body in
+        /// the sweep is pushed clear instead of crushed, and one that wanders under the landed deck's low end is pushed
+        /// back out to where it can launch.</summary>
+        void ShoveFromUnderDeck()
+        {
+            if (deck == null) return;
+            Bounds b = deck.bounds;
+            Vector3 centre = new Vector3(b.center.x, b.center.y - shoveReach * 0.5f, b.center.z);
+            Vector3 half = new Vector3(b.extents.x, b.extents.y + shoveReach * 0.5f, b.extents.z);
+            int n = Physics.OverlapBoxNonAlloc(centre, half, _hits, Quaternion.identity, 1 << 9, QueryTriggerInteraction.Ignore);
+            if (n == 0) return;
+            // The deck in the ramp's own (unscaled) space: a slab of deckSize centred at deckCentre.
+            Transform dt = deck.transform;
+            BoxCollider box = deck as BoxCollider;
+            Vector3 size = box != null ? Vector3.Scale(box.size, dt.localScale) : dt.localScale;
+            Vector3 deckCentre = dt.localPosition + (box != null ? Vector3.Scale(box.center, dt.localScale) : Vector3.zero);
+            float underside = deckCentre.y - size.y * 0.5f;
+            for (int i = 0; i < n; i++)
+            {
+                Rigidbody rb = _hits[i].attachedRigidbody;
+                if (rb == null || rb.isKinematic) continue;
+                WeaponBody w = rb.GetComponent<WeaponBody>();
+                if (w == null || w.IsBroken) continue;
+                Vector3 lp = transform.InverseTransformPoint(rb.worldCenterOfMass);
+                if (lp.y >= underside || lp.y < underside - shoveReach) continue;
+                if (Mathf.Abs(lp.x - deckCentre.x) > size.x * 0.5f || Mathf.Abs(lp.z - deckCentre.z) > size.z * 0.5f) continue;
+                Vector3 dir = mode == Mode.Swing ? -transform.forward : (lp.x >= deckCentre.x ? transform.right : -transform.right);
+                dir.y = 0f;
+                if (dir.sqrMagnitude < 1e-4f) continue;
+                rb.linearVelocity = dir.normalized * shoveSpeed + Vector3.up * 1f;
+            }
         }
 
         void ApplyPose(float k)
