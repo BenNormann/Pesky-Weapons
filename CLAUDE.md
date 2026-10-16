@@ -77,8 +77,9 @@ way. So:
   build in `docs/BUILD-LOG.md` / `Backups/rooms-v3/`. If anything looks hand-edited since, ask.
 - `BackupBeforeBuild` copies the scene and prefabs to `Backups/rooms-v3/<timestamp>/` and refuses to run
   while the open scene is dirty. Keep it that way.
-- Prefer `Pesky/Rooms/Rebuild Circuit Room + Chasm (v4)` (rooms 6 and 7 only) over
-  `Pesky/Rooms/Build Five Rooms v3` (all five).
+- Prefer the one-room menus, `Pesky/Rooms/Rebuild Gatehouse`, `Rebuild Well Room`, `Rebuild Porter Room` and
+  `Rebuild Circuit Room + Chasm (v4)` (rooms 6 and 7), over `Pesky/Rooms/Build Five Rooms v3` (all five). Each
+  one still reassigns the scene's ids, rebuilds the registries and the NavMesh.
 - `Assets/Scenes/Dev/BatTest.unity` holds an instance of the Chasm prefab with overrides (doors' portal
   planes and scripts off, goblins and the exit barrier off, a bot Dagger, a test rack, the scene's own
   spawn point). A re-save of the Chasm prefab drops those overrides: re-apply them with `execute_code`
@@ -109,9 +110,11 @@ way. So:
   must be 0; BatTest has 9 expected notes (no director, no goblins).
 - `[OptionalRef]` on a serialized field keeps the validator quiet about an empty reference.
 
-## Where things stand (2026-10-14)
+## Where things stand (2026-10-15)
 
-Rooms v4 (Circuit Room, Chasm) are built, merged and published (PR #11, build from `39191fd`); the Mage
-poltergeist (PR #12) too. PR #13 (floor slot by the exit door, release never breaks a weapon, the flat
-Sword stands) is open and not yet built or published. Open watch items are at the end of each BUILD-LOG
-round. The relay on Railway is live; the campus-wifi test is still pending.
+Everything through PR #24 (rooms v4, the Mage poltergeist, the Gatehouse and the chamber behind the gate, the
+action glow and sounds, goblin tuning, analytics, the exit compass, round 30's scene repair) is merged and published
+(build from `be4dbf9`, published as `2e1abed`). Round 31 (another player's weapon closes a circuit, the chamber
+stair's landing, the kit re-sent every 2 s, relay peers kept through a reconnect, the build hash) is on branch `fixes-circuit-remote-gatehouse-stair`, built and validated, not yet committed. The
+Orrery (PR #22) is merged but not installed in the run: placement is the owner's call. Open watch items are at the
+end of each BUILD-LOG round. The relay on Railway is live; the campus-wifi test is still pending.

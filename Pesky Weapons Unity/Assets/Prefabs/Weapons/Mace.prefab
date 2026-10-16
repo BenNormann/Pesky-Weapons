@@ -84,6 +84,7 @@ MonoBehaviour:
   maxAngularVelocity: 25
   restAtHome: 1
   modifiers: []
+  autoBrace: 0
 --- !u!114 &8152662909050150077
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -109,6 +110,7 @@ GameObject:
   - component: {fileID: 1157645728225583769}
   - component: {fileID: 5392213883833058555}
   - component: {fileID: 6633609298799515440}
+  - component: {fileID: 4242115636735596801}
   m_Layer: 9
   m_Name: Head
   m_TagString: Untagged
@@ -209,6 +211,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4242115636735596801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5734899694765995071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d19ec8a435ff7441aeeb4be4fa2dfe9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.Conductor
 --- !u!1 &5776410419382704500
 GameObject:
   m_ObjectHideFlags: 0

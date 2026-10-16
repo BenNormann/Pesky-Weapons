@@ -3195,3 +3195,91 @@ timer starts at once is worth checking in the game.
 Checked: 4 new watcher tests against a real WorldSim (13 analytics tests pass; the two `ResonanceForgeTests`
 still fail as before), the dashboard against sample data and the live Sheet in a browser. Runs already in the Sheet
 keep their inflated `duration_s`.
+
+## Round 31b: another player's weapon closes a circuit, the chamber stair's landing (2026-10-15; the analytics dashboard took 31)
+
+Two bugs from the published build (`2e1abed`), on branch `fixes-circuit-remote-gatehouse-stair`.
+
+**"Obviously connected with Sword and no light up."** The screenshot: another player's Sword (their name label over
+it) lying across the fed break, sparks still going, the far stub dark. On the host, a weapon ANOTHER PLAYER holds is a
+kinematic stand-in moved every physics step with MovePosition from that player's interpolated POSE stream
+(`WeaponBodyNet.RemoteMove`). The velocity PhysX reports for a body moved that way is what the step's move implied, the
+interpolation's and the aim's turning included, not the weapon's own; `CircuitBridge.Spans` asked that velocity to be
+under 1.5 m/s and could say no step after step, so the settle streak (8 steps) never ran out and the host never reported
+the break closed. A local or loose weapon (dynamic, simulated here) never had the problem, which is why every single-player
+test passed. `Spans` now judges a remote-driven weapon by the velocity its owner streamed (`RemoteVelocity`, that
+player's own rigidbody speed, zero when the weapon rests over there) and everything else by its own velocity as before.
+Diagnosed from the code and the screenshot; the owner tests it two-up. If a remote weapon still fails: next suspect is the
+aim's yaw turning the resting blade so a stub leaves its bounds between steps (the streak would then want a window,
+8 of the last 12, instead of 8 in a row).
+
+**The chamber stair ran into the wall.** The Gatehouse stair to the winch chamber climbs the gate wall's south face from
+the east wall (x 12) to the passage's edge (x 3), 16 steps of 0.5 m; its top step ends against the wall's east block
+with the window (x -2.5 to 2.5) a step off to the side, so a weapon that climbed it arrived in a corner: wall ahead, the
+drop beside, the window diagonally off, and a Sword lying in that corner had nowhere to launch. A LANDING
+(`ChamberLanding`, M_Ledge) now carries on from the top step across the chamber's whole width, so the climb arrives
+facing the window and rolls straight through.
+
+| Piece | x | y top | z |
+|---|---|---|---|
+| Top step (Step_16) | 3.00 to 3.56 | 8.00 | -2 to 0 |
+| ChamberLanding | -3.00 to 3.00 | 7.99 | -2 to 0 |
+| Chamber floor (GateWall_Slab) | -3.00 to 3.00 | 8.00 | 0 to 8 |
+| Window between the piers | -2.50 to 2.50 | 8 to 11 | 0 to 0.5 |
+
+A centimetre under the top step and under the chamber floor: nothing coplanar. Its underside is 7.49 m up, above the
+passage's 7 m ceiling, so it reads as the passage's lintel carried out over the back yard and nothing walking under it
+touches it. New menu `Pesky/Rooms/Rebuild Gatehouse` (index 0, same pattern as the Well and Porter menus); rebuilt with
+it, 224 scene ids reassigned, registries redone, validator 0 problems on Run.unity.
+
+**The Porter Room's grate, open on one screen and shut on another (2026-10-16).** Reported from a three-player session
+that ran entirely over the Railway relay (the host's network log: every WebRTC attempt to both peers failed on
+symmetric NAT and trystero retried every 16 s for the whole game; `join error ignored, the relay is up`). The kit is
+host-decided and symmetric: the lever flip is a KIT_REQ the host validates, the host's `PorterGate.FixedUpdate` sees
+its latch lever on and emits KIT_STATE PorterGate open, every peer applies the same two events. So two screens can
+only disagree when one of them never applied an event, and a KIT_STATE is a ONE-SHOT: nothing is ever sent again for a
+piece that does not change again (a latching lever, the gate it holds up). Three ways a peer misses one, none provable
+from a log that covers the last five minutes and shows no relay or peer event:
+
+| How | Where | What happens |
+|---|---|---|
+| The relay socket closes for a moment | `net.js` `ws.onclose` | every relay peer was marked GONE at once: OnPeerLeft on the host released their slots and dropped their queued events; on a client it ended the session as "host left" |
+| A WebRTC connection comes up and dies | `net.js` `room.onPeerLeave` | the peer was marked gone although the relay still carried it (the relay's own `leave` made the opposite check) |
+| A cached page after a publish | ids | the host's piece ids name other pieces on the stale build; the scene hash in WORLD_RESET was the scene's NAME, so nothing said so |
+
+Fixes, no protocol change: `KitResyncRule` (host, every 2 s) re-emits the kit table as the KIT_STATEs that built it,
+all kinds but Rune, Anvil, Lightning and PorterCarry (their apply has a side effect beyond the piece); every other
+ApplyKit case is idempotent, so a peer that has the state ignores the repeat and one that missed it converges within
+two seconds. `net.js`: a relay close no longer forgets the peers (the socket reopens in seconds with the same id and the
+hello lists them again; a peer that is really gone falls silent and the 15 s liveness timeout says so), and a WebRTC
+leave for a peer the relay still carries is logged, not acted on. WORLD_RESET's `sceneHash` is now `ContentHash()`,
+FNV-1a over every registry's scene ids; a client whose own hash differs logs an error and the narrator says "Your game
+is not the host's build. Refresh the page (Ctrl+F5) and join again." (peers present at level load; a mid-run joiner
+gets the snapshot, which does not carry the hash).
+
+**The breaks, by hitbox (2026-10-16).** Owner: easier to slot in, and "based off of hitbox collision between the two
+points so that if it looks like it's connected, IT IS CONNECTED"; the Hammer's and the Mace's handles are wood, only
+their heads conduct; the Staff may be iron. `CircuitBridge.Spans` no longer asks the weapon's bounding box to reach
+both stub points within 0.12 m (a diagonal blade's box reached where the blade did not, and a straight one a hair short
+failed): a break closes when a CONDUCTING collider of the weapon lies in each stub's own box grown by `touch` (3 cm),
+Physics.OverlapBox on the weapon layer. `Conductor` marks the parts that conduct: Sword and Dagger throughout, Hammer
+head (0.5 x 0.3 x 0.3 m) and Mace head (0.32 m sphere), the Staff's shaft, which is `metal` now and wears M_Metal. A
+metal weapon with no marks conducts with every collider (`WeaponBody.Conductors`). The magnet turns a weapon along the
+cradle faster (`snapTurn` 12). Reach, between stub centres: Sword 1.24 and Staff 1.80 close the 1.05 m breaks; Dagger
+0.62, Mace head and Hammer head close the Chasm's 0.5 m one and not the long ones. New menu `Pesky/Rooms/Rebuild
+Circuit Room` (index 3 alone: the Chasm and BatTest's overrides untouched).
+
+**Stairs flush to a wall (2026-10-16).** Owner, on the Gatehouse: "THE BOTTOM STAIR IS FLUSH WITH THE WALL MAKING A GAP
+TO GET STUCK IN". Every even step is 2 cm narrower than its neighbours (no coplanar side faces), and on a stair that
+runs along a wall that left a 1 cm slot between each even step and the wall. `Stair` takes a `flush` side now: the
+even steps' 2 cm come off the open side only, so every step stays against the wall (faces buried in the wall may share
+its plane; nobody sees them). ChamberStair (the gate wall), WatchStair and GalleryStair (east walls). The Chasm's
+CisternStair is also along a wall and keeps its slots until that room is next rebuilt.
+
+**Landings at the foot of both Gatehouse stairs (2026-10-16).** Owner: "STAIRS JUST WALK DOWN INTO THE WALL. NEEDS A
+LANDING. Both sets. You might have to make the room bigger." The chamber stair's foot was the east wall and the watch
+stair's the south wall: walking down, the last step dropped you against a wall face. The Gatehouse is 30 m wide now
+(was 24): the gate wall's side blocks and the yards grew with it, the chamber stair still runs from the passage's edge
+to 3 m short of the east wall (16 steps, tread 0.56), and those 3 m of floor are its landing. The watch stair's foot is
+3 m off the south wall (z -27), its platform 17 m long from the stair's top to 5.2 m short of the gate wall; the watcher
+and the sleeper moved with the east wall. Rebuilt with `Rebuild Gatehouse`.

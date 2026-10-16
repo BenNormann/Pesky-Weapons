@@ -70,6 +70,9 @@ public static HostAuthority CreateDefault()
             authority.AddRule(new EnemyStateRule());
             // Loose weapons right after: where the unheld bodies are, as this tick's contacts left them.
             authority.AddRule(new LooseWeaponsRule());
+            // The kit again every two seconds: a one-shot KIT_STATE a peer missed would otherwise stay missed (round 31).
+            authority.AddRule(new KitResyncRule());
+
             var clock = new ClockRule();
             authority.AddRule(clock);
             authority.SetValidator(MsgId.ClockPing, clock);

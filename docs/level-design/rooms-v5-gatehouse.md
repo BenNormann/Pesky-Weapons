@@ -52,7 +52,7 @@ stands on it (so one porter could bring a cart through), and a PIN LEVER in the 
 winch with the gate up (so the guards did not have to stand on the plate all day). Both are wired, in plain
 view, to the junction on the gate wall.
 
-## Shape: 24 x 60 x 12 m hall, entry north, exit south, floor level both
+## Shape: 30 x 60 x 12 m hall (24 wide until round 31: the stairs needed landings), entry north, exit south, floor level both
 
 1. **The front yard** (north, 22 m). Where you wait to be let in. The HOLD PLATE (8 kg: Mace or Hammer) is
    set into the floor off to the west, half hidden behind a crate stack and a cart, with its line running
@@ -93,7 +93,7 @@ view, to the junction on the gate wall.
 
 ## Numbers to settle with the owner
 
-- Hall 24 x 60 x 12; gate wall 8 m thick; portcullis 6 x 7 x 1; winch chamber 8 x 6 x 4 at 8 m.
+- Hall 30 x 60 x 12; gate wall 8 m thick; portcullis 6 x 7 x 1; winch chamber 8 x 6 x 4 at 8 m.
 - Hold plate 8 kg, weigh plate 10 kg (or 12 so it always takes two).
 - One sleeper in front, a watcher and a patroller behind.
 - The stair for everyone, or the timber post for blades only, or both.

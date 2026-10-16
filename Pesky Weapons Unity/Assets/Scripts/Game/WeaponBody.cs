@@ -113,6 +113,41 @@ namespace Pesky.Game
                 return b;
             }
         }
+        Collider[] _conductors;
+        /// <summary>The colliders that CONDUCT: the parts marked Conductor (the Hammer's head, not its handle), or every solid
+        /// collider when a metal weapon marks none. What a circuit break tests against its stubs.</summary>
+        public Collider[] Conductors
+        {
+            get
+            {
+                if (_conductors == null) _conductors = FindConductors();
+                return _conductors;
+            }
+        }
+
+        Collider[] FindConductors()
+        {
+            Collider[] all = _colliders != null ? _colliders : GetComponentsInChildren<Collider>(true);
+            int marked = 0, solid = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                Collider c = all[i];
+                if (c == null || c.isTrigger) continue;
+                solid++;
+                if (c.GetComponent<Conductor>() != null) marked++;
+            }
+            bool useAll = marked == 0 && def != null && def.metal;
+            Collider[] list = new Collider[useAll ? solid : marked];
+            int n = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                Collider c = all[i];
+                if (c == null || c.isTrigger) continue;
+                if (useAll || c.GetComponent<Conductor>() != null) list[n++] = c;
+            }
+            return list;
+        }
+
         public WeaponHomeSlot HomeSlot { get { return homeSlot; } }
         public float Hp { get { return _hp; } }
         public float MaxHp { get { return def != null ? def.maxHp : 0f; } }

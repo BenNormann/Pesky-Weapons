@@ -189,7 +189,7 @@ namespace Pesky.Game
             if (_session == null || !_session.IsHost) return;
 
             WorldResetMsg reset = new WorldResetMsg();
-            reset.sceneHash = (uint)Animator.StringToHash(gameObject.scene.name);
+            reset.sceneHash = ContentHash();   // the level's registries, not its name: a peer on another build hears the difference
             _session.HostEmit(reset.Encode());
 
             WeaponStateMsg msg = new WeaponStateMsg();
@@ -229,6 +229,48 @@ namespace Pesky.Game
             if (!_session.IsHost) SyncFromSim();
         }
 
+        uint _contentHashWarned;
+
+        /// <summary>
+        /// A hash of this level's registries: every piece's scene id, kind by kind. The same on every peer that runs
+        /// the same build, and what every KIT_STATE, WEAPON and ENEMY row is addressed by. The host sends it in
+        /// WORLD_RESET; a client compares it with its own (round 31: a cached page after a publish would wire the
+        /// host's ids to other pieces, a gate open here and shut there, and nothing would say why).
+        /// </summary>
+        public uint ContentHash()
+        {
+            uint h = 2166136261u;
+            h = Mix(h, 1, weapons); h = Mix(h, 2, enemies); h = Mix(h, 3, doors); h = Mix(h, 4, plates);
+            h = Mix(h, 5, circuitBridges); h = Mix(h, 6, keys); h = Mix(h, 7, runes); h = Mix(h, 8, anvils);
+            h = Mix(h, 9, magicDoors); h = Mix(h, 10, magnets); h = Mix(h, 11, lifts); h = Mix(h, 12, ropes);
+            h = Mix(h, 13, pots); h = Mix(h, 14, levers); h = Mix(h, 15, counterweights); h = Mix(h, 16, scales);
+            h = Mix(h, 17, lightningFields); h = Mix(h, 18, crackedWalls); h = Mix(h, 19, porterGates);
+            return h;
+        }
+
+        static uint Mix<T>(uint h, int kind, T[] pieces) where T : UnityEngine.Object, ISceneId
+        {
+            h = Fnv(h, (uint)kind);
+            h = Fnv(h, (uint)(pieces != null ? pieces.Length : 0));
+            if (pieces == null) return h;
+            for (int i = 0; i < pieces.Length; i++) h = Fnv(h, pieces[i] != null ? (uint)pieces[i].SceneId : 0xFFFFFFFFu);
+            return h;
+        }
+
+        /// <summary>FNV-1a over the four bytes of a value.</summary>
+        static uint Fnv(uint h, uint v)
+        {
+            unchecked
+            {
+                h = (h ^ (v & 0xFFu)) * 16777619u;
+                h = (h ^ ((v >> 8) & 0xFFu)) * 16777619u;
+                h = (h ^ ((v >> 16) & 0xFFu)) * 16777619u;
+                h = (h ^ (v >> 24)) * 16777619u;
+            }
+            return h;
+        }
+
+
         /// <summary>
         /// Client only: the tables were replaced (a snapshot, a resync, the host loading the level), so make
         /// the scene agree with the rows. Every step is idempotent, and goblins read their own rows.
@@ -236,6 +278,18 @@ namespace Pesky.Game
         void SyncFromSim()
         {
             WorldSim sim = _session.Sim;
+            // The host's level against this build, once per differing hash: the one check that catches a cached page.
+            if (sim.SceneHash != 0 && sim.SceneHash != _contentHashWarned)
+            {
+                uint mine = ContentHash();
+                if (sim.SceneHash != mine)
+                {
+                    _contentHashWarned = sim.SceneHash;
+                    Debug.LogError("[WorldAuthority] the host's level is not this build's (host " + sim.SceneHash + ", ours " + mine + "): refresh the page and join again.", this);
+                    NarratorChat.Say(NarratorChat.Narrator, "Your game is not the host's build. Refresh the page (Ctrl+F5) and join again.");
+                }
+            }
+
             for (int i = 0; i < weapons.Length; i++)
             {
                 WeaponBody w = weapons[i];

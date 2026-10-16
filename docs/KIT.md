@@ -272,9 +272,12 @@ scene validator enforces that.
 ### CircuitBridge + Circuit + MagicBridge (round 22) - `Kit/Circuit/`
 **Rule.** The labyrinth runs on magical energy (`M_MagicFlow`, shader `Pesky/MagicFlow`: dark purple with
 drifting lavender specks; `_Live` 0 = dead and dim). A **`CircuitBridge`** is a break in a conduit: two stubs
-with a cradle between them. A METAL weapon lying STILL (slower than `restSpeed` 1.5) whose collider bounds
-reach both stubs (within `tolerance` 0.12) closes it: a 1.05 m break takes a Sword, Mace or Hammer, not a
-Dagger; a 0.5 m break takes a Dagger. While the fed stub is live and the break is open it throws sparks.
+with a cradle between them. A weapon lying STILL (slower than `restSpeed` 1.5; another player's weapon by the
+velocity its owner streams) with a CONDUCTING part touching both stubs closes it (round 31): a hitbox test, each
+stub's box grown by `touch` 0.03 m against the weapon's `Conductor`-marked colliders (the Sword and Dagger throughout,
+the Hammer's and Mace's heads, the iron Staff; a metal weapon with no marks conducts with every collider). What
+looks connected is connected. A 1.05 m break takes a Sword or a Staff; a 0.5 m break a Dagger, a Mace's head or a
+Hammer's head. While the fed stub is live and the break is open it throws sparks.
 **Host state:** closed flag, host-decided every physics step from the bridge's own report
 (`ReportCircuitBridge`), broadcast as KIT_STATE `Circuit` (1 closed / 0 open), the way a hold plate travels.
 A **`Circuit`** lists its bridges in order from the source and its conduit stretches (`Run.pieces`, every rail
