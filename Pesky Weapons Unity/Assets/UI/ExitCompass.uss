@@ -1,0 +1,57 @@
+.exit-compass-root {
+    flex-grow: 1;
+}
+
+.exit-compass {
+    position: absolute;
+    left: 24px;
+    bottom: 18px;
+    width: 168px;
+    padding: 12px 8px 10px;
+    align-items: center;
+    background-color: rgba(10, 12, 16, 0.72);
+    border-width: 2px;
+    border-color: rgba(238, 238, 234, 0.2);
+    border-radius: 6px;
+}
+
+.exit-compass-title {
+    color: rgba(238, 238, 234, 0.85);
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    -unity-text-align: middle-center;
+    margin-bottom: 5px;
+}
+
+.exit-compass-dial {
+    width: 116px;
+    height: 116px;
+    flex-shrink: 0;
+}
+
+.exit-compass-progress {
+    color: rgb(228, 232, 231);
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 1.5px;
+    margin-top: 5px;
+    -unity-text-align: middle-center;
+}
+
+.exit-compass-status {
+    color: rgb(167, 178, 190);
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    margin-top: 3px;
+    -unity-text-align: middle-center;
+}
+
+.exit-compass.is-arrived {
+    border-color: rgba(125, 222, 187, 0.7);
+}
+
+.exit-compass.is-arrived .exit-compass-title,
+.exit-compass.is-arrived .exit-compass-status {
+    color: rgb(153, 231, 202);
+}

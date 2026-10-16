@@ -18,7 +18,7 @@ namespace Pesky.Game
     ///
     /// There is nothing else on the compass: no letters, no room name, no distance.
     /// </summary>
-    internal sealed class CompassView
+    internal sealed class CompassView : System.IDisposable
     {
         static readonly Color Ring = new Color(0.36f, 0.38f, 0.45f, 0.9f);
         static readonly Color Ground = new Color(0.055f, 0.063f, 0.078f, 0.72f);
@@ -36,6 +36,9 @@ namespace Pesky.Game
         static readonly CustomStyleProperty<float> GreenWidthScaleProp = new CustomStyleProperty<float>("--green-width-scale");
 
         readonly VisualElement _dial;
+        readonly bool _exitStyle;
+        bool _arrived;
+        float _needleOpacity = 1f;
 
         float _spikeLength = 0.92f;      // red spike tip, as a fraction of the radius
         float _spikeWidth = 0.16f;       // red spike half-width at its base, fraction of the radius
@@ -46,9 +49,10 @@ namespace Pesky.Game
         bool _green, _red;
         float _greenAngle, _redAngle;
 
-        public CompassView(VisualElement dial)
+        public CompassView(VisualElement dial, bool exitStyle = false)
         {
             _dial = dial;
+            _exitStyle = exitStyle;
             if (_dial == null) return;
             _dial.pickingMode = PickingMode.Ignore;
             _dial.generateVisualContent += OnDraw;
@@ -63,6 +67,24 @@ namespace Pesky.Game
             _red = red;
             _redAngle = redAngle;
             if (_dial != null) _dial.MarkDirtyRepaint();
+        }
+
+        public void SetExit(bool visible, float angle, bool arrived, float opacity = 1f)
+        {
+            if (_green == visible && _arrived == arrived && Mathf.Abs(Mathf.DeltaAngle(_greenAngle, angle)) < 0.02f
+                && Mathf.Abs(_needleOpacity - opacity) < 0.002f) return;
+            _green = visible;
+            _greenAngle = angle;
+            _arrived = arrived;
+            _needleOpacity = opacity;
+            if (_dial != null) _dial.MarkDirtyRepaint();
+        }
+
+        public void Dispose()
+        {
+            if (_dial == null) return;
+            _dial.generateVisualContent -= OnDraw;
+            _dial.UnregisterCallback<CustomStyleResolvedEvent>(OnCustomStyle);
         }
 
         /// <summary>Pick the spike shape up from USS. Anything the stylesheet leaves out keeps its fallback.</summary>
@@ -91,6 +113,12 @@ namespace Pesky.Game
 
             Painter2D painter = ctx.painter2D;
 
+            if (_exitStyle)
+            {
+                DrawExit(painter, centre, radius);
+                return;
+            }
+
             painter.fillColor = Ground;
             painter.BeginPath();
             painter.Arc(centre, radius, new Angle(0f, AngleUnit.Degree), new Angle(360f, AngleUnit.Degree));
@@ -106,6 +134,82 @@ namespace Pesky.Game
             // line up the green one sits on top of the red and both are still visible.
             if (_red) Spike(painter, centre, radius, _redAngle, Red, 1f, 1f);
             if (_green) Spike(painter, centre, radius, _greenAngle, Green, _greenLengthScale, _greenWidthScale);
+        }
+
+        void DrawExit(Painter2D p, Vector2 c, float r)
+        {
+            Color rim = new Color(0.72f, 0.74f, 0.78f, 0.8f);
+            Color tipColor = new Color(0.93f, 0.93f, 0.92f, _needleOpacity);
+            p.fillColor = new Color(0.07f, 0.08f, 0.1f, 0.85f);
+            Circle(p, c, r, true);
+            p.strokeColor = rim;
+            p.lineWidth = 1.3f;
+            Circle(p, c, r - 1f, false);
+            p.strokeColor = new Color(0.35f, 0.42f, 0.47f, 0.5f);
+            Circle(p, c, r * 0.68f, false);
+            for (int i = 0; i < 24; i++)
+            {
+                float a = i * 15f * Mathf.Deg2Rad;
+                Vector2 n = new Vector2(Mathf.Sin(a), -Mathf.Cos(a));
+                bool major = i % 6 == 0;
+                p.strokeColor = major ? rim : new Color(0.39f, 0.45f, 0.49f, 0.65f);
+                p.lineWidth = major ? 2f : 1f;
+                p.BeginPath();
+                p.MoveTo(c + n * (r - 6f));
+                p.LineTo(c + n * (r - (major ? 14f : 10f)));
+                p.Stroke();
+            }
+
+            p.fillColor = new Color(0.87f, 0.89f, 0.91f);
+            Triangle(p, c + new Vector2(0f, -r + 3f), c + new Vector2(-4f, -r - 2f), c + new Vector2(4f, -r - 2f));
+            if (_arrived)
+            {
+                p.strokeColor = new Color(0.6f, 0.94f, 0.81f);
+                p.lineWidth = 3f;
+                p.BeginPath();
+                p.MoveTo(c + new Vector2(-13f, 0f));
+                p.LineTo(c + new Vector2(-3f, 10f));
+                p.LineTo(c + new Vector2(17f, -12f));
+                p.Stroke();
+                return;
+            }
+            if (_green)
+            {
+                float a = _greenAngle * Mathf.Deg2Rad;
+                Vector2 n = new Vector2(Mathf.Sin(a), -Mathf.Cos(a));
+                Vector2 side = new Vector2(-n.y, n.x);
+                Vector2 tip = c + n * r * 0.76f;
+                Vector2 tail = c - n * r * 0.47f;
+                Vector2 left = c + side * r * 0.145f;
+                Vector2 right = c - side * r * 0.145f;
+                p.fillColor = new Color(0.3f, 0.32f, 0.36f, _needleOpacity);
+                Triangle(p, left, right, tail);
+                p.fillColor = tipColor;
+                Triangle(p, tip, left, c);
+                p.fillColor = new Color(0.62f, 0.65f, 0.7f, _needleOpacity);
+                Triangle(p, tip, c, right);
+            }
+            p.fillColor = rim;
+            Circle(p, c, 3.5f, true);
+            p.fillColor = new Color(0.06f, 0.09f, 0.12f);
+            Circle(p, c, 1.5f, true);
+        }
+
+        static void Circle(Painter2D p, Vector2 c, float radius, bool fill)
+        {
+            p.BeginPath();
+            p.Arc(c, radius, new Angle(0f, AngleUnit.Degree), new Angle(360f, AngleUnit.Degree));
+            if (fill) p.Fill(); else p.Stroke();
+        }
+
+        static void Triangle(Painter2D p, Vector2 a, Vector2 b, Vector2 c)
+        {
+            p.BeginPath();
+            p.MoveTo(a);
+            p.LineTo(b);
+            p.LineTo(c);
+            p.ClosePath();
+            p.Fill();
         }
 
         /// <summary>One spike: a narrow triangle from the middle of the dial out towards the ring.</summary>

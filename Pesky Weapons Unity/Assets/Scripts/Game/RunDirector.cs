@@ -75,6 +75,15 @@ namespace Pesky.Game
         public LabyrinthRoom ExitRoom { get { return exitRoom; } }
         public IReadOnlyList<LabyrinthRoom> Pool { get { return pool; } }
 
+        public Vector3 ExitGoal
+        {
+            get
+            {
+                if (exitVolume != null) return exitVolume.transform.TransformPoint(exitVolume.center);
+                return exitRoom != null ? exitRoom.Anchor.position : Vector3.zero;
+            }
+        }
+
         void Awake()
         {
             _session = sessionRunner != null ? sessionRunner.Session : null;
