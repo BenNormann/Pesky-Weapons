@@ -149,6 +149,109 @@ namespace Pesky.Editor
             Debug.Log("[RoomsV3] rebuilt the Well Room and reinstalled it as room " + (FirstRoomId + 1) + ".");
         }
 
+        /// <summary>Only the Gatehouse (index 0): its prefab and instance, nothing else touched.</summary>
+        [MenuItem("Pesky/Rooms/Rebuild Gatehouse")]
+        public static void RebuildGatehouse()
+        {
+            if (!BackupBeforeBuild()) return;
+            Gatehouse();
+            AssetDatabase.SaveAssets();
+            Scene scene = EditorSceneManager.OpenScene(RunScene, OpenSceneMode.Single);
+            InstallIntoOpenRunScene(scene, new[] { 0 });
+            Debug.Log("[RoomsV3] rebuilt the Gatehouse and reinstalled it as room " + FirstRoomId + ".");
+        }
+
+        /// <summary>Only the Circuit Room (index 3): the Chasm, and the BatTest scene's overrides on its prefab, are left alone.</summary>
+        [MenuItem("Pesky/Rooms/Rebuild Circuit Room")]
+        public static void RebuildCircuit()
+        {
+            if (!BackupBeforeBuild()) return;
+            CircuitRoom();
+            AssetDatabase.SaveAssets();
+            Scene scene = EditorSceneManager.OpenScene(RunScene, OpenSceneMode.Single);
+            InstallIntoOpenRunScene(scene, new[] { 3 });
+            Debug.Log("[RoomsV3] rebuilt the Circuit Room and reinstalled it as room " + (FirstRoomId + 3) + ".");
+        }
+
+
+
+        const string BatTestScene = "Assets/Scenes/Dev/BatTest.unity";
+        const string CircuitTestScene = "Assets/Scenes/Dev/CircuitTest.unity";
+
+        /// <summary>A dev scene for the circuit kit (round 31): BatTest's managers, camera, lighting and HUD, copied; the Circuit
+        /// Room at the origin with its teleports off (scripts and planes) and its goblins off, the gate and the circuit live; the
+        /// test rack on the floor by the north wall with Sword, Staff, Dagger, Hammer, Mace, Sword, Dagger; the spawn north of
+        /// the pit, facing it. Re-run after a Circuit Room rebuild: a prefab re-save drops an instance's overrides.</summary>
+        [MenuItem("Pesky/Dev/Make Circuit Test Scene")]
+        public static void MakeCircuitTest()
+        {
+            if (EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogError("[RoomsV3] stop Play mode first."); return; }
+            for (int i = 0; i < EditorSceneManager.sceneCount; i++) if (EditorSceneManager.GetSceneAt(i).isDirty) { Debug.LogError("[RoomsV3] the open scene is dirty: save or discard it first."); return; }
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(CircuitTestScene) != null) AssetDatabase.DeleteAsset(CircuitTestScene);
+            if (!AssetDatabase.CopyAsset(BatTestScene, CircuitTestScene)) { Debug.LogError("[RoomsV3] could not copy " + BatTestScene); return; }
+            Scene scene = EditorSceneManager.OpenScene(CircuitTestScene, OpenSceneMode.Single);
+            GameObject environment = FindRoot(scene, "Environment");
+            GameObject managers = FindRoot(scene, "_Managers");
+            if (environment == null || managers == null) { Debug.LogError("[RoomsV3] the copied scene has no Environment or _Managers."); return; }
+
+            // The room: the Chasm out, the Circuit Room in, at the origin.
+            foreach (LabyrinthRoom old in environment.GetComponentsInChildren<LabyrinthRoom>(true)) Object.DestroyImmediate(old.gameObject);
+            GameObject room = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath(3)), environment.transform);
+            room.name = "CircuitRoom";
+            room.transform.SetAsFirstSibling();
+            room.transform.localPosition = Vector3.zero;
+            // Overrides: no teleports (the scripts and the portal planes), no goblins; the room's own spawn point yields to the scene's.
+            foreach (MagicDoor d in room.GetComponentsInChildren<MagicDoor>(true))
+            {
+                d.enabled = false;
+                Transform plane = d.transform.Find("Plane");
+                if (plane != null) plane.gameObject.SetActive(false);
+            }
+            foreach (GoblinBrain g in room.GetComponentsInChildren<GoblinBrain>(true)) g.gameObject.SetActive(false);
+            Transform roomSpawn = room.transform.Find("SpawnPoint");
+            if (roomSpawn != null) roomSpawn.gameObject.SetActive(false);
+
+            // The spawn: on the floor north of the pit, facing south toward it.
+            Transform spawn = environment.transform.Find("SpawnPoint");
+            if (spawn == null) { spawn = new GameObject("SpawnPoint").transform; spawn.SetParent(environment.transform, false); }
+            spawn.localPosition = new Vector3(-4f, 0.6f, 2f);
+            spawn.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            PlayerSpawner spawner = managers.GetComponentInChildren<PlayerSpawner>(true);
+            if (spawner != null) SetArray(spawner, "spawnPoints", new List<Transform> { spawn });
+
+            // The rack by the north wall, the circuit's own set on it.
+            Transform rack = environment.transform.Find("TestRack");
+            if (rack != null) { rack.localPosition = new Vector3(0f, 0f, 11f); rack.localRotation = Quaternion.identity; }
+            Transform weapons = environment.transform.Find("Weapons");
+            if (weapons == null) { weapons = new GameObject("Weapons").transform; weapons.SetParent(environment.transform, false); }
+            for (int i = weapons.childCount - 1; i >= 0; i--) Object.DestroyImmediate(weapons.GetChild(i).gameObject);
+            string[] set = { "Sword", "Staff", "Dagger", "Hammer", "Mace", "Sword", "Dagger" };
+            for (int i = 0; i < set.Length; i++)
+            {
+                Transform slot = rack != null ? rack.Find("Slot_" + (i + 1)) : null;
+                GameObject w = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Weapons/" + set[i] + ".prefab"), weapons);
+                w.name = set[i] + "_" + (i + 1);
+                WeaponBody body = w.GetComponent<WeaponBody>();
+                if (slot != null)
+                {
+                    w.transform.SetPositionAndRotation(slot.position, slot.rotation);
+                    SetRef(body, "homeSlot", slot.GetComponent<WeaponHomeSlot>());
+                }
+                SetBool(body, "restAtHome", true);
+            }
+
+            WorldAuthority authority = managers.GetComponentInChildren<WorldAuthority>(true);
+            LevelClock clock = managers.GetComponentInChildren<LevelClock>(true);
+            WireSceneReferences(room, authority, null, clock, Names[3]);
+            RebuildSceneRegistries(scene, environment.transform, authority, null, null);
+            RunSceneBuilder.AssignSceneIds(scene);
+            BakeNavMesh(environment, scene);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[RoomsV3] made " + CircuitTestScene + ": the Circuit Room, no teleports, no goblins, " + set.Length + " weapons on the rack. Play it in the Editor.");
+        }
+
         static bool Wanted(int[] only, int i) { return only == null || System.Array.IndexOf(only, i) >= 0; }
 
         public static void CreateAllPrefabs()
@@ -175,7 +278,7 @@ namespace Pesky.Editor
             // plate held OR lever on. Behind the gate the weigh plate's line runs up the south wall into the exit door's own
             // wire. Two goblins behind, a sleeper in front. Decorations only where they block sight or movement (owner):
             // crates, barrels, a cart, a shelf.
-            const float W = 24f, L = 60f, H = 12f;
+            const float W = 30f, L = 60f, H = 12f;   // 30, not 24: three metres of floor at the foot of each stair (round 31: both walked down into a wall)
             const float wallS = 0f, wallN = 8f;              // the gate wall spans z 0..8; its north face is the front
             const float passW = 6f, passH = 7f;              // the passage through it
             const float chamberY = 8f;                        // the winch chamber's floor; its ceiling is the roof
@@ -203,8 +306,13 @@ namespace Pesky.Editor
             // passage, 1.5 m clear of the wall, that a blade sticks in and climbs (the mechanic the Well Room needs next) to
             // launch into the window.
             int steps = Mathf.RoundToInt(chamberY / 0.5f);
-            float tread = (W / 2f - passW / 2f) / steps;
-            Stair(geo, "ChamberStair", new Vector3(W / 2f, 0f, wallS - 1f), Vector3.left, steps, 0.5f, tread, 2f);
+            float tread = (W / 2f - 3f - passW / 2f) / steps;   // from 3 m off the east wall to the passage's edge
+            // The foot stops 3 m short of the east wall: a landing to walk down onto and turn (round 31: it met the wall).
+            Stair(geo, "ChamberStair", new Vector3(W / 2f - 3f, 0f, wallS - 1f), Vector3.left, steps, 0.5f, tread, 2f, Vector3.forward);   // flush to the gate wall's face
+            // The stair used to end against the gate wall's east block, a step short of the window: a weapon ran up into a
+            // corner (round 31). A landing now carries on from the top step across the window's whole width, a centimetre
+            // under the chamber floor, so the climb arrives facing the window and rolls straight through.
+            Block(geo, "ChamberLanding", new Vector3(0f, chamberY - 0.26f, wallS - 1f), new Vector3(passW, 0.5f, 2f), MLedge);
             Wood(play, "ClimbPost", new Vector3(-passW / 2f - 1.5f, (chamberY + 0.5f) / 2f, wallS - 1.5f - 0.45f), new Vector3(0.9f, chamberY + 0.5f, 0.9f));
 
             // THE WINCH: the drum across the chamber (it lights with the gate's line) and the counterweight beside it, a stone
@@ -300,7 +408,7 @@ namespace Pesky.Editor
             if (frontBox != null) { frontBox.center = Vector3.zero; frontBox.size = new Vector3(W, H, L / 2f - wallN); }
             RoomVolume front = frontGo.GetComponent<RoomVolume>();
             SetString(front, "roomName", "Front Yard");
-            GameObject sleeper = Kit(SleeperPrefab, play, "Goblin_Sleeper", new Vector3(9.5f, 0f, 20f), Quaternion.Euler(0f, -90f, 0f));
+            GameObject sleeper = Kit(SleeperPrefab, play, "Goblin_Sleeper", new Vector3(W / 2f - 2.5f, 0f, 20f), Quaternion.Euler(0f, -90f, 0f));
             SetArray(front, "enemies", new List<GoblinBrain> { sleeper.GetComponent<GoblinBrain>() });
             SetRef(sleeper.GetComponent<GoblinBrain>(), "room", front);
 
@@ -308,8 +416,8 @@ namespace Pesky.Editor
             // to the south wall and the east wall; a shelf flush to the west wall; crate stacks and barrels that hide the weigh
             // plate in the south-west corner from the passage. The watcher on the platform, the patroller on the floor.
             const float platY = 4f;
-            Stair(geo, "WatchStair", new Vector3(10f, 0f, -L / 2f), Vector3.forward, 8, 0.5f, 0.6f, 4f);
-            Block(geo, "WatchPlatform", new Vector3(10f, platY - 0.25f, -L / 2f + 4.8f + 10f), new Vector3(4f, 0.5f, 20f), MLedge);
+            Stair(geo, "WatchStair", new Vector3(W / 2f - 2f, 0f, -L / 2f + 3f), Vector3.forward, 8, 0.5f, 0.6f, 4f, Vector3.right);   // flush to the east wall; its foot 3 m off the south wall, a landing (round 31)
+            Block(geo, "WatchPlatform", new Vector3(W / 2f - 2f, platY - 0.25f, -L / 2f + 3f + 4.8f + 8.5f), new Vector3(4f, 0.5f, 17f), MLedge);   // from the stair's top to 5.2 m short of the gate wall
             Deco(geo, DecoShelf, "Shelf_W", new Vector3(-W / 2f + 0.3f, 0f, -14f), -90f);   // 0.3 = half its depth: flush to the wall
             Deco(geo, DecoCrate, "Crate_B1", new Vector3(-5.5f, 0f, -24.5f), 0f);
             Deco(geo, DecoCrate, "Crate_B2", new Vector3(-4.5f, 0f, -24.5f), 0f);
@@ -321,7 +429,7 @@ namespace Pesky.Editor
             if (backBox != null) { backBox.center = Vector3.zero; backBox.size = new Vector3(W, H, L / 2f + wallS); }
             RoomVolume back = backGo.GetComponent<RoomVolume>();
             SetString(back, "roomName", "Back Yard");
-            GameObject watcher = Kit(GoblinPrefab, play, "Goblin_Watch", new Vector3(10f, platY, -14f), Quaternion.identity);
+            GameObject watcher = Kit(GoblinPrefab, play, "Goblin_Watch", new Vector3(W / 2f - 2f, platY, -14f), Quaternion.identity);
             GameObject patroller = Kit(GoblinPrefab, play, "Goblin_Patrol", new Vector3(0f, 0f, -12f), Quaternion.identity);
             GameObject routeGo = Kit(RoutePrefab, play, "PatrolRoute_BackYard", Vector3.zero, Quaternion.identity);
             RoutePoints(routeGo.transform, new Vector3(-5f, 0f, -8f), new Vector3(5f, 0f, -8f), new Vector3(5f, 0f, -22f), new Vector3(-3f, 0f, -22f));
@@ -641,7 +749,7 @@ namespace Pesky.Editor
             // The gallery: a mezzanine over the exit door along the south-east, with its own goblin stair up the east wall.
             const float galleryY = 4.05f;   // 5 cm above the exit door frame's top (4.0) under it: no shared face
             Block(geo, "Gallery", new Vector3(6f, galleryY - 0.25f, -12f), new Vector3(12f, 0.5f, 6f), MLedge);
-            Stair(geo, "GalleryStair", new Vector3(11f, 0f, -2f), Vector3.back, 8, 0.5f, 0.6f, 2f);
+            Stair(geo, "GalleryStair", new Vector3(11f, 0f, -2f), Vector3.back, 8, 0.5f, 0.6f, 2f, Vector3.right);   // flush to the east wall
             Block(geo, "GalleryLanding", new Vector3(11f, galleryY / 2f, -7.9f), new Vector3(2f, galleryY, 2.2f), MLedge);
 
             // The generator: floor to ceiling, a crystal core in a cage with two halos. Every conduit starts at its top.
@@ -1002,6 +1110,11 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
             SetArray(authority, "magnets", ComponentsInScene<MagnetZone>(scene));
             SetArray(authority, "lifts", ComponentsInScene<Lift>(scene));
             SetArray(authority, "anvils", ComponentsInScene<AnvilStation>(scene));
+            // The rest of the kit too (round 31: a dev scene copied from another kept that scene's pots and cracked walls as nulls).
+            SetArray(authority, "pots", ComponentsInScene<Pot>(scene));
+            SetArray(authority, "crackedWalls", ComponentsInScene<CrackedWall>(scene));
+            SetArray(authority, "keys", ComponentsInScene<KeyPickup>(scene));
+            SetArray(authority, "runes", ComponentsInScene<RunePickup>(scene));
         }
 
         // ------------------------------------------------------------------ room shell
@@ -1333,6 +1446,14 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
         /// each `rise` higher and `tread` deeper, `width` across. Plain boxes: nothing wedges.</summary>
         static void Stair(Transform geo, string name, Vector3 foot, Vector3 dir, int count, float rise, float tread, float width)
         {
+            Stair(geo, name, foot, dir, count, rise, tread, width, Vector3.zero);
+        }
+
+        /// <summary>flush: the side, across the stair's width, that a wall runs along (zero: no wall). The even steps' 2 cm come
+        /// off the OTHER side only, so every step stays flush to that wall: the 1 cm slot between an even step and the wall
+        /// was a gap to get stuck in (owner, round 31). Faces buried against the wall may share its plane: nobody sees them.</summary>
+        static void Stair(Transform geo, string name, Vector3 foot, Vector3 dir, int count, float rise, float tread, float width, Vector3 flush)
+        {
             GameObject stair = new GameObject(name);
             stair.transform.SetParent(geo, false);
             bool alongZ = Mathf.Abs(dir.z) > Mathf.Abs(dir.x);
@@ -1343,6 +1464,7 @@ static void ReplaceRoom(Transform roomsRoot, int roomId, string prefabPath, stri
                 // Every step is a full-height box, so neighbours' side faces would lie in the same plane and flicker: even
                 // steps are 2 cm narrower (round 29c).
                 float w = k % 2 == 0 ? width - 0.02f : width;
+                if (k % 2 == 0 && flush.sqrMagnitude > 0f) centre += flush.normalized * 0.01f;   // the trimmed step keeps its wall-side face
                 Vector3 scale = alongZ ? new Vector3(w, h, tread) : new Vector3(tread, h, w);
                 Block(stair.transform, "Step_" + k, centre, scale, MLedge);
             }

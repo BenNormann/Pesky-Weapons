@@ -5362,7 +5362,8 @@ MonoBehaviour:
   restSpeed: 1.5
   stubA: {fileID: 8235211431846277772}
   stubB: {fileID: 8432348156896997351}
-  tolerance: 0.12
+  touch: 0.03
+  settleSteps: 8
   attachA: {fileID: 5610196965428504079}
   attachB: {fileID: 6696980236918216388}
   sparks: {fileID: 4167920536760820221}
@@ -5372,7 +5373,7 @@ MonoBehaviour:
   snapPull: 16
   snapRange: 2.5
   snapMaxSpeed: 2.5
-  snapTurn: 8
+  snapTurn: 12
   weaponMask:
     serializedVersion: 2
     m_Bits: 512

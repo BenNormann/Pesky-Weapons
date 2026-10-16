@@ -4,10 +4,13 @@ using UnityEngine;
 namespace Pesky.Game
 {
     /// <summary>
-    /// A break in a magical conduit: two stubs with a cradle between them. A METAL weapon lying still across
-    /// BOTH stubs closes it: a Sword spans a 1.05 m break, a Dagger does not; a Dagger spans a 0.5 m one.
-    /// The trigger box is the cradle. Every physics step the weapons resting in it are measured against the
-    /// two stub points and the host hears whether the break is bridged (WorldAuthority.ReportCircuitBridge);
+    /// A break in a magical conduit: two stubs with a cradle between them. A weapon lying still with a CONDUCTING
+    /// part touching BOTH stubs closes it (Conductor-marked colliders: the Sword and the Dagger throughout, the
+    /// Hammer's and the Mace's heads, the iron Staff). It is a hitbox test between the weapon's metal and each stub's
+    /// box, grown by a few centimetres: what looks connected is connected (owner, round 31). A Sword or a Staff reaches
+    /// across a 1.05 m break; a Dagger, a Mace's head or a Hammer's head across a 0.5 m one.
+    /// The trigger box is the cradle. Every physics step the weapons resting in it are tested against the
+    /// two stubs and the host hears whether the break is bridged (WorldAuthority.ReportCircuitBridge);
     /// the host decides and everybody applies the answer (KIT_STATE Circuit, 1 = closed), exactly like a
     /// hold plate. While the stub on the fed side is live and the break is open, it throws sparks. The
     /// Circuit reads Closed on its bridges in order from the source. Once the whole circuit has been closed it SEALS:
@@ -25,10 +28,11 @@ namespace Pesky.Game
         [SerializeField] bool metalOnly = true;
         [Tooltip("A weapon only counts while it is RESTING: slower than this. A fly-through never closes it.")]
         [SerializeField] float restSpeed = 1.5f;
-        [Tooltip("The two stub ends. A weapon's collider bounds must reach both, within tolerance.")]
+        [Tooltip("The two stubs (the conduit's ends, each a small box). A weapon closes the break when a conducting part of it touches both.")]
         [SerializeField] Transform stubA;
         [SerializeField] Transform stubB;
-        [SerializeField] float tolerance = 0.12f;
+        [Tooltip("How far from a stub's faces a conducting part still counts as touching it, in metres. A few centimetres: what looks connected is connected, and what visibly is not, is not.")]
+        [SerializeField] float touch = 0.03f;
         [Tooltip("Physics steps a weapon must span the stubs before the break counts as closed, and three times as many with nothing spanning before it counts as open again: a jolt or a hop does not flicker it (and its sound).")]
         [SerializeField] int settleSteps = 8;
 
@@ -67,6 +71,7 @@ namespace Pesky.Game
         static readonly int LiveId = Shader.PropertyToID("_Live");
         readonly List<WeaponBody> _in = new List<WeaponBody>();
         readonly Collider[] _near = new Collider[32];
+        readonly Collider[] _touching = new Collider[16];   // Touches has its own buffer: Snap calls Spans while it walks _near
         readonly List<WeaponBody> _pulled = new List<WeaponBody>();
         MaterialPropertyBlock _mpb;
         bool _closed;
@@ -131,10 +136,30 @@ namespace Pesky.Game
         {
             if (w == null || w.IsBroken || w.Body == null || stubA == null || stubB == null) return false;
             if (metalOnly && (w.Def == null || !w.Def.metal)) return false;
-            if (w.Body.linearVelocity.magnitude > restSpeed) return false;
-            Bounds b = w.WorldBounds;
-            b.Expand(tolerance * 2f);
-            return b.Contains(stubA.position) && b.Contains(stubB.position);
+            // Resting. Another player's weapon is a kinematic stand-in here, moved every step with MovePosition from their
+            // interpolated POSE stream: the velocity PhysX reports for it is what that step's move implied (the interpolation's
+            // and the aim's turning), not the weapon's own, so a Sword lying still could read as moving and never close the
+            // break. A remote-driven weapon is judged by the velocity its owner streamed (zero when it rests over there).
+            Vector3 speed = w.IsRemoteDriven ? w.RemoteVelocity : w.Body.linearVelocity;
+            if (speed.magnitude > restSpeed) return false;
+            return Touches(w, stubA) && Touches(w, stubB);
+        }
+
+        /// <summary>Does a conducting part of the weapon lie in the stub's box, grown by touch on every side? The stub is its
+        /// mesh cube (it has no collider of its own): a hitbox test between the weapon's metal and the stub, not a bounding box.</summary>
+        bool Touches(WeaponBody w, Transform stub)
+        {
+            Collider[] parts = w.Conductors;
+            if (parts == null || parts.Length == 0) return false;
+            Vector3 half = stub.lossyScale * 0.5f + Vector3.one * touch;
+            int n = Physics.OverlapBoxNonAlloc(stub.position, half, _touching, stub.rotation, weaponMask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                Collider c = _touching[i];
+                if (c.attachedRigidbody != w.Body) continue;
+                for (int p = 0; p < parts.Length; p++) if (parts[p] == c) return true;
+            }
+            return false;
         }
 
         void FixedUpdate()
@@ -228,8 +253,11 @@ namespace Pesky.Game
             if (stubA == null || stubB == null) return;
             Gizmos.color = new Color(0.66f, 0.27f, 0.95f, 0.9f);
             Gizmos.DrawLine(stubA.position, stubB.position);
-            Gizmos.DrawWireSphere(stubA.position, tolerance);
-            Gizmos.DrawWireSphere(stubB.position, tolerance);
+            Gizmos.matrix = Matrix4x4.TRS(stubA.position, stubA.rotation, Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, stubA.lossyScale + Vector3.one * (2f * touch));
+            Gizmos.matrix = Matrix4x4.TRS(stubB.position, stubB.rotation, Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, stubB.lossyScale + Vector3.one * (2f * touch));
+            Gizmos.matrix = Matrix4x4.identity;
         }
     }
 }

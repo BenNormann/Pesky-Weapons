@@ -83,6 +83,7 @@ MonoBehaviour:
   maxAngularVelocity: 25
   restAtHome: 1
   modifiers: []
+  autoBrace: 0
 --- !u!114 &3971106591505446371
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -108,6 +109,7 @@ GameObject:
   - component: {fileID: 5063902126146431552}
   - component: {fileID: 6733649349305179022}
   - component: {fileID: 5878666896429647805}
+  - component: {fileID: 2125222509787470631}
   m_Layer: 9
   m_Name: Shaft
   m_TagString: Untagged
@@ -186,7 +188,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 9220ed3b283382740830f8d417fe571a, type: 2}
+  - {fileID: 2100000, guid: f5f33d84ce1fb8f45b4e404e6166be12, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -210,3 +212,15 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2125222509787470631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5481508259979241910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d19ec8a435ff7441aeeb4be4fa2dfe9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.Conductor
