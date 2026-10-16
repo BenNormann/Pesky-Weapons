@@ -126,3 +126,31 @@ with the pivot table selected. They update as runs arrive.
    - Link to data collection: https://docs.google.com/spreadsheets/d/1HmK-adKw-AqHhSZjBKzJXs6QMS5cL9FUVSBqQOgkQys/edit?usp=sharing
 2. Data Visualization:
    - Google Sheets pivot tables and charts on the `runs`, `rooms` and `votes` tabs, updating as runs arrive.
+
+## 8. The dashboard
+
+`WebGLTemplates/Pesky/dashboard.html` ships with every build, next to the game:
+**https://bennormann.github.io/Pesky-Weapons-Build/dashboard.html** once a build that has it is published.
+
+It reads the Sheet through the Apps Script (`<URL>?format=json`, so the deployment must be on a version of
+`Code.gs` that has it) and refreshes every minute. What it shows:
+
+- **Headline numbers:** runs recorded, how often the crew escaped, the median run length, how often a vote
+  caught the Mage. Each says how many runs it is out of: with a handful of runs a percentage swings a lot.
+- **Where runs stall:** average time in each room (cleared rooms only), and how many runs ended in each room.
+- **How runs end** by player count, **who the votes banished**, and **when votes happen**.
+- A **runs table** under the charts.
+
+**Filters:** the build (the game's version string, `Application.version`: bump it in Player Settings for each
+milestone build so a fix can be compared with the build before it) and whether to include runs the host left
+mid-way (off by default: they have no outcome).
+
+**Testing it without the Sheet:** `dashboard.html?src=<a JSON file>` reads that file instead (same shape as the
+`?format=json` answer: `runs`, `rooms`, `votes` arrays of row objects).
+
+Like the game's reports, the page's request to `script.google.com` is blocked by Brave Shields and some ad
+blockers: the page says so when it cannot load.
+
+For the GDD, the dashboard's charts can stand in for the Sheet's pivot charts (section 6) as the "images of
+actual results" on each metric page, and the Data Visualization line can read: *a dashboard page published
+with the game (plain HTML/SVG) reads the Sheet and charts each metric, updating as runs arrive*.
