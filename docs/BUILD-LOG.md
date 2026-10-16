@@ -2933,3 +2933,193 @@ rack, leaning on a wall) stands on its pommel instead of flipping end over end; 
 Rebuilt the two v4 rooms (the Chasm unchanged), BatTest re-applied, validator 0 problems. Watch: the pivot
 lift means a braced body can hop a little when it starts to turn on uneven ground; a Sword on its pommel is a
 shorter target than one on its point.
+
+## Round 29: the Gatehouse, a switch is a wire, dead portals, the climb, timber, no signs (2026-10-14)
+
+Owner's list: every teleport door made of the magic material with a visible wire powering it; every sign out
+of every room, with a hints file for stuck crews; the hallway gate room redesigned ("see how interesting the
+circuit room is"); the Well Room's platforming too hard: rework the wall jump for Sword and Dagger and make
+the wood obviously wood; the Circuit Room's exit with no sliding slab, just a deactivated portal. On the
+draft: no moat; EVERY lever and plate connected to a circuit line so it makes sense; decorate both sides of
+the gate; the gate bigger and thicker and the wall thicker still; still grey-box, no textures, decorations
+only where they are obstacles; and all work in a NEW Unity instance (another chat owns the main checkout's
+Editor). Branch `rooms-overhaul`, this worktree; the Editor ran on the worktree's own project copy.
+
+**A switch is a wire** (`PowerLine`, `PowerJunction`, KIT.md). A plate, a lever, a door, a circuit or a
+junction is the source of a run of M_MagicFlow rails that is live while the source is on; lines meet in a
+junction (OR). Pure views. The builder's `Line()` / `Junction()` wire them; `Conduit()` routes the rails.
+
+**Dead portals** (`MagicDoor.showPlaneWhenShut`, `DoorMagic()`). No exit hides behind a sliding slab any
+more: the portal plane stays in view, dark, driven by the room's line or circuit, and comes alive when the
+door opens; the gate's panel keeps its collider (solid to weapons and souls) and loses its renderer. Every
+builder exit. Both MagicDoor prefabs now wear M_MagicFlow on the plane (the grid one still had the old
+M_Magic) and carry the wire: strips up both jambs, a bar over the opening, a supply up the wall to 5.7 m
+turning into the wall at 5.6 (`SupplyY`); a room's own line ends there. Base `LabyrinthRoom.prefab` lost its
+`RoomSign` fixture, so the start room, the gate hall and every pool room lost their sign with it; the three
+builder signs are gone from the builder. Zero `Sign` components in Run. `docs/HINTS.md`: three escalating
+lines per room, for whoever is narrating until the narrator exists.
+
+**The Gatehouse** (`RoomsV3Builder.Gatehouse`, design `docs/level-design/rooms-v5-gatehouse.md` redraft 2,
+approved): 24 x 60 x 12, an 8 m thick gate wall with a 6 x 7 m passage shut by a 1 m thick portcullis (the
+Door prefab's panel grown and barred both sides, a carving NavMesh obstacle), a winch chamber inside the
+wall above the passage with a window on the front yard, reached by a goblin stair up the wall's face (any
+weapon) or a free-standing timber post (a blade, the climb). Hold plate (8 kg, held) in the front yard and
+pin lever in the chamber, each with a wire to the junction on the wall's face; the junction's line runs up
+the face, along the passage ceiling to the gate and into the winch drum, which lights; the gate (and a
+counterweight that drops as it rises) is up while plate held OR lever on. Behind: a watch platform with a
+goblin, a patroller on a route, a shelf and crate stacks hiding the weigh plate (10 kg, latching) whose line
+runs up the south wall into the exit's wire. A sleeper in the front yard. Decorations only as blockers
+(crates, barrels, a new `Deco_Cart`, the shelf); braziers, banners and the empty rack from the draft were
+struck by the owner. Room 3 is now `Room_03_Gatehouse`; `RoomV3_ArmoryGate.prefab` deleted.
+
+**The climb** (`WeaponBody.TickClimb`, `LaunchResult.Climbed`, tuning "Climb"). A blade stuck in a wooden
+wall that looks back at the timber and launches goes STRAIGHT UP the face and, once its rise is spent, probes
+sideways for the wood and stabs back in; it keeps probing while falling, so it never misses the top of a
+post. A Sword climbs 3.6 m a hop, a Dagger 4.9. Looking away still leaves the post. Sticking is more lenient
+(`stickMinSpeed` 4, `stickMaxAngleDeg` 70). **Timber**: `WoodBlock` wears the new flat orange-brown
+`M_Timber` (no texture), so stickable wood is unmistakable next to stone; M_Wood stays on grips and crates.
+
+**Rooms rebuilt** Gatehouse, Well Room (exit plate wired into the exit door), Porter Room (grate lever wired
+to the grate's wheel, exit lit by its own door), Circuit Room (dead run re-routed to end in the exit's supply
+wire; exit a dead portal; its shelf moved flush to the wall, it stood 0.25 m off). The Bat Room prefab was
+NOT rebuilt (a re-save would drop BatTest's overrides); it gets the door wire through the prefab, and its
+exit is always open; the builder code for its dead portal is in place for the next rebuild. Backups
+`Backups/rooms-v3/20261014-124109` and `20261014-124450`. Validator 0 problems. A bounds scan of the Gatehouse for
+slots between 5 cm and 1.5 m found and fixed three (shelf off the wall, crates near the weigh plate, the
+counterweight beside the chamber wall). Compile clean.
+
+Untested by me, as always. To try: a Sword into the Well Room's post point-first, then look at the post and
+launch (the hop and the stab); Q from the chamber window; the hold plate with a Hammer and a friend up the
+stair to the lever (watch the junction and the drum light); the counterweight's drop; the sleeper waking on
+a loud landing; the dead portals (do they read as "no power yet"?); the Porter Room wheel lighting when the
+inside lever is hit; the Circuit Room's exit coming alive on the seal with no slab.
+
+### Round 29b: the chamber behind the gate, the freight lift, the porter's stores, spent plates, plain wood
+
+Owner, on the first build: the lever room above the gate was on the wrong side (the front), so the lever could
+be pinned without ever passing the gate; move the chamber, the stair and the post to the other side, keep the
+wiring. Decorate the Porter Room and the Well Room, and make the Well Room's platform obviously an elevator
+and what it is for, with props. Then, after merging the lever-and-plate glow PR: rebase; keep the timber
+material, wood must not glow; a plate that can no longer do anything (the hold plate once the lever is
+flicked) stays pressed down with no glow.
+
+- **Gatehouse**: the winch chamber, its window, the goblin stair and the timber post are on the gate wall's
+  BACK face; the portcullis is at the passage's FRONT end and rises into the solid wall. The two switch lines
+  meet in the junction on the gate passage's west wall (seen from both yards): the plate line along the front
+  yard's floor, the foot of the wall and the foot of the passage wall; the lever line down the chamber wall,
+  through the wall and out of the passage's top corner, down to the junction; the gate line along the passage
+  ceiling to the gate (stopping short of the rising bars) and up inside the wall into the drum. The watch
+  platform's stair moved to the far end so the chamber stair has the gate end. The hold plate is SPENT once
+  the pin lever is on (`PressurePlate.spentWhenLeverOn`): pad down for good, glow off; its line goes dark,
+  the lever's line and the junction carry the power.
+- **Well Room, a goblin freight lift**: cargo rides the deck (crates and barrels along both side edges,
+  non-static children of the ramp, the middle lane clear for the heavy's ride); a loading area on the floor
+  either side of the entry (crates, barrels, a cart) clear of where the fallen ramp's end lands; goods that
+  already went up on the south balcony, clear of the plate. `DecoMoving()` is the builder helper for
+  decorations that ride a mover.
+- **Porter Room**: crate stacks and barrels in the hall break the sight lines between the entry, the goblins
+  and the grate, a shelf on the east wall; the porter's stores in the guard room (a shelf on the west wall,
+  crates by the east wall) clear of the porter's walk from the bars to its stand.
+- **Rebase** onto main after the glow PR: one commit (`f7d15cc`), no conflicts; git merged WoodBlock (their
+  GlowShell, my M_Timber) and KIT.md. Then the GlowShell was removed from `WoodBlock.prefab` through the
+  Editor: timber is plain M_Timber, it does not glow. The worktree Editor blocked on Unity's "scene modified
+  externally" dialog after the rebase (answered Reload); the MCP server loses its instance selection on every
+  reconnect: set it again before each batch.
+- Rooms 3, 4, 5 rebuilt and reinstalled (the Circuit Room and the Chasm untouched this time). Validator 0
+  problems. The slot scan found the lift's cargo crates level with the guide frames' uprights (a 1 m pocket
+  at deck height); the cargo now keeps 1.5 m from the uprights and the end lips (Well Room rebuilt again, 0
+  pockets). The scan's bounds test is meaningless against the octagon's diagonal corner walls (their boxes
+  cover a big square); those clearances were checked against the wall planes by hand: 1.6 m or more. Backups
+  `20261014-134422`, `-134647`. Untested by me. To try: pin the lever from the chamber and watch the hold
+  plate sink and go dark while the junction stays lit; the stair and the post on the back face; the lift's
+  cargo riding the fall; the porter's walk past the stores.
+
+### Round 29c: z-fighting caught by the validator, the ship command, the chat narrator, the thick grate wall
+
+Owner, with screenshots: the raised portcullis flickered against the gate wall ("the gate is flush with the
+wall"); add an automatic check for that to the push-and-PR pipeline (`/check-ship-pr`). The chamber lever
+faced the wall. After the rope is cut a purple rod stayed hanging. The Porter Room's grate should rise fully
+into its wall with just the bottom showing; the room wants a visual overhaul (plan first). Goblin lines over
+heads behind grates are unreadable: a game chat in the top right, a narrator who gives a hint at one minute
+in a room and a detailed one at two, sarcastic and a little mean.
+
+- **Coplanar check** (`SceneValidator.CheckCoplanarFaces`, KIT.md): every enabled cube renderer not under a
+  Rigidbody is an oriented box; pairs whose bounds touch are checked face against face (same plane within
+  3 mm, same normal, overlapping by more than 2 cm each way); every Door's panel and what rides it is checked
+  again at its open offset. Only EXPOSED overlaps count: a probe a centimetre in front of the overlap must be
+  inside a RoomVolume and inside no other block (the first run listed 386 wall undersides buried in floor
+  slabs and undersides below the floors). Fixes it demanded: the portcullis inset 0.2 m behind the wall's face
+  and 0.1 m into walls, floor and ceiling; conduits 0.24 / 0.23 / 0.20 by axis (stubs 0.22) and the door
+  wire pieces likewise, so crossing rails share no face; even stair steps 2 cm narrower; lattice rails a hair
+  behind the bars; the Circuit Room's entry run re-routed into the entry door's supply wire (it used to end
+  along the jamb strip, same size, same place).
+- **`/check-ship-pr`** (`.claude/commands/check-ship-pr.md`): compile check, `Pesky/Validate Open Scenes`
+  must say 0 problems (no weakening the validator), clean tree and commit as the owner, rebase on main (room
+  prefabs and Run take main's side and are rebuilt), push, `gh pr create`. Refuses to ship on any problem.
+- **Narrator chat** (`NarratorChat`, `NarratorLines`, `chat-root` in Run.uxml/uss): on the RunHud object,
+  wired to the PlayerSpawner and the LabyrinthDirector; room = the RoomVolume the local player is in; 60 s
+  and 120 s; lines per puzzle id. The porter's refusal goes into the chat from both the local brain and the
+  net puppet (within 40 m of the camera).
+- Lever faces the chamber (its handle is +Z); the hold plate line and junction follow it (z 2.5). Rope: the
+  cut disables every renderer under it but the loose ends. Porter Room: partition 1.2 m thick in three blocks,
+  the grate in the middle of the passage, `openOffset` 3.3 of 3.5; lever, wheel, chain, bars point and the
+  grate's wire on the back face. Porter Room overhaul plan: `docs/level-design/porter-room-v5.md`, not built.
+- All five rooms rebuilt (the Bat Room too, for its rails; the BatTest scene's overrides re-applied through
+  the Editor: goblins off, both doorways bricked, the volume "Bat Test"). `.gitignore` now tracks
+  `.claude/commands/` (the rest of `.claude/` stays local). Validator 0 problems, coplanar check included.
+  Untested by me. Watch: the chat's first line one minute into the start room (it nags there too); the
+  porter's refusal appearing in the chat; the raised portcullis fully hidden (its bars too); the grate's
+  bottom edge under the Porter Room lintel; the cut rope leaving nothing; the lever's handle facing into the
+  chamber; stair sides and rail corners no longer flickering (if any flicker remains, the validator did not
+  see it: say where).
+
+### Round 29d: the Porter Room as the receiving hall
+
+Owner: "yes, build the porter room plan as written" (`docs/level-design/porter-room-v5.md`). Built in
+`RoomsV3Builder.PorterRoom`: the COUNTER (1 x 1 m, 13 m long, 8 m in front of the grate, open at its east
+end, two crate stacks on top that hide the grate from the entry), the RECEIVING DOCK (the west side of the
+hall from the counter to the north wall raised 0.5 m, clear of the entry; barrels along its edge, the cart at
+its head, a crate stack on it), the STORE (shelves flush on both walls, four crate stacks 1.5 m apart and
+from the walls, the porter's stand moved to the far west corner round the maze, the porter starting beside
+the bars east of the maze), and the two inspectors starting BEHIND the counter so they come round its open
+end. Nothing else about the room changed (16 x 50 x 11, the thick partition and grate, the bell, the exit).
+
+The first full validator run after the chat and the thick wall listed 36 real coplanar pairs (the earlier
+"0 problems" was a stale console line): rail ends coinciding with crossing rails' faces (the 0.12 m overrun
+equalled an x-rail's half-thickness; now 0.09, shorter than any), the Circuit Room's east and south ceiling
+runs sharing one line (the south run now leaves the generator southward and comes down the wall west of the
+gallery), the pit walls' tops and inner faces in the floor slabs' faces (2 cm under and 2 cm proud now), the
+gallery slab's top at the exit frame's top (gallery 4.05), the break prefab's rails sharing their base's end
+and side faces (2 cm shorter, 1 cm in), and the lever prefab's post glow shell sharing the post's foot
+(shell 2 cm up). All five rooms rebuilt twice more, BatTest re-applied each time. Validator 0 problems
+(console cleared first, then read). The slot scan over the five rooms: 0 real pockets (the three listed in
+the Gatehouse are a crate behind another crate and the hanging counterweight beside the window piers at
+3 m up). Backups up to `20261014-142120`. Untested by me. Watch in the Porter Room: goblins coming round
+the counter's east end (the NavMesh bakes round it), the dock's 0.5 m drop, the porter's walk round the
+maze to the far corner, the Dagger's cover along the dock.
+
+## Round 29: playtest analytics (2026-10-15)
+
+Owner: the alpha GDD needs analytics, recorded only for runs with 3 or more players (`docs/ANALYTICS.md`).
+
+**The host records, nobody else.** `RunAnalyticsWatcher` observes the host's sim once a frame, from
+`RunDirector` (the one place that knows which room of the run a point is in). It reads state every peer
+already has (the run timer, the streamed poses, the vote's result, ROUND_RESULT) and changes nothing: no new
+message, no scene edit. The 3+ count is taken once, when the run's timer starts.
+
+**One report per run** (`RunReport`): a `runs` row, a `rooms` row per room anybody alive entered (time from the
+first entry to the first entry of the next room), a `votes` row per meeting. A run the host leaves mid-way is
+sent as `abandoned`, from the scene closing or, for a closed tab, by the page itself on `pagehide`.
+
+**Delivery** is `navigator.sendBeacon` (`PeskyAnalytics.jslib`) to a Google Apps Script web app
+(`tools/analytics/Code.gs`) that appends to a Google Sheet and ignores a run id it already has. The URL goes in
+`index.html` (`PESKY_ANALYTICS_URL`), empty until the Sheet is deployed. Nothing is sent from the Editor or a
+`?debug=1` page unless `?analytics=1`.
+
+Checked: a clean compile in batch mode and a WebGL build (0 errors); the 9 new EditMode tests pass
+(`RunReportTests`). The two `ResonanceForgeTests` that expect four rooms and the banana on slot 7 still fail;
+they predate this round. End to end on a local build (served over https, three players on two machines through
+a local copy of the relay with `?relay=force`): a three-player run whose host left mid-way reached the Sheet as
+`abandoned`, and a run that started with two players was not recorded. That test also found that times were
+written as a float's binary value (74.09999847), now doubles rounded to a tenth. Not yet seen: a run that ends
+with its result (`ended` = `result`), and the tab-close path (`pagehide`).

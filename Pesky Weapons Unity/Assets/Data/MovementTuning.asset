@@ -45,8 +45,8 @@ MonoBehaviour:
   previewMarkerLift: 0.02
   animateSeconds: 1.5
   animateSpeed: 1
-  stickMinSpeed: 6
-  stickMaxAngleDeg: 60
+  stickMinSpeed: 4
+  stickMaxAngleDeg: 70
   stickSinkDepth: 0.1
   stickRearmSeconds: 0.3
   bladeAlignRate: 10

@@ -130,17 +130,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03d5da90dd5ba4c4499065767cd57fd1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.CircuitBridge
---- !u!114 &112523522 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 887969813919701642, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
-  m_PrefabInstance: {fileID: 446002906}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a684d68efa76e254ea4c2db36e014c5f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.GoblinBrain
 --- !u!1001 &139887609
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -463,8 +452,8 @@ MonoBehaviour:
   - {fileID: 1416830818}
   - {fileID: 1019703185}
   enemies:
-  - {fileID: 112523522}
-  - {fileID: 446002915}
+  - {fileID: 0}
+  - {fileID: 0}
   - {fileID: 446002911}
   doors: []
   plates: []
@@ -695,12 +684,20 @@ PrefabInstance:
       value: 302
       objectReference: {fileID: 0}
     - target: {fileID: 3030159737793891082, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+      propertyPath: enemies.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3030159737793891082, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: 'enemies.Array.data[0]'
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 3117336274147016304, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: id
       value: 303
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117336274147016304, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+      propertyPath: enemies.Array.size
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3117336274147016304, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: 'enemies.Array.data[0]'
@@ -750,6 +747,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3905327912647110950, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 84cfc4105a941164599a6959bfc5c461, type: 2}
     - target: {fileID: 4778807635511257105, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: id
       value: 2501
@@ -830,6 +831,10 @@ PrefabInstance:
       propertyPath: id
       value: 1401
       objectReference: {fileID: 0}
+    - target: {fileID: 7208447894027214087, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 84cfc4105a941164599a6959bfc5c461, type: 2}
     - target: {fileID: 7556462219842471521, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: id
       value: 503
@@ -838,6 +843,10 @@ PrefabInstance:
       propertyPath: authority
       value: 
       objectReference: {fileID: 267765539}
+    - target: {fileID: 8177667420465801353, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8260893603462305976, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
       propertyPath: id
       value: 502
@@ -968,17 +977,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67af5dad7b096c14a8a9ad2d54f4ea25, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Pesky.Game::Pesky.Game.RoomVolume
---- !u!114 &446002915 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1243925852580756090, guid: 7c9a4e280f4b8c248a1d1658c4f721cc, type: 3}
-  m_PrefabInstance: {fileID: 446002906}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a684d68efa76e254ea4c2db36e014c5f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Pesky.Game::Pesky.Game.GoblinBrain
 --- !u!1 &544965564
 GameObject:
   m_ObjectHideFlags: 0

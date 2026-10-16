@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Pesky.Data;
 using Pesky.Protocol;
 using Pesky.Session;
+using Pesky.Session.Analytics;
 using Pesky.Sim;
 using UnityEngine;
 
@@ -20,6 +21,9 @@ namespace Pesky.Game
     /// It plugs into the scene's LabyrinthDirector (its `run` field), which the hundred grid doorways
     /// already reference, so MagicDoor's grid mode, ExitZone and the culling all keep working unchanged.
     /// It changes nothing shared: it reads the sim and answers the host through WorldAuthority's IHostWorld.
+    ///
+    /// On the host it also owns the run's analytics recorder (docs/ANALYTICS.md), since it is the one place
+    /// that knows which room of the run a player stands in.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class RunDirector : MonoBehaviour
@@ -49,6 +53,7 @@ namespace Pesky.Game
 
         NetSession _session;
         readonly Dictionary<int, LabyrinthRoom> _byRoomId = new Dictionary<int, LabyrinthRoom>();
+        RunAnalyticsWatcher _analytics;
 
         /// <summary>The run half of the sim, or null before a session exists.</summary>
         public RunState Run
@@ -87,6 +92,43 @@ namespace Pesky.Game
                 _byRoomId.Add(room.RoomId, room);
             }
             if (startRoom == null || exitRoom == null) Debug.LogError("RunDirector needs a start room and an Exit room.", this);
+        }
+
+        // ---------------------------------------------------------------- analytics (host only)
+
+        void Update()
+        {
+            if (_session == null || !_session.IsHost) return;
+            if (_analytics == null)
+            {
+                _analytics = new RunAnalyticsWatcher(RunPositionAt, LabelOf, Application.version);
+                _analytics.Changed += AnalyticsSender.Hold;
+                _analytics.Finished += AnalyticsSender.Send;
+            }
+            _analytics.Observe(_session.Sim);
+        }
+
+        void OnDestroy()
+        {
+            // The host leaving the run scene mid-run (back to the menu): what was recorded goes as abandoned.
+            if (_analytics != null && _session != null) _analytics.Abandon(_session.Sim);
+        }
+
+        /// <summary>Where a world point is in the run for analytics: 0 to Count - 1 for its rooms, Count for the Exit room, -1 elsewhere (the start room included).</summary>
+        int RunPositionAt(Vector3 world)
+        {
+            RunState run = Run;
+            LabyrinthRoom room = RoomAt(world);
+            if (run == null || room == null || room == startRoom) return -1;
+            if (room == exitRoom) return run.Count;
+            return run.IndexOf(room.RoomId);
+        }
+
+        string LabelOf(int roomId)
+        {
+            GameData data = _session != null ? _session.Data : null;
+            LabyrinthDef def = data != null ? data.labyrinth : null;
+            return def != null ? def.LabelOf(roomId) : "Room " + roomId;
         }
 
         // ---------------------------------------------------------------- the chain

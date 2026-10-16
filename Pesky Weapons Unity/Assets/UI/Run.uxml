@@ -28,6 +28,10 @@
 
         <ui:Label name="ghost-status" class="ghost-status" text="" picking-mode="Ignore" />
 
+        <ui:VisualElement name="chat-root" class="chat-root" picking-mode="Ignore">
+            <ui:VisualElement name="chat-lines" class="chat-lines" picking-mode="Ignore" />
+        </ui:VisualElement>
+
         <ui:VisualElement name="vote-root" class="vote-root">
             <ui:VisualElement name="vote-panel" class="vote-panel">
                 <ui:Label name="vote-title" class="vote-title" text="VOTE CALLED BY" />
