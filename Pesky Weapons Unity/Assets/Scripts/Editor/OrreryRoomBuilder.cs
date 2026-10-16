@@ -33,9 +33,17 @@ namespace Pesky.Editor
         const string MWood = M + "M_Wood.mat", MLedge = M + "M_Ledge.mat", MFlow = M + "M_MagicFlow.mat", MKey = M + "M_Key.mat";
         const string MHazard = M + "M_Hazard.mat", MSilver = M + "M_Silver.mat";
         const int LayerWorld = 8;
+        // The wires (RoomsV3Builder's rules, mirrored: its helpers are private): a rail along a floor at the stubs' own height, and
+        // the height up a wall where the doorway's supply strip tops out and turns into the wall.
+        const float OnFloor = 0.13f, SupplyY = 5.6f;
+        // The junction at the foot of the orrery, on the exit side: the three star lines meet here and one line leaves for the door.
+        const float JunctionZ = -5.95f;
+        static readonly string[] DoorMagicPieces = { "Plane", "Feed_L", "Feed_R", "Feed_Top", "Supply", "Supply_In" };
 
         // The room
         const float W = 32f, H = 16f;
+        // The planets hang at these bearings while their lever is off and swing to AlignedYaw when it is on.
+        const float InnerOffYaw = 200f, BlueOffYaw = 130f, RedOffYaw = 250f, AlignedYaw = 0f;
         // The orrery
         const float DaisR = 4.5f, DaisH = 1f, StepR = 5.4f, StepH = 0.5f, ArmReach = 4.95f, PeriodSeconds = 10f;
         // The perches: top heights and their faces toward the room
@@ -74,6 +82,7 @@ namespace Pesky.Editor
             Lighting(fixtures);
 
             Door gate = ExitGate(room, new List<ImpactLever> { loft, shelf, gallery });
+            Wiring(room, geo, play, fixtures, loft, shelf, gallery);
             Profile(room);
             PrefabUtility.SaveAsPrefabAsset(room, PrefabPath);
             Object.DestroyImmediate(room);
@@ -119,9 +128,9 @@ namespace Pesky.Editor
             Visual(rotor, "Collar_Low", PrimitiveType.Cylinder, new Vector3(0f, 3.6f, 0f), Vector3.zero, new Vector3(0.7f, 0.12f, 0.7f), MAnvil);
             Visual(rotor, "Collar_Mid", PrimitiveType.Cylinder, new Vector3(0f, 6.1f, 0f), Vector3.zero, new Vector3(0.7f, 0.12f, 0.7f), MAnvil);
             Visual(rotor, "Collar_High", PrimitiveType.Cylinder, new Vector3(0f, 8.4f, 0f), Vector3.zero, new Vector3(0.6f, 0.12f, 0.6f), MAnvil);
-            Planet(rotor, "Inner", 3.6f, 3.0f, 0f, 0.45f, M + "M_Rope.mat", false);        // a small grey world close to the axle
-            Planet(rotor, "Blue", 6.1f, 8.0f, 130f, 0.95f, MLedge, true);         // the wide blue one, with a moon
-            Planet(rotor, "Red", 8.4f, 5.4f, 245f, 0.7f, MHazard, false);         // the red one, high and quick-looking
+            Planet(rotor, "Inner", 3.6f, 3.0f, InnerOffYaw, 0.45f, M + "M_Rope.mat", false);   // a small sandy world close to the axle
+            Planet(rotor, "Blue", 6.1f, 8.0f, BlueOffYaw, 0.95f, MLedge, true);        // the wide blue one, with a moon
+            Planet(rotor, "Red", 8.4f, 5.4f, RedOffYaw, 0.7f, MHazard, false);         // the red one, high and quick-looking
             Visual(rotor, "Sun", PrimitiveType.Sphere, new Vector3(0f, 11.4f, 0f), Vector3.zero, Vector3.one * 2.4f, MFlow);
             Visual(rotor, "Sun_Halo", PrimitiveType.Cylinder, new Vector3(0f, 11.4f, 0f), new Vector3(8f, 0f, 0f), new Vector3(4.2f, 0.03f, 4.2f), MFlow);
             Visual(rotor, "Sun_Ring", PrimitiveType.Cylinder, new Vector3(0f, 11.4f, 0f), new Vector3(-14f, 0f, 12f), new Vector3(3.3f, 0.04f, 3.3f), MKey);
@@ -206,8 +215,8 @@ namespace Pesky.Editor
             return lever;
         }
 
-        /// <summary>The floor is a star chart: two rings round the dais, and a lit line from each perch to the outer ring and
-        /// from the dais to the exit, so the eye goes lever, ring, machine, door. Inlays only: no colliders.</summary>
+        /// <summary>The floor is a star chart: two rings round the dais. They are inlays only (no collider, no state); the lit lines
+        /// that run across it from each perch are real wires, built by Wiring.</summary>
         static void FloorChart(Transform geo)
         {
             GameObject chart = new GameObject("StarChart");
@@ -215,21 +224,6 @@ namespace Pesky.Editor
             Transform c = chart.transform;
             Ring(c, "Ring_Inner", 7.2f, 0.16f);
             Ring(c, "Ring_Outer", 10.6f, 0.22f);
-            // perch lines: the foot of each perch to the outer ring
-            Inlay(c, "Line_Loft", new Vector3(LoftFace + 0.05f, 0f, -3.75f), new Vector3(-9.92f, 0f, -3.75f));
-            Inlay(c, "Line_Shelf", new Vector3(ShelfFace - 0.05f, 0f, -2.75f), new Vector3(10.24f, 0f, -2.75f));
-            Inlay(c, "Line_Gallery_W", new Vector3(-5.75f, 0f, -11.95f), new Vector3(-5.75f, 0f, -8.9f));
-            Inlay(c, "Line_Gallery_E", new Vector3(5.75f, 0f, -11.95f), new Vector3(5.75f, 0f, -8.9f));
-            // the machine to the door: dais step to the threshold, then up both jambs and over the lintel
-            Inlay(c, "Line_Exit", new Vector3(0f, 0f, -StepR - 0.05f), new Vector3(0f, 0f, -W / 2f + 0.05f));
-            Rail(geo, "Jamb_W", new Vector3(-1.75f, 0f, -W / 2f + 0.3f), new Vector3(-1.75f, 3.75f, -W / 2f + 0.3f));
-            Rail(geo, "Jamb_E", new Vector3(1.75f, 0f, -W / 2f + 0.3f), new Vector3(1.75f, 3.75f, -W / 2f + 0.3f));
-            Rail(geo, "Lintel", new Vector3(-1.75f, 3.75f, -W / 2f + 0.3f), new Vector3(1.75f, 3.75f, -W / 2f + 0.3f));
-            // and up the gallery posts to the lever's floor
-            Rail(geo, "Post_Line_W", new Vector3(-5.75f, 0f, GalleryFace + 0.05f), new Vector3(-5.75f, GalleryY - 0.5f, GalleryFace + 0.05f));
-            Rail(geo, "Post_Line_E", new Vector3(5.75f, 0f, GalleryFace + 0.05f), new Vector3(5.75f, GalleryY - 0.5f, GalleryFace + 0.05f));
-            Rail(geo, "Loft_Line", new Vector3(LoftFace + 0.05f, 0f, -3.75f), new Vector3(LoftFace + 0.05f, LoftY - 0.5f, -3.75f));
-            Rail(geo, "Shelf_Line", new Vector3(ShelfFace - 0.05f, 0f, -2.75f), new Vector3(ShelfFace - 0.05f, ShelfY - 0.5f, -2.75f));
         }
 
         /// <summary>Stone pilasters where the eight walls meet, and a brass band round the room at the shelf's height,
@@ -317,8 +311,9 @@ namespace Pesky.Editor
             GameObject g = new GameObject("Dressing");
             g.transform.SetParent(geo, false);
             Transform t = g.transform;
-            Deco(t, "Deco_Banner", "Banner_Exit_W", new Vector3(-3.1f, 0f, -W / 2f), 180f);
-            Deco(t, "Deco_Banner", "Banner_Exit_E", new Vector3(3.1f, 0f, -W / 2f), 180f);
+            // The exit banners stand 3.7 m out: the exit's wire climbs the wall between the door frame and a banner.
+            Deco(t, "Deco_Banner", "Banner_Exit_W", new Vector3(-3.7f, 0f, -W / 2f), 180f);
+            Deco(t, "Deco_Banner", "Banner_Exit_E", new Vector3(3.7f, 0f, -W / 2f), 180f);
         }
 
         /// <summary>Four torches where the eye needs them, and one violet light from the sun. Six lights at most per room.</summary>
@@ -401,6 +396,7 @@ namespace Pesky.Editor
             // Doorways lead nowhere in a test scene: their portals are bricked up as in BatTest.
             foreach (MagicDoor md in room.GetComponentsInChildren<MagicDoor>(true))
             {
+                if (md.name != "Doorway_North") continue;   // the exit's portal is the lit end of the wire: leave it
                 Transform plane = md.transform.Find("Plane");
                 if (plane != null) plane.gameObject.SetActive(false);
             }
@@ -424,6 +420,163 @@ namespace Pesky.Editor
             SetArray(authority, "circuitBridges", new List<CircuitBridge>());
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
+        }
+
+        // ------------------------------------------------------------------ the wires (a switch is a wire)
+        /// <summary>
+        /// Every lever has a visible conduit: from the lever's foot along its perch, down the post, across the floor to the junction
+        /// at the foot of the orrery; the junction (every input required) is the source of one line that runs under the gallery,
+        /// up the wall beside the door and into the door's own supply wire, and the doorway is a dead portal that lights when the
+        /// three levers are on. The machine itself (OrreryMachine) swings each planet into line as its lever turns on.
+        /// Rails follow RoomsV3Builder's rules (a thickness per axis, ends overrun by less than any half-thickness), so no two share a plane.
+        /// </summary>
+        static void Wiring(GameObject room, Transform geo, Transform play, Transform fixtures, ImpactLever loft, ImpactLever shelf, ImpactLever gallery)
+        {
+            float loftTop = LoftY + OnFloor, shelfTop = ShelfY + OnFloor, galleryTop = GalleryY + OnFloor;
+            float loftEdge = LoftFace + 0.05f, shelfEdge = ShelfFace - 0.05f, galleryEdge = GalleryFace + 0.05f;
+
+            // The scribe's wire: along the loft to its south post, down the post, south across the floor, east to the junction.
+            List<Renderer> loftRails = new List<Renderer>();
+            loftRails.Add(Conduit(geo, "Wire_Loft_0", new Vector3(-13.6f, loftTop, -3.0f), new Vector3(-13.6f, loftTop, -3.75f)));
+            loftRails.Add(Conduit(geo, "Wire_Loft_1", new Vector3(-13.6f, loftTop, -3.75f), new Vector3(loftEdge, loftTop, -3.75f)));
+            loftRails.Add(Conduit(geo, "Wire_Loft_2", new Vector3(loftEdge, loftTop, -3.75f), new Vector3(loftEdge, OnFloor, -3.75f)));
+            loftRails.Add(Conduit(geo, "Wire_Loft_3", new Vector3(loftEdge, OnFloor, -3.75f), new Vector3(loftEdge, OnFloor, JunctionZ)));
+            loftRails.Add(Conduit(geo, "Wire_Loft_4", new Vector3(loftEdge, OnFloor, JunctionZ), new Vector3(-0.35f, OnFloor, JunctionZ)));
+            PowerLine loftLine = WireLine(play, "Line_Loft", loft, loftRails);
+
+            // The shelf's wire, the same way from the east.
+            List<Renderer> shelfRails = new List<Renderer>();
+            shelfRails.Add(Conduit(geo, "Wire_Shelf_0", new Vector3(13.6f, shelfTop, -1.8f), new Vector3(13.6f, shelfTop, -2.75f)));
+            shelfRails.Add(Conduit(geo, "Wire_Shelf_1", new Vector3(13.6f, shelfTop, -2.75f), new Vector3(shelfEdge, shelfTop, -2.75f)));
+            shelfRails.Add(Conduit(geo, "Wire_Shelf_2", new Vector3(shelfEdge, shelfTop, -2.75f), new Vector3(shelfEdge, OnFloor, -2.75f)));
+            shelfRails.Add(Conduit(geo, "Wire_Shelf_3", new Vector3(shelfEdge, OnFloor, -2.75f), new Vector3(shelfEdge, OnFloor, JunctionZ)));
+            shelfRails.Add(Conduit(geo, "Wire_Shelf_4", new Vector3(shelfEdge, OnFloor, JunctionZ), new Vector3(0.35f, OnFloor, JunctionZ)));
+            PowerLine shelfLine = WireLine(play, "Line_Shelf", shelf, shelfRails);
+
+            // The gallery's wire: along the gallery to its west post, down the post, north across the floor, east, and into the
+            // junction's south face a hand's breadth west of the line that leaves it.
+            List<Renderer> galleryRails = new List<Renderer>();
+            galleryRails.Add(Conduit(geo, "Wire_Gallery_0", new Vector3(0f, galleryTop, -15.0f), new Vector3(-5.75f, galleryTop, -15.0f)));
+            galleryRails.Add(Conduit(geo, "Wire_Gallery_1", new Vector3(-5.75f, galleryTop, -15.0f), new Vector3(-5.75f, galleryTop, galleryEdge)));
+            galleryRails.Add(Conduit(geo, "Wire_Gallery_2", new Vector3(-5.75f, galleryTop, galleryEdge), new Vector3(-5.75f, OnFloor, galleryEdge)));
+            galleryRails.Add(Conduit(geo, "Wire_Gallery_3", new Vector3(-5.75f, OnFloor, galleryEdge), new Vector3(-5.75f, OnFloor, -7.0f)));
+            galleryRails.Add(Conduit(geo, "Wire_Gallery_4", new Vector3(-5.75f, OnFloor, -7.0f), new Vector3(-0.25f, OnFloor, -7.0f)));
+            galleryRails.Add(Conduit(geo, "Wire_Gallery_5", new Vector3(-0.25f, OnFloor, -7.0f), new Vector3(-0.25f, OnFloor, JunctionZ - 0.25f)));
+            PowerLine galleryLine = WireLine(play, "Line_Gallery", gallery, galleryRails);
+
+            // The junction: live only with all three.
+            PowerJunction junction = WireJunction(play, geo, "Junction", new Vector3(0f, 0.3f, JunctionZ), new List<PowerLine> { loftLine, shelfLine, galleryLine });
+
+            // The line out: south along the floor under the gallery, a jog east to clear the door, up the wall beside the frame (the
+            // exit banners stand wider than it) and along the wall at the supply's height to the door's own supply wire.
+            const float wallZ = -W / 2f + 0.3f, riseX = 2.45f;
+            List<Renderer> exitRails = new List<Renderer>();
+            exitRails.Add(Conduit(geo, "Wire_Exit_0", new Vector3(0f, OnFloor, JunctionZ - 0.25f), new Vector3(0f, OnFloor, -14.0f)));
+            exitRails.Add(Conduit(geo, "Wire_Exit_1", new Vector3(0f, OnFloor, -14.0f), new Vector3(riseX, OnFloor, -14.0f)));
+            exitRails.Add(Conduit(geo, "Wire_Exit_2", new Vector3(riseX, OnFloor, -14.0f), new Vector3(riseX, OnFloor, wallZ)));
+            exitRails.Add(Conduit(geo, "Wire_Exit_3", new Vector3(riseX, OnFloor, wallZ), new Vector3(riseX, SupplyY, wallZ)));
+            exitRails.Add(Conduit(geo, "Wire_Exit_4", new Vector3(riseX, SupplyY, wallZ), new Vector3(0f, SupplyY, wallZ)));
+            exitRails.AddRange(DoorMagic(room));
+            WireLine(play, "Line_Exit", junction, exitRails);
+
+            // The machine: each planet swings into line as its lever turns on, and the sun gathers the power.
+            Transform spinner = play.Find("Orrery_Spinner");
+            Transform rotor = spinner != null ? spinner.Find("Rotor") : null;
+            if (rotor == null) return;
+            GameObject machineGo = new GameObject("Orrery_Machine");
+            machineGo.transform.SetParent(play, false);
+            OrreryMachine machine = machineGo.AddComponent<OrreryMachine>();
+            SerializedObject so = new SerializedObject(machine);
+            SerializedProperty links = so.FindProperty("planets");
+            links.arraySize = 3;
+            string[] arms = { "Planet_Inner", "Planet_Blue", "Planet_Red" };
+            ImpactLever[] levers = { loft, shelf, gallery };   // the higher the perch, the higher the world
+            float[] offs = { InnerOffYaw, BlueOffYaw, RedOffYaw };
+            for (int i = 0; i < 3; i++)
+            {
+                SerializedProperty link = links.GetArrayElementAtIndex(i);
+                link.FindPropertyRelative("arm").objectReferenceValue = rotor.Find(arms[i]);
+                link.FindPropertyRelative("lever").objectReferenceValue = levers[i];
+                link.FindPropertyRelative("offYaw").floatValue = offs[i];
+                link.FindPropertyRelative("onYaw").floatValue = AlignedYaw;
+            }
+            Transform sunLight = fixtures != null ? fixtures.Find("SunLight") : null;
+            if (sunLight != null) so.FindProperty("sunLight").objectReferenceValue = sunLight.GetComponent<Light>();
+            SerializedProperty suns = so.FindProperty("sunRenderers");
+            suns.arraySize = 2;
+            suns.GetArrayElementAtIndex(0).objectReferenceValue = rotor.Find("Sun").GetComponent<Renderer>();
+            suns.GetArrayElementAtIndex(1).objectReferenceValue = rotor.Find("Sun_Halo").GetComponent<Renderer>();
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>A run of conduit (M_MagicFlow, static, no collider). RoomsV3Builder.Conduit's rules: the cross-section depends on
+        /// the rail's axis (x 0.24, z 0.23, y 0.20) and each end overruns its point by 0.09, less than any half-thickness, so where
+        /// two rails cross or one ends inside another no two faces share a plane, and every corner closes.</summary>
+        static Renderer Conduit(Transform geo, string name, Vector3 from, Vector3 to)
+        {
+            const float overrun = 0.09f;
+            Vector3 n = (to - from).normalized;
+            Vector3 a = from - n * overrun, b = to + n * overrun;
+            Vector3 up = Mathf.Abs(n.y) > 0.9f ? Vector3.forward : Vector3.up;
+            float thick = Mathf.Abs(n.y) > 0.9f ? 0.20f : (Mathf.Abs(n.x) >= Mathf.Abs(n.z) ? 0.24f : 0.23f);
+            GameObject rail = Block(geo, name, (a + b) / 2f, new Vector3(thick, thick, (b - a).magnitude), MFlow, Quaternion.LookRotation(n, up));
+            Collider c = rail.GetComponent<Collider>();
+            if (c != null) Object.DestroyImmediate(c);
+            return rail.GetComponent<Renderer>();
+        }
+
+        /// <summary>A PowerLine under Gameplay: lit while its source (a lever, or a junction) is on.</summary>
+        static PowerLine WireLine(Transform play, string name, Object source, List<Renderer> rails)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(play, false);
+            PowerLine line = go.AddComponent<PowerLine>();
+            if (source is ImpactLever) SetRef(line, "lever", source);
+            else if (source is PowerJunction) SetRef(line, "junction", source);
+            SetArray(line, "rails", rails);
+            return line;
+        }
+
+        /// <summary>A junction box (0.8 x 0.6 x 0.6, M_MagicFlow, no collider) and the PowerJunction that is live only when EVERY input is.</summary>
+        static PowerJunction WireJunction(Transform play, Transform geo, string name, Vector3 pos, List<PowerLine> inputs)
+        {
+            GameObject box = Block(geo, name + "_Box", pos, new Vector3(0.8f, 0.6f, 0.6f), MFlow);
+            Collider c = box.GetComponent<Collider>();
+            if (c != null) Object.DestroyImmediate(c);
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(play, false);
+            go.transform.localPosition = pos;
+            PowerJunction junction = go.AddComponent<PowerJunction>();
+            SetArray(junction, "inputs", inputs);
+            SetBool(junction, "requireAll", true);
+            SetRef(junction, "box", box.GetComponent<Renderer>());
+            return junction;
+        }
+
+        /// <summary>The exit doorway as a DEAD PORTAL: no sliding slab. The gate's panel keeps its collider and loses its renderer; the
+        /// doorway's plane stays in view, dark, and comes alive with the line. Returns the doorway's magic renderers (the plane and
+        /// its wire) for the exit's PowerLine to drive. Call after ExitGate. (RoomsV3Builder.DoorMagic, mirrored.)</summary>
+        static List<Renderer> DoorMagic(GameObject room)
+        {
+            List<Renderer> pieces = new List<Renderer>();
+            Transform doorways = room.transform.Find("Doorways");
+            Transform panel = doorways != null ? doorways.Find("Gate_South/Panel") : null;
+            if (panel != null)
+            {
+                MeshRenderer r = panel.GetComponent<MeshRenderer>();
+                if (r != null) Object.DestroyImmediate(r);
+                MeshFilter f = panel.GetComponent<MeshFilter>();
+                if (f != null) Object.DestroyImmediate(f);
+            }
+            Transform south = doorways != null ? doorways.Find("Doorway_South") : null;
+            if (south == null) return pieces;
+            SetBool(south.GetComponent<MagicDoor>(), "showPlaneWhenShut", true);
+            foreach (string nm in DoorMagicPieces)
+            {
+                Transform t = south.Find(nm);
+                if (t != null && t.GetComponent<Renderer>() != null) pieces.Add(t.GetComponent<Renderer>());
+            }
+            return pieces;
         }
 
         // ------------------------------------------------------------------ shell
@@ -547,21 +700,6 @@ namespace Pesky.Editor
         {
             Disc(parent, name, new Vector3(0f, 0.004f, 0f), radius, 0.006f, MFlow, false);
             Disc(parent, name + "_Cut", new Vector3(0f, 0.008f, 0f), radius - width, 0.006f, MFloor, false);
-        }
-
-        static void Inlay(Transform parent, string name, Vector3 from, Vector3 to)
-        {
-            Vector3 d = to - from;
-            GameObject go = Block(parent, name, (from + to) / 2f + Vector3.up * 0.012f, new Vector3(0.18f, 0.012f, d.magnitude), MFlow, Quaternion.LookRotation(d.normalized, Vector3.up));
-            Object.DestroyImmediate(go.GetComponent<Collider>());
-        }
-
-        static void Rail(Transform geo, string name, Vector3 from, Vector3 to)
-        {
-            Vector3 d = to - from;
-            Vector3 up = Mathf.Abs(d.normalized.y) > 0.9f ? Vector3.forward : Vector3.up;
-            GameObject go = Block(geo, name, (from + to) / 2f, new Vector3(0.16f, 0.16f, d.magnitude + 0.16f), MFlow, Quaternion.LookRotation(d.normalized, up));
-            Object.DestroyImmediate(go.GetComponent<Collider>());
         }
 
         static void Cord(Transform geo, string name, Vector3 from, Vector3 to, float thickness, string material)
