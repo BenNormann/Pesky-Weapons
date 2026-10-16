@@ -17,7 +17,13 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="bottom-row" class="bottom-row" picking-mode="Ignore">
-            <ui:VisualElement name="weapon-panel" class="weapon-panel" picking-mode="Ignore">
+            <ui:VisualElement name="exit-compass" class="hud-panel exit-compass" picking-mode="Ignore">
+                <ui:Label text="FINAL EXIT" class="hud-title" picking-mode="Ignore" />
+                <ui:VisualElement name="exit-compass-dial" class="hud-title exit-compass-dial" picking-mode="Ignore" />
+                <ui:Label name="exit-compass-progress" class="hud-detail" text="" picking-mode="Ignore" />
+                <ui:Label name="exit-compass-status" class="hud-detail" text="" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="weapon-panel" class="hud-panel weapon-panel" picking-mode="Ignore">
                 <ui:Label name="weapon-name" class="weapon-name" text="WEAPON" />
                 <ui:VisualElement name="hp-track" class="hp-track" picking-mode="Ignore">
                     <ui:VisualElement name="hp-fill" class="hp-fill" picking-mode="Ignore" />

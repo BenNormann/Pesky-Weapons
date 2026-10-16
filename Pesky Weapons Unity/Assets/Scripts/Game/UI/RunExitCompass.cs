@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using Pesky.Protocol;
 
@@ -7,25 +6,19 @@ namespace Pesky.Game
 {
     [DefaultExecutionOrder(500)]
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(UIDocument))]
     public sealed class RunExitCompass : MonoBehaviour
     {
-        const string ResourcePath = "UI/ExitCompass";
         [SerializeField] UIDocument document;
-        [SerializeField] StyleSheet style;
+        [SerializeField] RunDirector run;
+        [SerializeField] PlayerSpawner spawner;
+        [SerializeField] OrbitCamera orbitCamera;
+        [SerializeField] SessionRunner sessionRunner;
         [Tooltip("Needle settling time in seconds. Short enough to track a turn, long enough to remove body jitter.")]
         [Range(0.03f, 0.4f)] [SerializeField] float smoothTime = 0.14f;
 
-        RunDirector _run;
-        PlayerSpawner _spawner;
-        OrbitCamera _camera;
-        SessionRunner _runner;
-        VisualElement _root, _card, _dial;
-        VisualElement _weaponPanel;
-        StyleLength _weaponMargin;
-        bool _weaponInset;
+        VisualElement _card, _dial;
         Label _status, _progress;
-        CompassView _view;
+        ExitCompassView _view;
         ExitCompassBearing _bearing;
         LabyrinthRoom _room;
         Vector3 _lastPosition;
@@ -38,79 +31,15 @@ namespace Pesky.Game
         public bool HasReading { get; private set; }
         public Vector3 TargetPosition { get; private set; }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Register()
-        {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void InstallInitial() { Install(SceneManager.GetActiveScene()); }
-
-        static void OnSceneLoaded(Scene scene, LoadSceneMode mode) { Install(scene); }
-
-        static void Install(Scene scene)
-        {
-            if (!scene.isLoaded) return;
-            RunDirector run = FindInScene<RunDirector>(scene);
-            if (run == null || FindInScene<RunExitCompass>(scene) != null) return;
-            GameObject prefab = Resources.Load<GameObject>(ResourcePath);
-            if (prefab == null) return;
-            GameObject go = Instantiate(prefab);
-            go.name = "ExitCompass";
-            if (go.scene != scene) SceneManager.MoveGameObjectToScene(go, scene);
-            go.GetComponent<RunExitCompass>().BindScene(scene);
-        }
-
-        static T FindInScene<T>(Scene scene) where T : Component
-        {
-            foreach (GameObject root in scene.GetRootGameObjects())
-            {
-                T component = root.GetComponentInChildren<T>(true);
-                if (component != null) return component;
-            }
-            return null;
-        }
-
-        void Awake()
-        {
-            if (document == null) document = GetComponent<UIDocument>();
-            BindScene(gameObject.scene);
-        }
-
-        void BindScene(Scene scene)
-        {
-            SetWeaponInset(false);
-            _run = FindInScene<RunDirector>(scene);
-            _spawner = FindInScene<PlayerSpawner>(scene);
-            _camera = FindInScene<OrbitCamera>(scene);
-            _runner = FindInScene<SessionRunner>(scene);
-            HudController hud = FindInScene<HudController>(scene);
-            UIDocument hudDocument = hud != null ? hud.GetComponent<UIDocument>() : null;
-            _weaponPanel = hudDocument != null ? hudDocument.rootVisualElement.Q<VisualElement>("weapon-panel") : null;
-            if (_weaponPanel != null) _weaponMargin = _weaponPanel.style.marginLeft;
-        }
-
-        void SetWeaponInset(bool visible)
-        {
-            if (_weaponPanel == null || _weaponInset == visible) return;
-            _weaponInset = visible;
-            _weaponPanel.style.marginLeft = visible ? new StyleLength(184f) : _weaponMargin;
-        }
-
         void OnEnable()
         {
-            BindScene(gameObject.scene);
-            _root = document != null ? document.rootVisualElement : null;
-            if (_root == null) return;
-            _root.pickingMode = PickingMode.Ignore;
-            if (style != null && !_root.styleSheets.Contains(style)) _root.styleSheets.Add(style);
-            _card = _root.Q<VisualElement>("exit-compass");
-            _dial = _root.Q<VisualElement>("exit-compass-dial");
-            _status = _root.Q<Label>("exit-compass-status");
-            _progress = _root.Q<Label>("exit-compass-progress");
-            _view = new CompassView(_dial, true);
+            VisualElement root = document != null ? document.rootVisualElement : null;
+            if (root == null) return;
+            _card = root.Q<VisualElement>("exit-compass");
+            _dial = root.Q<VisualElement>("exit-compass-dial");
+            _status = root.Q<Label>("exit-compass-status");
+            _progress = root.Q<Label>("exit-compass-progress");
+            _view = new ExitCompassView(_dial);
             _bearing.Reset();
             _hadPosition = false;
             _room = null;
@@ -122,7 +51,6 @@ namespace Pesky.Game
 
         void OnDisable()
         {
-            SetWeaponInset(false);
             if (_card != null) _card.style.display = DisplayStyle.None;
             if (_view != null) _view.Dispose();
             _view = null;
@@ -132,22 +60,21 @@ namespace Pesky.Game
         void LateUpdate()
         {
             if (_card == null || _view == null) return;
-            PlayerSoul soul = _spawner != null ? _spawner.LocalSoul : null;
-            bool ended = _runner != null && _runner.Session != null && _runner.Session.Phase == SessionPhase.Ended;
-            bool visible = _run != null && soul != null && !ended && (_runner == null || !_runner.IsPaused);
+            PlayerSoul soul = spawner != null ? spawner.LocalSoul : null;
+            bool ended = sessionRunner != null && sessionRunner.Session != null && sessionRunner.Session.Phase == SessionPhase.Ended;
+            bool visible = run != null && soul != null && !ended && (sessionRunner == null || !sessionRunner.IsPaused);
             _card.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
-            SetWeaponInset(visible);
             if (!visible) { HasReading = false; return; }
 
             WeaponBody weapon = soul.Weapon;
             Vector3 position = weapon != null ? weapon.Body.position : soul.Body.position;
             ExitCompassReading reading;
-            HasReading = ExitCompassRoute.TryRead(_run, position, out reading);
+            HasReading = ExitCompassRoute.TryRead(run, position, out reading);
             if (!HasReading)
             {
                 _card.EnableInClassList("is-arrived", false);
                 _view.SetExit(false, _bearing.Angle, false);
-                SetStatus(_run.Run == null || _run.Run.Count == 0 ? "FINDING THE EXIT" : "RETURN TO THE ROOMS");
+                SetStatus(run.Run == null || run.Run.Count == 0 ? "FINDING THE EXIT" : "RETURN TO THE ROOMS");
                 SetProgress(-1, 0);
                 _hadPosition = false;
                 _room = null;
@@ -160,7 +87,7 @@ namespace Pesky.Game
             _hadPosition = true;
             _room = reading.room;
             float targetAngle;
-            bool aim = ExitCompassBearing.TryHeading(position, reading.target, _camera != null ? _camera.Yaw : 0f, out targetAngle);
+            bool aim = ExitCompassBearing.TryHeading(position, reading.target, orbitCamera != null ? orbitCamera.Yaw : 0f, out targetAngle);
             if (!aim) targetAngle = _bearing.Angle;
             float angle = _bearing.Step(targetAngle, Time.unscaledDeltaTime, smoothTime, jumped);
             if (jumped) _needleOpacity = 0f;

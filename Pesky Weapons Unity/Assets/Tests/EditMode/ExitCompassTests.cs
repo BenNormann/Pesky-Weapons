@@ -5,7 +5,9 @@ using Pesky.Protocol;
 using Pesky.Session;
 using Pesky.Sim;
 using UnityEditor;
+using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Pesky.Tests
 {
@@ -174,15 +176,72 @@ namespace Pesky.Tests
         }
 
         [Test]
-        public void PrefabIsReusableAndDrawsBelowModalOverlays()
+        public void PrefabLivesOutsideResourcesAndUsesTheSharedHudDocument()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/UI/ExitCompass.prefab");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/ExitCompass.prefab");
             Assert.IsNotNull(prefab);
             Assert.IsNotNull(prefab.GetComponent<RunExitCompass>());
-            var doc = prefab.GetComponent<UnityEngine.UIElements.UIDocument>();
-            Assert.IsNotNull(doc.visualTreeAsset);
-            Assert.IsNotNull(doc.panelSettings);
-            Assert.Less(doc.sortingOrder, 1f, "Votes, blindness, and end screens must cover the compass.");
+            Assert.IsNull(prefab.GetComponent<UIDocument>());
+            Assert.IsFalse(AssetDatabase.IsValidFolder("Assets/Resources"));
+            Assert.IsNull(AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/UI/ExitCompass.uss"));
+            foreach (var method in typeof(RunExitCompass).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+                Assert.IsFalse(method.IsDefined(typeof(RuntimeInitializeOnLoadMethodAttribute), false));
+        }
+
+        [Test]
+        public void SharedHudOwnsTheCompassLayoutAndStyle()
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Hud.uxml");
+            var root = asset.CloneTree();
+            var compass = root.Q<VisualElement>("exit-compass");
+            var weapon = root.Q<VisualElement>("weapon-panel");
+            Assert.IsNotNull(compass);
+            Assert.AreSame(weapon.parent, compass.parent);
+            Assert.AreEqual("bottom-row", compass.parent.name);
+            Assert.Less(compass.parent.IndexOf(compass), weapon.parent.IndexOf(weapon));
+            Assert.IsTrue(compass.ClassListContains("hud-panel"));
+            Assert.IsTrue(weapon.ClassListContains("hud-panel"));
+            Assert.IsNotNull(compass.Q<VisualElement>("exit-compass-dial"));
+            Assert.AreEqual(StyleKeyword.Null, weapon.style.marginLeft.keyword);
+        }
+
+        [Test]
+        public void RunSceneContainsOneWiredCompassPrefabUnderUi()
+        {
+            string yaml = System.IO.File.ReadAllText("Assets/Scenes/Run.unity");
+            string guid = AssetDatabase.AssetPathToGUID("Assets/Prefabs/UI/ExitCompass.prefab");
+            string instance = null;
+            int count = 0;
+            var blocks = Regex.Matches(yaml, @"(?m)^--- !u![\s\S]*?(?=^--- !u!|\z)");
+            foreach (Match block in blocks)
+            {
+                if (!block.Value.Contains("PrefabInstance:") || !block.Value.Contains("m_SourcePrefab: {fileID: 100100000, guid: " + guid)) continue;
+                instance = block.Value;
+                count++;
+            }
+            Assert.AreEqual(1, count);
+            string parentId = Regex.Match(instance, @"m_TransformParent: \{fileID: (\d+)\}").Groups[1].Value;
+            string parent = SceneBlock(blocks, parentId);
+            string parentGoId = Regex.Match(parent, @"m_GameObject: \{fileID: (\d+)\}").Groups[1].Value;
+            StringAssert.Contains("m_Name: _UI", SceneBlock(blocks, parentGoId));
+            foreach (string field in new[] { "document", "run", "spawner", "orbitCamera", "sessionRunner" })
+            {
+                var reference = Regex.Match(instance, @"propertyPath: " + field + @"\r?\n\s+value:.*\r?\n\s+objectReference: \{fileID: (\d+)\}");
+                Assert.IsTrue(reference.Success, field);
+                string id = reference.Groups[1].Value;
+                Assert.AreNotEqual("0", id, field);
+                Assert.IsNotEmpty(SceneBlock(blocks, id), field);
+            }
+            var hud = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/HUD.prefab").GetComponent<UIDocument>();
+            Assert.AreEqual("Assets/UI/Hud.uxml", AssetDatabase.GetAssetPath(hud.visualTreeAsset));
+            Assert.Less(hud.sortingOrder, 1f);
+        }
+
+        static string SceneBlock(MatchCollection blocks, string id)
+        {
+            foreach (Match block in blocks)
+                if (Regex.IsMatch(block.Value, @"\A--- !u!\d+ &" + id + @"(?:\s|$)")) return block.Value;
+            return "";
         }
     }
 }
