@@ -74,6 +74,8 @@ run's timer started (a vote's pause is not counted).
    `window.PESKY_ANALYTICS_URL = '<that URL>'`, then build and publish as usual (`docs/WEB-BUILD.md`).
 
 Changing `Code.gs` later: **Deploy > Manage deployments > edit > Version: New version** keeps the same URL.
+(`<URL>?format=json` returns the three tabs as JSON, which the dashboard reads; it needs the version of
+`Code.gs` that has it deployed.)
 A **new deployment** makes a new URL, which then has to go into `index.html` again.
 
 ## 4. How it is built
