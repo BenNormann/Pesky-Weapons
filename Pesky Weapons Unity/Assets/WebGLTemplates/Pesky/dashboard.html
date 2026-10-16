@@ -158,7 +158,7 @@
     </div>
     <div class="card">
       <h2>Where runs stall: runs that ended in each room</h2>
-      <p class="note">How many runs ended (time ran out, the Mage won, the host left) with the crew still in that room.</p>
+      <p class="note">How many runs ended (time ran out, the Mage won, the host left) with the crew still in that room. The Exit room counts runs that got there but did not all escape.</p>
       <div class="chart" id="c-room-end"></div>
     </div>
     <div class="card">
@@ -280,7 +280,7 @@
     var finished = runs.filter(function (r) { return r.ended === 'result'; });
 
     tiles(runs, finished);
-    roomCharts(rooms);
+    roomCharts(rooms, runs);
     outcomeChart(finished);
     voteCharts(votes);
     table(runs);
@@ -333,17 +333,26 @@
       .sort(function (a, b) { return a.at / a.rows - b.at / b.rows; });
   }
 
-  function roomCharts(rooms) {
+  function roomCharts(rooms, runs) {
     var groups = roomGroups(rooms);
     bars($('c-room-time'), groups.filter(function (g) { return g.cleared.length; }).map(function (g) {
       var avg = g.cleared.reduce(function (a, b) { return a + b; }, 0) / g.cleared.length;
       return { label: g.name, value: avg, text: clock(avg),
         tip: '<b>' + esc(g.name) + '</b>' + clock(avg) + ' on average<br>' + plural(g.cleared.length, 'run') + ' cleared it' };
     }), { format: clock, empty: 'No room has been cleared yet.' });
-    bars($('c-room-end'), groups.map(function (g) {
+    var ended = groups.map(function (g) {
       return { label: g.name, value: g.stuck, text: String(g.stuck),
         tip: '<b>' + esc(g.name) + '</b>' + plural(g.stuck, 'run') + ' ended here<br>out of ' + plural(g.rows, 'run') + ' that reached it' };
-    }), { format: function (v) { return String(Math.round(v)); }, integer: true, empty: 'No rooms recorded yet.' });
+    });
+    // The Exit room has no rooms row: a run that got there and still did not escape (the crew never all stood
+    // in it at once before the time ran out) stalled there.
+    var atExit = runs.filter(function (r) { return num(r.rooms_reached) > num(r.rooms_total); });
+    if (atExit.length) {
+      var stuck = atExit.filter(function (r) { return r.outcome !== 'Escaped'; }).length;
+      ended.push({ label: 'Exit room', value: stuck, text: String(stuck),
+        tip: '<b>Exit room</b>' + plural(stuck, 'run') + ' reached it and did not escape<br>out of ' + plural(atExit.length, 'run') + ' that reached it' });
+    }
+    bars($('c-room-end'), ended, { format: function (v) { return String(Math.round(v)); }, integer: true, empty: 'No rooms recorded yet.' });
   }
 
   function outcomeChart(finished) {
@@ -459,9 +468,9 @@
       el('text', { x: LEFT - 6, y: y + 4, 'text-anchor': 'end' }, svg).textContent = format(max * i / 4);
     }
     var band = plotW / cats.length;
-    // Skip labels only when they would collide: about 6.5px a character plus a little air.
-    var widest = Math.max.apply(null, cats.map(function (c) { return c.label.length; }));
-    var every = Math.max(1, Math.ceil(Math.min(widest * 6.5 + 12, 90) / band));
+    // Every column keeps its label, shortened with an ellipsis to fit; labels are skipped only when the
+    // columns are too narrow for even a few characters (a long run of minutes).
+    var every = band >= 36 ? 1 : Math.ceil(36 / band);
     cats.forEach(function (c, i) {
       if (i % every) return;
       var label = el('text', { x: LEFT + band * (i + 0.5), y: H - BOTTOM + 16, 'text-anchor': 'middle' }, svg);

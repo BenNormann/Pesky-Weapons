@@ -137,7 +137,8 @@ It reads the Sheet through the Apps Script (`<URL>?format=json`, so the deployme
 
 - **Headline numbers:** runs recorded, how often the crew escaped, the median run length, how often a vote
   caught the Mage. Each says how many runs it is out of: with a handful of runs a percentage swings a lot.
-- **Where runs stall:** average time in each room (cleared rooms only), and how many runs ended in each room.
+- **Where runs stall:** average time in each room (cleared rooms only), and how many runs ended in each room,
+  plus an **Exit room** column for runs that reached the Exit room but did not all escape before the time ran out.
 - **How runs end** by player count, **who the votes banished**, and **when votes happen**.
 - A **runs table** under the charts.
 
