@@ -24,7 +24,9 @@ namespace Pesky.Game
             /// <summary>Every plate in `plates` is Held at once (a circuit whose gaps are all bridged).</summary>
             PlatesHeld = 8,
             /// <summary>Power reaches the door: every break in its Circuit is closed (round 22).</summary>
-            CircuitLive = 9
+            CircuitLive = 9,
+            /// <summary>Every lever in `levers` is on at the same time (a lever bank: split up and flip them all).</summary>
+            LeversOn = 10
         }
 
         [SerializeField] Mode mode = Mode.AlwaysOpen;
@@ -42,6 +44,8 @@ namespace Pesky.Game
         [OptionalRef][SerializeField] Circuit circuit;
         [Tooltip("PlatesHeld: every one of these must be Held at the same time.")]
         [OptionalRef][SerializeField] PressurePlate[] plates = new PressurePlate[0];
+        [Tooltip("LeversOn: every one of these must be on at the same time.")]
+        [OptionalRef][SerializeField] ImpactLever[] levers = new ImpactLever[0];
         [Tooltip("Optional second condition OR-ed with this one (a portcullis held by a plate OR pinned by a lever).")]
         [OptionalRef][SerializeField] DoorCondition orCondition;
         public Mode ConditionMode { get { return mode; } }
@@ -70,6 +74,10 @@ public bool IsSatisfied(WorldAuthority authority)
                     return true;
                 case Mode.PartyHasKey: return authority != null && authority.HasKey(keyId);
                 case Mode.LeverOn: return lever != null && lever.IsOn;
+                case Mode.LeversOn:
+                    if (levers == null || levers.Length == 0) return false;
+                    for (int i = 0; i < levers.Length; i++) if (levers[i] == null || !levers[i].IsOn) return false;
+                    return true;
                 case Mode.CircuitLive: return circuit != null && circuit.IsLive;
                 case Mode.ScalesSatisfied: return scales != null && scales.Latched;
                 default: return false; // Sealed
@@ -89,6 +97,7 @@ public bool IsSatisfied(WorldAuthority authority)
                 case Mode.PlatesHeld: return "CLOSE THE CIRCUIT";
                 case Mode.PartyHasKey: return "KEY " + keyId;
                 case Mode.LeverOn: return "LEVER";
+                case Mode.LeversOn: return "EVERY LEVER";
                 case Mode.ScalesSatisfied: return "SCALES";
                 default: return "SEALED";
             }
@@ -101,6 +110,7 @@ public bool IsSatisfied(WorldAuthority authority)
             if ((mode == Mode.PlateLatched || mode == Mode.PlateHeld) && plate == null) return true;
             if (mode == Mode.PlatesHeld && (plates == null || plates.Length == 0)) return true;
             if (mode == Mode.LeverOn && lever == null) return true;
+            if (mode == Mode.LeversOn && (levers == null || levers.Length == 0)) return true;
             if (mode == Mode.ScalesSatisfied && scales == null) return true;
             return false;
         }
